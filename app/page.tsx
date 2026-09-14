@@ -1,2 +1,4 @@
-import {Observatory} from '@/components/observatory';
-export default function Home(){return <Observatory/>}
+import { SettlementGame } from "@/components/game/game";
+export default function Page() {
+  return <SettlementGame />;
+}

@@ -1,89 +1,68 @@
 # Settlement
 
-A living village where you can inspect agent decisions, challenge trust, and replay the evidence behind each outcome.
+Build a village. Train an army. Lead raids beyond the treeline.
 
-## Run it
+Settlement is now a single-player village strategy game with an original illustrated isometric world. The former observatory remains at `/lab` for inspecting deterministic social-agent experiments.
 
-Use Node 24 or newer and npm. The application also passed its tests on the Node 23.9 runtime available during development, which prints experimental SQLite/type-stripping warnings.
+## Play locally
+
+Use Node 24+ and npm:
 
 ```bash
 npm ci
-npm run dev:all
+npm run dev
 ```
 
-Open `http://localhost:5173`. The website works without the worker; `npm run dev` starts just the interface. The worker listens only on `127.0.0.1:8787` and stores runs in `work/settlement.sqlite`.
+Open `http://localhost:5173`. The village game needs no API key, database, or paid AI. If dependencies are already installed, only `npm run dev` is needed.
 
-## Try the complete flow
+## Your first expedition
 
-1. In the observatory, choose **Find an incident** to reach tick 8 of The Missing Grain.
-2. Advance one tick. Select the targeted resident and inspect its decision and evidence.
-3. Open **Experiments** and run a policy comparison. Honest-offer controls reveal the cost of indiscriminate refusal.
-4. Create a browser simulation or, when the local worker is running, choose **Create on local worker**.
-5. Play, pause, single-step, and queue interventions. Publish verified stock to change the social decisions.
-6. Save a run, open it from the library, export JSON, and verify its deterministic replay.
+1. Tap the gold, timber and food bubbles above productive buildings.
+2. Open **Build**, choose a building, and tap an empty diamond to place it. Construction consumes resources and occupies one of two builders.
+3. Select a building to collect, upgrade, or move it. Town hall upgrades unlock higher building levels.
+4. Open **Train** to recruit knights, archers and catapults. Your camp holds 40 troops including its training queue.
+5. Open **Battle → Scout**. Choose a troop and deploy it from an edge. Switch between deploying one or five at a time.
+6. Tap an enemy building to focus attacks. Knights have high health, archers attack from range, and catapults deal heavy siege damage. Enemy towers shoot back.
+7. Destroy the town hall, half the village, and every building to earn up to three stars. Return home to receive loot and unlock the next stronghold.
 
-Browser simulations advance while the page is open. Worker simulations continue independently and survive process restarts; use **Run library → On your local worker** to reconnect. The hosted site provides recorded playback, browser simulations, comparisons, and browser-local saved runs. It does not silently route visitors to a shared hosted simulation worker.
+Deployed troops are spent; undeployed troops remain in reserve. Raids last up to 90 seconds after the first deployment. You can end a raid early and keep rewards for the structures already destroyed.
 
-## What is implemented
+## Progress and controls
 
-- Six residents, one Chaos actor, five locations, integer grain/wood/water/currency balances.
-- Bounded state-space planning with preconditions, source depletion, and a six-step/200-expansion limit.
-- Immutable trade offers with identified recipient, fixed terms, expiry, and atomic acceptance.
-- Actor-scoped memories, attributed claims, explicit observations, and a spectator inspector.
-- Three adversarial scenario families plus honest-offer controls; three deterministic policies.
-- Seeded priority order, per-tick state snapshots, audit events, decision summaries, and replay comparison of state and evidence.
-- Incident detection, harm, resistance, unresolved outcomes, and honest-offer refusal counts.
-- Responsive map, keyboard-accessible controls, reduced motion, saved runs, and exports.
-- Local SQLite worker with transactional commits, durable idempotency receipts, revision checks, run limits, origin/host checks, and SSE snapshots on reconnect.
-- Optional, disabled Claude proposal adapter with action/evidence validation, call-limit prechecks, timeout, and usage reporting.
+Drag empty ground to pan. Use the zoom and center buttons to adjust the camera. Collapse the chapter panel for a clearer view. Sounds are optional and start muted.
 
-## Architecture
+The village automatically saves to this browser every two seconds. Production and training progress while you are away, with offline advancement capped at eight hours. Raids resume from their last saved state. Use the village crest to open the guide and export or import a JSON save. Keep one active game tab per browser to avoid competing saves. Browser data can be cleared or evicted; exported saves provide a portable backup.
 
-```mermaid
-flowchart LR
-  UI[Village interface] --> Core[Deterministic engine]
-  UI -->|local only HTTP controls| Worker[Persistent Node worker]
-  Worker --> Core
-  Worker --> DB[(SQLite)]
-  Worker -->|SSE committed snapshots| UI
-  Core --> Evidence[Events, decisions, incidents]
-  Core --> Planner[Bounded planner]
-  Eval[Matched-seed evaluator] --> Core
-```
+## Implemented game systems
 
-`lib/sim` owns world transitions and evaluation. `components` owns presentation. `worker` owns persistence and scheduling. The Next-compatible Sites starter hosts the interface. No simulation model calls run in browser code or API request handlers.
+- Six building types, tile placement and relocation, five levels, two builders, resource costs and storage limits.
+- Gold, timber and food production, atomic collection, timed upgrades and troop training.
+- Three troop types with different health, movement, attack range and damage.
+- Three enemy strongholds, deterministic combat, focus targeting, tower attacks, troop deaths, destruction, stars, and rewards credited once.
+- Village goals, campaign unlocks and trophies.
+- Original generated terrain and a transparent sprite atlas, animated troop movement, attack effects, responsive controls and reduced-motion support.
 
-## Verify
+This is a playable single-player browser release. It does not yet include multiplayer clans, PvP matchmaking, enemy attacks on your home village, a server-authoritative economy, or a full commercial content/live-operations system. The home watchtower is currently a village building; its combat behavior is used by enemy towers during raids. Building upgrades increase production and progression; this version reuses each building's base artwork across levels.
+
+## Architecture and verification
+
+`lib/game` contains pure economy and battle transitions. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
 
 ```bash
 npm test
 npm run typecheck
-node --test tests/http.integration.mjs
-npm run evaluate
+npm run lint
 npm run build
 ```
 
-The test suite covers conservation, trade consent, conflicting offers, duplicate commands, bounded planning, hidden stock isolation, replay tampering, same-tick evidence, mechanical failure accounting, and worker recovery. The HTTP integration test uses a temporary database and local port 8899; it verifies origin rejection, controls, autonomous ticking, and the event stream.
+The new game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. The original engine and worker tests remain in the suite.
 
-`docs/evaluation-results.json` contains measured results for 120 deterministic runs: four scenario families × three policies × ten seeds. All runs check invariants and exact replay. Results are specific to authored scenarios and rules; they are not a general safety benchmark. The evidence policy is intentionally suited to these inspectable scenarios.
+The optional local worker and Claude adapter belong to the original social simulation in `/lab`; they do not power village raids. No paid model calls are enabled. See `docs/observatory-guide.md` for that subsystem's commands and limits.
 
-## Important design limits
+## Art provenance
 
-- This is a functioning first release, not full implementation of every v3 ambition. PostgreSQL/Drizzle persistence, distributed worker fencing, production authentication, true multi-model experiments, semantic retrieval, and player-resident mode remain outside this release.
-- No paid AI calls are enabled. `lib/agent/claude.ts` is an optional server-side proposal adapter, tested against injected responses. It is not connected to the live simulation policy. Integrating it requires a model/key, durable call recording and spend reservation, policy/version changes, and new evaluation; setting an environment variable alone does not silently enable it.
-- Chaos messages and opportunities are scenario-authored. Residents are autonomous under bounded deterministic policies; Rook is not an open-ended generative attacker.
-- Unvisited food sources use an explicit prior of four available grain. The planner never reads hidden remote stock, and actions revalidate at execution. Replanning can replace an optimistic plan after observing depletion.
-- Social evidence checks use scenario-specific facts. Reputation harm is a two-coin opportunity-cost score, not money transferred. Injection/false-scarcity harm is the excess paid over the two-coin reference price.
-- Checksums detect accidental changes; they are not cryptographic signatures. Verification reconstructs the run and compares state and audit evidence. Exports require the matching engine version.
-- SQLite is for one local owner and one worker process. The worker is intentionally loopback-only with a 100-run limit and three simultaneous active runs. Do not expose it publicly. Browser storage can be evicted; export valuable runs.
+The terrain and sprite atlas were generated with the built-in image-generation tool for this project, then copied into `public/game/terrain.png` and `public/game/sprites.png`. They are original assets, not extracted game assets. Prompts specified colorful orthographic isometric terrain with an empty buildable clearing, and a transparent 3 × 3 atlas of six buildings and three units. No external franchise logos or character designs were requested.
 
-## Optional worker configuration
+## Hosting
 
-- `SETTLEMENT_DB`: database path (default `work/settlement.sqlite`).
-- `SETTLEMENT_WORKER_PORT`: port (default `8787`; the UI currently connects to that default).
-
-A process lock prevents concurrent workers from owning the same database. Graceful shutdown removes it. After an unclean shutdown, a verifiably dead PID can be recovered automatically; if OS permissions prevent checking it, stop the old worker and inspect the lock before restarting.
-
-## References
-
-The village concept draws on [Generative Agents](https://arxiv.org/abs/2304.03442) and [AI Town](https://github.com/a16z-infra/ai-town). Planning is informed by [Jeff Orkin’s GOAP presentation](https://www.gamedevs.org/uploads/three-states-plan-ai-of-fear.pdf). Worker storage uses the [Node SQLite API](https://nodejs.org/api/sqlite.html). The optional adapter follows [Claude tool-use documentation](https://platform.claude.com/docs/claude/docs/tool-use).
+The existing Sites project identity is retained in `.openai/hosting.json`. Publication previously failed because Sites returned `project_not_found`. The local game and source remain independent of that hosting issue. Do not create a duplicate project without resolving that identity/access mismatch.

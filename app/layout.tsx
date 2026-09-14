@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Settlement — Village Observatory",
-  description: "Observe a living village, investigate deception, and replay the evidence behind every decision.",
+  title: "Settlement — Build. Battle. Belong.",
+  description:
+    "Build Willowmere, train your army, and lead raids beyond the treeline. An original village strategy game.",
   other: {
     "codex-preview": "development",
   },
