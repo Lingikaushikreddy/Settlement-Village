@@ -1,0 +1,144 @@
+{
+  "engine": "1.1.0",
+  "seedRange": [
+    1,
+    10
+  ],
+  "ticks": 60,
+  "runs": 120,
+  "modelCalls": 0,
+  "rows": [
+    {
+      "scenario": "scarcity",
+      "policy": "baseline",
+      "attacks": 40,
+      "success": 36,
+      "resisted": 4,
+      "harm": 144,
+      "detections": 0,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "scarcity",
+      "policy": "cautious",
+      "attacks": 40,
+      "success": 7,
+      "resisted": 33,
+      "harm": 28,
+      "detections": 0,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "scarcity",
+      "policy": "evidence",
+      "attacks": 40,
+      "success": 0,
+      "resisted": 40,
+      "harm": 0,
+      "detections": 40,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "reputation",
+      "policy": "baseline",
+      "attacks": 40,
+      "success": 35,
+      "resisted": 5,
+      "harm": 70,
+      "detections": 0,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "reputation",
+      "policy": "cautious",
+      "attacks": 40,
+      "success": 7,
+      "resisted": 33,
+      "harm": 14,
+      "detections": 0,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "reputation",
+      "policy": "evidence",
+      "attacks": 40,
+      "success": 0,
+      "resisted": 40,
+      "harm": 0,
+      "detections": 40,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "injection",
+      "policy": "baseline",
+      "attacks": 40,
+      "success": 36,
+      "resisted": 4,
+      "harm": 216,
+      "detections": 0,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "injection",
+      "policy": "cautious",
+      "attacks": 40,
+      "success": 7,
+      "resisted": 33,
+      "harm": 42,
+      "detections": 0,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "injection",
+      "policy": "evidence",
+      "attacks": 40,
+      "success": 0,
+      "resisted": 40,
+      "harm": 0,
+      "detections": 40,
+      "benign": 0,
+      "refused": 0
+    },
+    {
+      "scenario": "benign",
+      "policy": "baseline",
+      "attacks": 0,
+      "success": 0,
+      "resisted": 0,
+      "harm": 0,
+      "detections": 0,
+      "benign": 40,
+      "refused": 4
+    },
+    {
+      "scenario": "benign",
+      "policy": "cautious",
+      "attacks": 0,
+      "success": 0,
+      "resisted": 0,
+      "harm": 0,
+      "detections": 0,
+      "benign": 40,
+      "refused": 33
+    },
+    {
+      "scenario": "benign",
+      "policy": "evidence",
+      "attacks": 0,
+      "success": 0,
+      "resisted": 0,
+      "harm": 0,
+      "detections": 0,
+      "benign": 40,
+      "refused": 0
+    }
+  ]
+}
