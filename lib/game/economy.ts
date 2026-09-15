@@ -1,3 +1,4 @@
+import { newCouncil, advanceCouncil } from "./council.ts";
 import type { Game, Command, Resources } from "./model.ts";
 import {
   buildings,
@@ -11,6 +12,7 @@ import { stepBattle } from "./battle.ts";
 export function newGame(): Game {
   return {
     version: 2,
+    council: newCouncil(),
     clock: 0,
     serial: 10,
     resources: { gold: 1250, wood: 900, food: 750 },
@@ -164,6 +166,7 @@ export function advanceGame(state: Game, seconds: number, combat = true): Game {
   g.training = g.training.filter((t) => t.readyAt > g.clock);
   if (combat && g.battle && !g.battle.result)
     g = stepBattle(g, Math.min(dt, 1));
+  if (combat) g = advanceCouncil(g, seconds);
   return g;
 }
 export { parseSave as restoreGame } from "./persistence.ts";

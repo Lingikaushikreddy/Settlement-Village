@@ -1,8 +1,8 @@
 # Settlement
 
-Build a village. Train an army. Lead raids beyond the treeline.
+Build a village. Know your residents. Investigate their stories. Lead raids beyond the treeline.
 
-Settlement is now a single-player village strategy game with an original illustrated isometric world. The former observatory remains at `/lab` for inspecting deterministic social-agent experiments.
+Settlement is a single-player village strategy game with an original illustrated isometric world and an integrated, inspectable resident simulation. The same six residents and Chaos agent from the original lab now occupy the playable village. Their work produces village supplies, and social decisions have real treasury consequences. The standalone observatory remains at `/lab` for detailed experiments.
 
 ## Play locally
 
@@ -27,6 +27,24 @@ Open `http://localhost:5173`. The village game needs no API key, database, or pa
 
 Deployed troops are spent; undeployed troops remain in reserve. Raids last up to 90 seconds after the first deployment. You can end a raid early and keep rewards for the structures already destroyed.
 
+## Your first village story
+
+1. Open **Village life → Welcome your residents**, or select a named resident on the map.
+2. Choose the chapter's social policy: Trust first, Cautious, or Check evidence. Start the village day or advance one tick at a time.
+3. At tick 8, Rook's claim pauses the day before the recipient responds. Read the claim and inspect that resident's goal, action, and source evidence.
+4. Publish a verified stock ledger for **20 village gold**, deliver **12 communal grain for 60 village food**, or continue and let the policy decide. Each order advances one tick and is recorded alongside its treasury cost.
+5. Use the timeline to inspect the past without changing live progress. **Treasury trail** links each work dividend, order, and loss to the exact tick and evidence.
+6. **Compare policies** runs all three policies with the same scenario and seed, without your interventions or treasury rewards. It reports harm, evaluated cases, detection, unresolved cases, honest-offer refusals, and inspection effort.
+7. Complete each 32-tick chapter to unlock the next: The Missing Grain, A Question of Trust, The Forged Notice, and An Honest Offer. Previous chapters remain in the archive and can be exported with their evidence.
+
+Each chapter begins a fresh authored resident scenario; your village, army, and treasury persist. Completed chapters cannot be restarted for rewards. Social simulation pauses at new claims, during raids, and while offline. Loading a save resumes it paused. No consequential social choices are fast-forwarded while you are away.
+
+### How residents affect your economy
+
+Successful gathering earns a **gameplay work dividend**, separate from the resident's personal inventory: each gathered grain produces four village food multiplied by the highest ready farm level; each gathered wood produces four timber multiplied by the highest ready lumbermill level. Each gathered water earns two gold for communal service when the town hall is ready. Valid fair trades earn six gold. A building under construction or upgrade does not qualify for its work dividend.
+
+Scenario harm costs **20 village gold per harm unit**, capped at available whole gold. Any uncovered amount is recorded, without debt or negative balances. Reputation harm represents a lost-trade opportunity penalty, not stolen funds. Dividends, costs and penalties are applied once as the corresponding tick commits, and appear in the treasury trail. These explicit gameplay rules bridge the simulation to construction and recruitment; they are not claims about real economics or general agent robustness.
+
 ## Progress and controls
 
 Drag empty ground to pan. Use the zoom and center buttons to adjust the camera. Collapse the chapter panel for a clearer view. Sounds are optional and start muted.
@@ -40,13 +58,14 @@ The village automatically saves to this browser every two seconds. Production an
 - Three troop types with different health, movement, attack range and damage.
 - Three enemy strongholds, deterministic combat, focus targeting, tower attacks, troop deaths, destruction, stars, and rewards credited once.
 - Village goals, campaign unlocks and trophies.
+- Six autonomous residents, one authored Chaos agent, named map interactions, four social chapters, bounded planning, private evidence inspection, historical playback, chief interventions, a treasury audit trail, and matched policy comparisons.
 - Original generated terrain and a transparent sprite atlas, animated troop movement, attack effects, responsive controls and reduced-motion support.
 
 This is a playable single-player browser release. It does not yet include multiplayer clans, PvP matchmaking, enemy attacks on your home village, a server-authoritative economy, or a full commercial content/live-operations system. The home watchtower is currently a village building; its combat behavior is used by enemy towers during raids. Building upgrades increase production and progression; this version reuses each building's base artwork across levels.
 
 ## Architecture and verification
 
-`lib/game` contains pure economy and battle transitions. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
+`lib/game` contains pure economy, battle and council transitions. The council adapter reuses `lib/sim` unchanged and reconstructs versioned scenario runs from compact saved inputs, with a bounded run cache. It does not store full simulation snapshots inside every game tick. Version-2 saves without council data migrate to a paused first chapter without changing previous progress. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
 
 ```bash
 npm test
@@ -55,13 +74,17 @@ npm run lint
 npm run build
 ```
 
-The new game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. The original engine and worker tests remain in the suite.
+The game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. Council tests additionally cover migration, production dividends, ready workplaces, incident pauses, paid interventions, replay-safe reloads, fair reputation trades, actual treasury losses, private historical evidence, read-only comparisons, chapter progression and invalid saves. The original engine and worker tests remain in the suite.
 
-The optional local worker and Claude adapter belong to the original social simulation in `/lab`; they do not power village raids. No paid model calls are enabled. See `docs/observatory-guide.md` for that subsystem's commands and limits.
+The game integrates the deterministic social engine locally. The optional SQLite worker remains a lab service; the browser game does not use that worker or gain its durability guarantees. The optional Claude adapter is still not wired into live gameplay. No paid model calls are enabled. See `docs/observatory-guide.md` for that subsystem's commands and limits.
 
 ## Art provenance
 
-The terrain and sprite atlas were generated with the built-in image-generation tool for this project, then copied into `public/game/terrain.png` and `public/game/sprites.png`. They are original assets, not extracted game assets. Prompts specified colorful orthographic isometric terrain with an empty buildable clearing, and a transparent 3 × 3 atlas of six buildings and three units. No external franchise logos or character designs were requested.
+The terrain and sprite atlas were generated with the built-in image-generation tool for this project, then copied into `public/game/terrain.png` and `public/game/sprites.png`. They are original assets, not extracted game assets. Prompts specified colorful orthographic isometric terrain with an empty buildable clearing, and a transparent 3 × 3 atlas of six buildings and three units. No external franchise logos or character designs were requested. The well and market props are project-authored SVG artwork. Named residents reuse the existing character atlas with identifying labels; distinct animated civilian art is future work.
+
+## Current simulation limits
+
+The residents use bounded deterministic policies, with fixed initial trust tendencies. Rook's opportunities and claims are authored. Four finite scenarios are integrated; this is not an open-ended generative society. The shared surface, work dividends, treasury consequences, evidence, and policy comparisons are implemented. Persistent relationships across chapters, model-assisted social interpretation, public immutable replay links, production multi-user operation, and the complete research-inspired thesis remain outside this release.
 
 ## Hosting
 

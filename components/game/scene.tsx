@@ -11,6 +11,8 @@ import {
   Flag,
 } from "lucide-react";
 import { buildings, troops } from "@/lib/game/catalog";
+import { councilLocations } from "@/lib/game/council-map";
+import type { Agent } from "@/lib/sim/types";
 import { zones } from "@/lib/game/battle";
 import type { Game, BuildingKind } from "@/lib/game/model";
 export function Sprite({
@@ -44,8 +46,16 @@ export function Scene({
   onSelect,
   onTile,
   onDeploy,
+  residents,
+  activeIncidents,
+  selectedResident,
+  onResident,
 }: {
   game: Game;
+  residents: Agent[];
+  activeIncidents: string[];
+  selectedResident: string | null;
+  onResident: (id: string) => void;
   selected: string | null;
   placing: BuildingKind | string | null;
   onSelect: (id: string) => void;
@@ -69,12 +79,16 @@ export function Scene({
   }, []);
   const scale = Math.max(size.w / 1536, size.h / 1024) * camera.z;
   const battle = game.battle;
+  const locations = councilLocations(game);
   const village = battle ? battle.buildings : game.buildings;
   const pathPairs = battle
     ? []
     : game.buildings
         .filter((b) => b.kind !== "hall")
-        .map((b) => [point(4, 4), point(b.x, b.y)]);
+        .map((b) => [
+          point(locations.granary.x, locations.granary.y),
+          point(b.x, b.y),
+        ]);
   return (
     <div
       className="game-stage"
@@ -228,24 +242,133 @@ export function Scene({
             </div>
           );
         })}
-        {!battle &&
-          Array.from({ length: 6 }, (_, i) => {
-            const p = point(2 + (i % 4), 3 + Math.floor(i / 3) * 3);
-            return (
-              <div
-                key={i}
-                className={`wandering-villager wander-${i % 3}`}
-                style={{
-                  left: p.x + 45,
-                  top: p.y + 20,
-                  zIndex: 850,
-                  animationDelay: `-${i * 3}s`,
-                }}
-              >
-                <Sprite index={i % 2 ? 7 : 6} />
-              </div>
-            );
-          })}
+        {!battle && !placing && (
+          <>
+            {(["market", "well"] as const).map((location) => {
+              const p = point(locations[location].x, locations[location].y);
+              return (
+                <div
+                  className="civic-landmark"
+                  key={location}
+                  style={{ left: p.x, top: p.y, zIndex: 20 + Math.round(p.y) }}
+                  aria-hidden="true"
+                >
+                  {location === "well" ? (
+                    <svg viewBox="0 0 90 80">
+                      <ellipse
+                        cx="45"
+                        cy="66"
+                        rx="31"
+                        ry="10"
+                        fill="#475c3c"
+                        opacity=".3"
+                      />
+                      <path
+                        d="M20 48 Q45 65 70 48 V62 Q45 79 20 62Z"
+                        fill="#9ba99a"
+                        stroke="#5b736b"
+                        strokeWidth="2"
+                      />
+                      <ellipse cx="45" cy="48" rx="25" ry="10" fill="#d2d4b6" />
+                      <ellipse cx="45" cy="49" rx="17" ry="6" fill="#3e788e" />
+                      <path
+                        d="M25 48V22M65 48V22"
+                        stroke="#a3734e"
+                        strokeWidth="6"
+                      />
+                      <path
+                        d="M10 27L44 6L80 27L47 40Z"
+                        fill="#799fc0"
+                        stroke="#487293"
+                        strokeWidth="2"
+                      />
+                      <path d="M44 6L47 40L80 27Z" fill="#426b96" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 90 80">
+                      <ellipse
+                        cx="45"
+                        cy="68"
+                        rx="36"
+                        ry="9"
+                        fill="#475c3c"
+                        opacity=".25"
+                      />
+                      <path
+                        d="M19 57L50 71L78 56V43L48 53L19 42Z"
+                        fill="#a97b48"
+                      />
+                      <path d="M18 44L47 29L79 43L49 58Z" fill="#e5b967" />
+                      <path
+                        d="M18 57V24M78 55V23"
+                        stroke="#715837"
+                        strokeWidth="5"
+                      />
+                      <path
+                        d="M10 26L41 9L85 26L51 43Z"
+                        fill="#dfb85e"
+                        stroke="#a17740"
+                        strokeWidth="2"
+                      />
+                      <path d="M25 18L38 12L71 33L57 40Z" fill="#bb6960" />
+                      <path d="M45 10L58 16L85 26L73 32Z" fill="#bb6960" />
+                      <circle cx="37" cy="45" r="5" fill="#8ba457" />
+                      <circle cx="49" cy="49" r="5" fill="#ad5c49" />
+                      <circle cx="61" cy="44" r="5" fill="#8ba457" />
+                    </svg>
+                  )}
+                  <span>
+                    {location === "market" ? "Market square" : "Willow well"}
+                  </span>
+                </div>
+              );
+            })}
+            {residents.map((a, i) => {
+              const location =
+                locations[a.location as keyof typeof locations] ??
+                locations.market;
+              const at = point(location.x, location.y);
+              const neighbors = residents.filter(
+                (b) => b.location === a.location,
+              );
+              const order = neighbors.findIndex((b) => b.id === a.id);
+              const p = {
+                x: at.x + (order - (neighbors.length - 1) / 2) * 48,
+                y: at.y + 54 + (order % 2) * 8,
+              };
+              return (
+                <button
+                  key={a.id}
+                  className={`sim-resident ${a.id === selectedResident ? "selected" : ""}`}
+                  style={{ left: p.x, top: p.y, zIndex: 25 + Math.round(p.y) }}
+                  onClick={() => onResident(a.id)}
+                  aria-label={`Inspect ${a.name}, ${a.occupation}, at ${a.location}: ${a.goal}`}
+                >
+                  <Sprite
+                    index={i % 2 ? 6 : 7}
+                    style={
+                      a.role === "chaos"
+                        ? {
+                            filter:
+                              "hue-rotate(90deg) drop-shadow(0 3px 2px #20322855)",
+                          }
+                        : undefined
+                    }
+                  />
+                  <b>{a.name}</b>
+                  {activeIncidents.includes(a.id) && (
+                    <span
+                      className="resident-alert"
+                      aria-label="Claim received"
+                    >
+                      !
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </>
+        )}
         {battle?.units
           .filter((u) => u.hp > 0)
           .map((u) => {

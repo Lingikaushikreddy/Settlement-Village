@@ -54,6 +54,13 @@ import type {
   Resources,
   Command,
 } from "@/lib/game/model";
+import { CouncilPanel, VillageLife } from "./council";
+import {
+  councilCommand,
+  councilPending,
+  councilRun,
+  newCouncil,
+} from "@/lib/game/council";
 import "./game.css";
 const KEY = "settlement-village-game-v2";
 const resourceIcons = { gold: Coins, wood: TreePine, food: Wheat };
@@ -91,6 +98,8 @@ export function SettlementGame() {
     [panel, setPanel] = useState<"build" | "train" | "raid" | "guide" | null>(
       null,
     ),
+    [councilOpen, setCouncilOpen] = useState(false),
+    [resident, setResident] = useState("mira"),
     [placing, setPlacing] = useState<string | null>(null),
     [notice, setNotice] = useState(""),
     [troop, setTroop] = useState<TroopKind>("knight"),
@@ -196,6 +205,12 @@ export function SettlementGame() {
     }
     return false;
   }
+  function openCouncil(id?: string) {
+    if (id) setResident(id);
+    update((g) => councilCommand(g, { type: "pause" }));
+    setSelected(null);
+    setCouncilOpen(true);
+  }
   function choose(id: string) {
     if (id.startsWith("collect:")) {
       act({ type: "collect", id: id.slice(8) }, "Resources collected!");
@@ -247,10 +262,28 @@ export function SettlementGame() {
   }
   return (
     <main className="village-game">
+      {councilOpen && !game.battle && (
+        <CouncilPanel
+          key={game.council?.chapter ?? 0}
+          game={game}
+          resident={resident}
+          onResident={setResident}
+          onAction={(c) => update((g) => councilCommand(g, c))}
+          onClose={() => setCouncilOpen(false)}
+        />
+      )}
       <Scene
         game={game}
         selected={selected}
         placing={placing}
+        residents={
+          councilRun(game.council ?? newCouncil()).snapshots.at(-1)!.agents
+        }
+        activeIncidents={councilPending(
+          councilRun(game.council ?? newCouncil()),
+        ).map((i) => i.target)}
+        selectedResident={councilOpen ? resident : null}
+        onResident={openCouncil}
         onSelect={choose}
         onTile={place}
         onDeploy={(zone) => {
@@ -322,6 +355,7 @@ export function SettlementGame() {
       </header>
       {!raiding ? (
         <>
+          <VillageLife game={game} onOpen={openCouncil} />
           <aside className={`quest-panel ${goalsOpen ? "" : "collapsed"}`}>
             <button
               className="quest-title"
@@ -342,7 +376,7 @@ export function SettlementGame() {
                 <p>
                   Build your home. Gather your army.
                   <br />
-                  See what lies beyond the trees.
+                  Meet the people who call it home.
                 </p>
                 {quests
                   .filter((q) => !game.claimed.includes(q.id))
@@ -879,6 +913,16 @@ export function SettlementGame() {
                     <b>Lead the raid</b>Deploy along the edges and focus towers
                     first. Destroy the town hall, half the village, and every
                     building for three stars.
+                  </p>
+                </div>
+                <div>
+                  <BookOpen />
+                  <p>
+                    <b>Care for your residents</b>Open Village life to meet six
+                    residents. Start their day, inspect rumors, and give
+                    evidence before they decide. Work earns supplies; deception
+                    can cost gold. Social stories pause during raids and while
+                    offline.
                   </p>
                 </div>
                 <p className="guide-limit">
