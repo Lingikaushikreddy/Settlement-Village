@@ -1,3 +1,4 @@
+import { modelConfig, modelStatus, modelStep } from "./model.ts";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
@@ -34,6 +35,7 @@ try {
 const { writeSync } = await import("node:fs");
 writeSync(lock, String(process.pid));
 const store = new RunStore(path);
+const provider = modelConfig(process.env);
 const allowed = new Set(["http://localhost:5173", "http://127.0.0.1:5173"]);
 const streams = new Map<string, Set<ServerResponse>>();
 let subscribers = 0;
@@ -91,7 +93,12 @@ const server = createServer(async (req, res) => {
       return send(res, 200, {
         ok: true,
         mode: "deterministic",
-        modelCallsEnabled: false,
+        modelCallsEnabled: modelStatus(provider).ready,
+      });
+    if (req.method === "GET" && url.pathname === "/model/status")
+      return send(res, 200, {
+        ...modelStatus(provider),
+        ...store.modelUsage(),
       });
     if (req.method === "GET" && url.pathname === "/runs")
       return send(res, 200, { runs: store.list() });
@@ -106,6 +113,16 @@ const server = createServer(async (req, res) => {
       const id = parts[1];
       if (req.method === "GET" && parts.length === 2)
         return send(res, 200, store.get(id));
+      if (req.method === "POST" && parts[2] === "model-step") {
+        if (!origin || !allowed.has(origin))
+          return send(res, 403, {
+            error: "Model steps require an allowed application origin",
+          });
+        const result = await modelStep(store, id, await body(req), provider);
+        send(res, 200, result);
+        publish(id);
+        return;
+      }
       if (req.method === "POST" && parts[2] === "commands") {
         const result = store.command(id, (await body(req)) as Command);
         send(res, 200, result);
@@ -180,7 +197,7 @@ server.on("error", (error) => {
 });
 server.listen(port, "127.0.0.1", () =>
   console.log(
-    `Settlement worker: http://127.0.0.1:${port} (local only; model calls disabled)`,
+    `Settlement worker: http://127.0.0.1:${port} (local only; model steps ${modelStatus(provider).ready ? "configured, explicit action required" : "disabled"})`,
   ),
 );
 function shutdown() {

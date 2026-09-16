@@ -14,6 +14,7 @@ test("worker HTTP controls, origin protection and event stream form one working 
     {
       env: {
         ...process.env,
+        SETTLEMENT_LIVE_AI: "false",
         SETTLEMENT_WORKER_PORT: "8899",
         SETTLEMENT_DB: join(dir, "run.sqlite"),
       },
@@ -53,6 +54,25 @@ test("worker HTTP controls, origin protection and event stream form one working 
     });
     assert.equal(create.status, 201);
     const initial = await create.json();
+    const modelStatus = await (await fetch(base + "/model/status")).json();
+    assert.equal(modelStatus.ready, false);
+    assert.equal(JSON.stringify(modelStatus).includes("apiKey"), false);
+    const modelRequest = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "model-disabled", expectedVersion: 0 }),
+    };
+    assert.equal(
+      (await fetch(`${base}/runs/${initial.run.id}/model-step`, modelRequest))
+        .status,
+      403,
+    );
+    const disabled = await fetch(`${base}/runs/${initial.run.id}/model-step`, {
+      ...modelRequest,
+      headers: { ...modelRequest.headers, Origin: "http://localhost:5173" },
+    });
+    assert.equal(disabled.status, 400);
+    assert.match((await disabled.json()).error, /disabled/i);
     const command = async (data) => {
       const res = await fetch(`${base}/runs/${initial.run.id}/commands`, {
         method: "POST",

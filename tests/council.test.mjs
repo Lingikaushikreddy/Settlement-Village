@@ -204,3 +204,19 @@ test("a resident who already decided is not shown as waiting for investigation",
   assert.equal(councilRun(g.council).incidents[0].decision, "refused");
   assert.equal(councilPending(councilRun(g.council)).length, 0);
 });
+
+test("campaign research records do not replace existing experiment identities", async () => {
+  const { councilResearchRun } = await import("../lib/game/council.ts");
+  const { runToEnd } = await import("../lib/sim/engine.ts");
+  const game = newGame();
+  const experiment = runToEnd({
+    seed: 42,
+    scenario: "scarcity",
+    policy: "baseline",
+  });
+  const record = councilResearchRun(game.council);
+  assert.notEqual(record.id, experiment.id);
+  assert.equal(record.id, councilResearchRun(game.council).id);
+  assert.equal(verifyReplay(record).ok, true);
+  assert.equal(councilRun(game.council).id, experiment.id);
+});

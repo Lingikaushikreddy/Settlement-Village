@@ -142,6 +142,20 @@ export type Run = {
     tick: number;
     type: Intervention;
   }[];
+  socialDecisions?: SocialDecision[];
   modelCalls: number;
   estimatedCost: number;
+};
+
+export type SocialDecision = {
+  tick: number;
+  actor: string;
+  incidentId: string;
+  action: "accept_claim" | "reject_claim" | "check_evidence";
+  summary: string;
+  evidenceIds: string[];
+  model: string;
+  requestId: string | null;
+  usage: { inputTokens: number; outputTokens: number };
+  costUSD: number;
 };

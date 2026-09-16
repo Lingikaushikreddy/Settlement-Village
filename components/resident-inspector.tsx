@@ -161,8 +161,8 @@ export function ResidentInspector({
       <div className="inspector-note">
         <BookOpen size={16} />
         <p>
-          Deterministic policy summary. This inspector is visible to you;
-          residents only see their permitted observations.
+          Decision summary with recorded sources. This inspector is visible to
+          you; residents only see their permitted observations.
         </p>
       </div>
     </aside>

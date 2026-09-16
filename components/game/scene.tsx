@@ -50,8 +50,10 @@ export function Scene({
   activeIncidents,
   selectedResident,
   onResident,
+  readOnly = false,
 }: {
   game: Game;
+  readOnly?: boolean;
   residents: Agent[];
   activeIncidents: string[];
   selectedResident: string | null;
@@ -196,7 +198,7 @@ export function Scene({
                 className="building-art"
                 aria-label={`${enemy ? "Target" : "Select"} ${def.name}${!enemy ? ` level ${b.level}` : ""}`}
                 onClick={() => onSelect(b.id)}
-                disabled={dead || !!placing}
+                disabled={dead || !!placing || readOnly}
               >
                 <Sprite index={def.sprite} />
                 {dead ? <span className="rubble">✦</span> : null}
@@ -208,7 +210,10 @@ export function Scene({
               ) : null}
               {!enemy && !placing ? (
                 <>
-                  {def.resource && b.stored >= 15 && !buildingReady ? (
+                  {def.resource &&
+                  b.stored >= 15 &&
+                  !buildingReady &&
+                  !readOnly ? (
                     <button
                       className={`collect-bubble ${def.resource}`}
                       onClick={() => onSelect(`collect:${b.id}`)}

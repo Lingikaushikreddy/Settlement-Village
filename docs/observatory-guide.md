@@ -15,14 +15,14 @@ Open `http://localhost:5173`. The website works without the worker; `npm run dev
 
 ## Try the complete flow
 
-1. In the observatory, choose **Find an incident** to reach tick 8 of The Missing Grain.
+1. Open **Research** in the village navigation. It begins with your current chapter record. Use **Archive → Included reference run → Open replay**, then **Find an incident** to reach tick 8 of The Missing Grain.
 2. Advance one tick. Select the targeted resident and inspect its decision and evidence.
-3. Open **Experiments** and run a policy comparison. Honest-offer controls reveal the cost of indiscriminate refusal.
+3. Open **Compare** and run a policy comparison. Honest-offer controls reveal the cost of indiscriminate refusal.
 4. Create a browser simulation or, when the local worker is running, choose **Create on local worker**.
 5. Play, pause, single-step, and queue interventions. Publish verified stock to change the social decisions.
 6. Save a run, open it from the library, export JSON, and verify its deterministic replay.
 
-Browser simulations advance while the page is open. Worker simulations continue independently and survive process restarts; use **Run library → On your local worker** to reconnect. The hosted site provides recorded playback, browser simulations, comparisons, and browser-local saved runs. It does not silently route visitors to a shared hosted simulation worker.
+Browser simulations advance while the page is open. Worker simulations continue independently and survive process restarts; use **Archive → On your local worker** to reconnect. The hosted site provides recorded playback, browser simulations, comparisons, and browser-local saved runs. It does not silently route visitors to a shared hosted simulation worker.
 
 ## What is implemented
 
@@ -51,7 +51,7 @@ flowchart LR
   Eval[Matched-seed evaluator] --> Core
 ```
 
-`lib/sim` owns world transitions and evaluation. `components` owns presentation. `worker` owns persistence and scheduling. The Next-compatible Sites starter hosts the interface. No simulation model calls run in browser code or API request handlers.
+`lib/sim` owns world transitions and evaluation. `components` owns presentation. `worker` owns persistence and scheduling. The Next-compatible Sites starter hosts the interface. No provider calls or keys run in browser code. Explicit optional model steps run in the local Node worker.
 
 ## Verify
 
@@ -70,7 +70,7 @@ The test suite covers conservation, trade consent, conflicting offers, duplicate
 ## Important design limits
 
 - This is a functioning first release, not full implementation of every v3 ambition. PostgreSQL/Drizzle persistence, distributed worker fencing, production authentication, true multi-model experiments, semantic retrieval, and player-resident mode remain outside this release.
-- No paid AI calls are enabled. `lib/agent/claude.ts` is an optional server-side proposal adapter, tested against injected responses. It is not connected to the live simulation policy. Integrating it requires a model/key, durable call recording and spend reservation, policy/version changes, and new evaluation; setting an environment variable alone does not silently enable it.
+- Model calls are disabled by default. Explicit steps on paused worker experiments can use configured Claude decisions with durable response records and conservative spend reservations. Automatic playback and matched comparisons use the free policy. See [Live model setup](live-models.md). The paid provider has not been contacted during development; tests inject provider responses.
 - Chaos messages and opportunities are scenario-authored. Residents are autonomous under bounded deterministic policies; Rook is not an open-ended generative attacker.
 - Unvisited food sources use an explicit prior of four available grain. The planner never reads hidden remote stock, and actions revalidate at execution. Replanning can replace an optimistic plan after observing depletion.
 - Social evidence checks use scenario-specific facts. Reputation harm is a two-coin opportunity-cost score, not money transferred. Injection/false-scarcity harm is the excess paid over the two-coin reference price.

@@ -1,0 +1,432 @@
+/* The village remains the setting; research opens as its field journal. */
+.settlement-navigation {
+  position: absolute;
+  z-index: 25;
+  top: 95px;
+  left: 24px;
+  display: flex;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid #76968c;
+  background: #172b42f5;
+  border-radius: 12px;
+  box-shadow: 0 5px 18px #112d3240;
+}
+.settlement-navigation button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 13px;
+  min-height: 38px;
+  border-radius: 7px;
+  color: #dfebdf;
+}
+.settlement-navigation button[aria-pressed="true"] {
+  background: #f3ce7a;
+  color: #172b42;
+  font-weight: 700;
+}
+.village-game .quest-panel {
+  top: 158px;
+}
+.village-game .village-life {
+  top: 158px;
+}
+.research-active .game-stage {
+  right: 652px;
+}
+.research-active .game-world {
+  top: 54%;
+}
+.research-active .building-art:disabled {
+  opacity: 1;
+  filter: none;
+  cursor: default;
+}
+.unified-workbench {
+  position: absolute;
+  right: 18px;
+  top: 95px;
+  bottom: 18px;
+  width: 610px;
+  z-index: 24;
+  border: 1px solid #a8b7a2;
+  border-radius: 18px;
+  overflow: auto;
+  background: #f8faf5;
+  color: #243631;
+  box-shadow: 0 16px 50px #102e375c;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.research-map-caption {
+  position: absolute;
+  z-index: 10;
+  top: 161px;
+  left: 24px;
+  max-width: calc(100% - 720px);
+  padding: 14px 17px;
+  border-radius: 12px;
+  background: #172b42e8;
+  box-shadow: 0 5px 22px #203c3730;
+}
+.research-map-caption strong {
+  display: block;
+  color: #fff1d6;
+  font-size: 17px;
+}
+.research-map-caption span {
+  display: block;
+  color: #d7e9d4;
+  font-size: 13px;
+  margin-top: 3px;
+}
+.research-map-caption p {
+  font-size: 13px;
+  margin-top: 8px;
+  color: #d1e0d4;
+}
+.research-loading {
+  padding: 30px;
+}
+.unified-research.settlement {
+  padding: 22px;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+.research-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.research-heading span {
+  font-size: 13px;
+  color: #64746b;
+}
+.research-heading h2 {
+  font:
+    28px/1.2 Georgia,
+    serif;
+  color: #172b42;
+  margin-top: 5px;
+}
+.research-close {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid #ced8ca;
+  border-radius: 50%;
+  font-size: 24px !important;
+}
+.research-tabs {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.research-tabs nav {
+  display: flex;
+  gap: 4px;
+}
+.research-tabs nav button {
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #506557;
+}
+.research-tabs nav button[aria-pressed="true"] {
+  background: #e0e9dc;
+  color: #244d42;
+  font-weight: 600;
+}
+.research-help {
+  margin: 12px 0;
+}
+.research-boundary {
+  display: flex;
+  gap: 8px;
+  padding: 11px 12px;
+  border-left: 3px solid #718e69;
+  background: #eaf0e3;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.research-boundary svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.unified-research .scenario-strip {
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 0 16px;
+  margin: 0;
+  background: none;
+  border: 0;
+}
+.unified-research .scenario-strip > div:nth-child(2) {
+  flex: 1;
+  min-width: 180px;
+}
+.unified-research .scenario-strip strong {
+  font-size: 15px;
+}
+.unified-research .scenario-strip span {
+  font-size: 12px;
+}
+.unified-research .world-layout {
+  display: block;
+}
+.research-residents {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 0 0 14px;
+}
+.research-residents button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #d4ded0;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.research-residents button[aria-pressed="true"] {
+  border-color: #244d42;
+  background: #e4eddf;
+}
+.research-residents i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.unified-research .inspector {
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  width: 100%;
+  border: 1px solid #d9e2d4;
+  border-radius: 12px;
+  padding: 18px;
+}
+.unified-research .inspector-tabs [data-slot="tabs-content"] {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.unified-research .inspector-note {
+  margin-top: 12px;
+}
+.unified-research .timeline {
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 0;
+}
+.unified-research .timeline-track {
+  flex: 1;
+  min-width: 190px;
+}
+.unified-research .save-run {
+  display: inline-flex;
+}
+.unified-research .run-toolbar {
+  align-items: flex-start;
+  gap: 12px;
+  flex-direction: column;
+  margin: 0 0 18px;
+}
+.unified-research .run-toolbar > div {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.unified-research .lower-grid {
+  display: block;
+}
+.unified-research .metrics-panel {
+  margin-top: 20px;
+}
+.unified-research .section-heading {
+  flex-wrap: wrap;
+  height: auto;
+  gap: 10px;
+}
+.unified-research .activity-panel {
+  min-width: 0;
+}
+.model-readiness {
+  padding: 17px;
+  border: 1px solid #cbd9cc;
+  border-radius: 12px;
+  background: #eef3eb;
+  margin-bottom: 22px;
+}
+.model-readiness > div {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.model-readiness > div > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.model-readiness strong,
+.model-readiness small {
+  display: block;
+}
+.model-readiness small {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #516657;
+}
+.model-readiness > button {
+  margin: 14px 0 8px;
+  min-height: 40px;
+}
+.model-readiness > p,
+.model-readiness details {
+  font-size: 13px;
+  margin-top: 12px;
+}
+.model-readiness details p {
+  padding: 8px 0;
+}
+.unified-research .experiment-heading {
+  flex-wrap: wrap;
+}
+.unified-research .policy-grid {
+  grid-template-columns: 1fr;
+}
+.unified-research .experiment-controls {
+  flex-wrap: wrap;
+}
+.unified-research .experiment-intro {
+  max-width: 100%;
+}
+.unified-research .library-row {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px 0;
+}
+.unified-research .library-row > div {
+  min-width: 60%;
+}
+.unified-research .library-feature {
+  flex-wrap: wrap;
+  padding: 18px;
+}
+.unified-research .site-footer {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+.unified-research button:focus-visible {
+  outline-color: #407da7;
+}
+@media (max-width: 1100px) {
+  .unified-workbench {
+    width: 55%;
+    right: 12px;
+  }
+  .research-active .game-stage {
+    right: calc(55% + 24px);
+  }
+  .research-map-caption {
+    max-width: calc(45% - 42px);
+  }
+  .settlement-navigation {
+    left: 18px;
+  }
+  .settlement-navigation button {
+    padding: 8px 10px;
+  }
+  .settlement-navigation button svg {
+    display: none;
+  }
+  .unified-research.settlement {
+    padding: 18px;
+  }
+}
+@media (max-width: 760px) {
+  .settlement-navigation {
+    top: 113px;
+    left: 12px;
+    right: 12px;
+    justify-content: space-between;
+  }
+  .settlement-navigation button {
+    flex: 1;
+    font-size: 13px;
+    padding: 7px 5px;
+  }
+  .village-game .quest-panel,
+  .village-game .village-life {
+    top: 174px;
+  }
+  .unified-workbench {
+    top: 345px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
+  .research-active .game-stage {
+    right: 0;
+    bottom: calc(100% - 365px);
+    top: 155px;
+  }
+  .research-active .game-world {
+    top: 38%;
+  }
+  .research-active .camera-controls {
+    bottom: 24px;
+    left: auto;
+    right: 12px;
+  }
+  .research-active .camera-hint {
+    display: none;
+  }
+  .research-map-caption {
+    top: 173px;
+    left: 12px;
+    max-width: 250px;
+    padding: 9px 12px;
+    pointer-events: none;
+  }
+  .research-map-caption strong {
+    font-size: 14px;
+  }
+  .research-map-caption p {
+    display: none;
+  }
+  .research-map-caption span {
+    font-size: 11px;
+  }
+  .unified-research.settlement {
+    padding: 20px 16px 40px;
+  }
+  .research-heading h2 {
+    font-size: 25px;
+  }
+  .unified-research .scenario-icon {
+    display: none;
+  }
+  .unified-research .scenario-strip > div:nth-child(2) {
+    min-width: 150px;
+  }
+  .unified-research .timeline-track {
+    min-width: 180px;
+  }
+  .unified-research .timeline .speed-select {
+    width: 115px;
+  }
+  .research-tabs {
+    gap: 12px;
+  }
+  .unified-research .section-heading [data-slot="tabs-list"] {
+    gap: 8px;
+  }
+}

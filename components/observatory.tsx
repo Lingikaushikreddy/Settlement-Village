@@ -13,7 +13,6 @@ import {
   Pause,
   StepForward,
   RotateCcw,
-  Users,
   ShieldAlert,
   FlaskConical,
   ArrowUpRight,
@@ -21,15 +20,13 @@ import {
   Plus,
   BookOpen,
   CheckCircle2,
-  Clock,
-  Radio,
+  Users,
   Library,
   ChevronRight,
   Activity,
   Server,
+  Sparkles,
 } from "lucide-react";
-import Link from "next/link";
-import { VillageMap } from "./village-map";
 import { ResidentInspector } from "./resident-inspector";
 import { Experiments, exportJson } from "./experiments";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -51,7 +48,7 @@ import {
 import {
   advance,
   createRun,
-  ENGINE_VERSION,
+  supportedEngine,
   metrics,
   policyInfo,
   runToEnd,
@@ -60,6 +57,8 @@ import {
 } from "@/lib/sim/engine";
 import type { Run, Scenario, Policy, Intervention } from "@/lib/sim/types";
 const STORAGE = "settlement-library-v1";
+const workerOrigin = () =>
+  ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
 const defaultRun = () =>
   runToEnd({
     seed: 42,
@@ -72,7 +71,7 @@ function validateSaved(x: unknown): x is Run {
     !!x &&
     typeof x === "object" &&
     (x as Run).schemaVersion === 1 &&
-    (x as Run).engineVersion === ENGINE_VERSION &&
+    supportedEngine((x as Run).engineVersion) &&
     Array.isArray((x as Run).snapshots) &&
     (x as Run).snapshots.length <= 151 &&
     Array.isArray((x as Run).events) &&
@@ -80,13 +79,33 @@ function validateSaved(x: unknown): x is Run {
     !!(x as Run).config
   );
 }
-export function Observatory() {
-  const [run, setRun] = useState<Run>(defaultRun),
-    [tick, setTick] = useState(0),
+export type ResearchFrame = {
+  run: Run;
+  tick: number;
+  selected: string;
+  mode: "recorded" | "local" | "worker";
+};
+export function Observatory({
+  currentRun,
+  section,
+  onSection,
+  selectedResident,
+  onSelected,
+  onFrame,
+  onExit,
+}: {
+  currentRun: Run;
+  section: string;
+  onSection: (section: string) => void;
+  selectedResident: string;
+  onSelected: (id: string) => void;
+  onFrame: (frame: ResearchFrame) => void;
+  onExit: () => void;
+}) {
+  const [run, setRun] = useState<Run>(() => currentRun),
+    [tick, setTick] = useState(currentRun.snapshots.length - 1),
     [playing, setPlaying] = useState(false),
     [speed, setSpeed] = useState("1"),
-    [selected, select] = useState("mira"),
-    [view, setView] = useState("observatory"),
     [mode, setMode] = useState<"recorded" | "local" | "worker">("recorded"),
     [newOpen, setNewOpen] = useState(false),
     [starting, setStarting] = useState(false),
@@ -102,6 +121,21 @@ export function Observatory() {
     [workerRuns, setWorkerRuns] = useState<
       { id: string; name: string; tick: number; running: boolean }[]
     >([]);
+  const selected = selectedResident,
+    select = onSelected,
+    view = section,
+    setView = onSection;
+  const [provider, setProvider] = useState<{
+    ready: boolean;
+    reason: string;
+    model: string | null;
+    dailyBudgetUSD: number | null;
+    reservedUSD?: number;
+  } | null>(null);
+  const [modelBusy, setModelBusy] = useState(false);
+  useEffect(() => {
+    onFrame({ run, tick, selected, mode });
+  }, [run, tick, selected, mode, onFrame]);
   const sessionRef = useRef(0);
   const loadRef = useRef(0);
   const ref = useRef({ run, tick, mode, queued });
@@ -122,7 +156,17 @@ export function Observatory() {
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE) || "[]");
         if (Array.isArray(saved))
-          setLibrary(saved.filter(validateSaved).slice(0, 8));
+          setLibrary(
+            saved
+              .filter((x) => {
+                try {
+                  return validateSaved(x) && verifyReplay(x).ok;
+                } catch {
+                  return false;
+                }
+              })
+              .slice(0, 8),
+          );
       } catch {
         setNotice(
           "Saved runs could not be read. You can still start a new simulation.",
@@ -139,11 +183,33 @@ export function Observatory() {
         setTick(0);
       }
     }, 0);
-    if (["localhost", "127.0.0.1"].includes(location.hostname))
+    if (workerOrigin())
       fetch("http://127.0.0.1:8787/health")
         .then((r) => r.ok && setWorkerAvailable(true))
         .catch(() => {});
+    if (workerOrigin())
+      fetch("http://127.0.0.1:8787/model/status")
+        .then((r) =>
+          r.ok
+            ? r.json()
+            : r.status === 404
+              ? {
+                  ready: false,
+                  reason:
+                    "Restart your local worker to load the model-decision controls.",
+                  model: null,
+                  dailyBudgetUSD: null,
+                }
+              : null,
+        )
+        .then((data) => setProvider(data as typeof provider))
+        .catch(() => setProvider(null));
     return () => {
+      // Invalidate asynchronous requests using the current session, not the mount's value.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      sessionRef.current++;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      loadRef.current++;
       clearTimeout(hydrate);
       streamRef.current?.close();
     };
@@ -154,7 +220,7 @@ export function Observatory() {
     return () => clearTimeout(t);
   }, [notice]);
   useEffect(() => {
-    if (!["localhost", "127.0.0.1"].includes(location.hostname)) return;
+    if (!workerOrigin()) return;
     if (view === "library" || newOpen)
       fetch("http://127.0.0.1:8787/runs")
         .then(async (r) => {
@@ -290,6 +356,43 @@ export function Observatory() {
     const t = setInterval(step, 1000 / Number(speed));
     return () => clearInterval(t);
   }, [playing, speed, step, mode]);
+  async function requestModelStep() {
+    const session = sessionRef.current;
+    const id = ref.current.run.id;
+    setModelBusy(true);
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8787/runs/${id}/model-step`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: crypto.randomUUID(),
+            expectedVersion: revisionRef.current,
+          }),
+        },
+      );
+      const data = (await response.json()) as {
+        run: Run;
+        version: number;
+        running?: boolean;
+        error?: string;
+      };
+      if (session !== sessionRef.current) return;
+      if (!response.ok) throw Error(data.error || "Model step failed.");
+      attachWorker(data);
+      setNotice(
+        "Model decision recorded and applied. Replay will reuse this response.",
+      );
+    } catch (error) {
+      if (session === sessionRef.current)
+        setNotice(
+          error instanceof Error ? error.message : "Model step failed.",
+        );
+    } finally {
+      setModelBusy(false);
+    }
+  }
   function openRun(r: Run) {
     sessionRef.current++;
     streamRef.current?.close();
@@ -464,57 +567,70 @@ export function Observatory() {
     [w],
   );
   return (
-    <main className="settlement">
-      <header className="topbar">
-        <Link className="brand" href="/" aria-label="Settlement home">
-          <span className="brand-icon">
-            <Sprout />
-          </span>
-          Settlement
-        </Link>
-        <nav aria-label="Main navigation">
+    <section className="settlement unified-research">
+      <header className="research-heading">
+        <div>
+          <span>Settlement / research desk</span>
+          <h2>
+            {view === "experiments"
+              ? "Test a different decision."
+              : view === "library"
+                ? "Your village archive."
+                : "Follow the evidence."}
+          </h2>
+        </div>
+        <button
+          className="research-close"
+          onClick={onExit}
+          aria-label="Close research and return to village"
+        >
+          ×
+        </button>
+      </header>
+      <div className="research-tabs">
+        <nav aria-label="Research tools">
           {[
-            ["observatory", "Observatory"],
-            ["experiments", "Experiments"],
-            ["library", "Run library"],
-          ].map(([id, name]) => (
+            ["observatory", "Inspect"],
+            ["experiments", "Compare"],
+            ["library", "Archive"],
+          ].map(([id, label]) => (
             <button
               key={id}
-              className={view === id ? "nav-active" : ""}
+              aria-pressed={view === id}
+              disabled={modelBusy}
               onClick={() => {
+                if (mode !== "worker") setPlaying(false);
                 setView(id);
-                setPlaying(false);
               }}
             >
-              {name}
+              {label}
             </button>
           ))}
         </nav>
-        <button className="about-button" onClick={() => setHelpOpen(true)}>
-          Field guide <BookOpen size={15} />
+        <button
+          className="primary"
+          disabled={modelBusy}
+          onClick={() => setNewOpen(true)}
+        >
+          <Plus size={15} /> New experiment
         </button>
-      </header>
-      <div className="workspace-heading">
-        <div>
-          <p className="breadcrumb">
-            Your field station <span>/</span>{" "}
-            {view === "observatory"
-              ? "Willowmere"
-              : view === "experiments"
-                ? "Experiments"
-                : "Saved runs"}
-          </p>
-          <h1>
-            {view === "observatory"
-              ? "A small world. Consequential decisions."
-              : view === "experiments"
-                ? "Evidence over assumptions."
-                : "Stories you can return to."}
-          </h1>
-        </div>
-        <button className="primary" onClick={() => setNewOpen(true)}>
-          <Plus size={17} /> New simulation
-        </button>
+      </div>
+      <button
+        className="text-button research-help"
+        onClick={() => setHelpOpen(true)}
+      >
+        <BookOpen size={14} /> Research field guide
+      </button>
+      <div className="research-boundary">
+        <ShieldAlert size={16} />
+        <span>
+          {mode === "recorded"
+            ? "Recorded evidence"
+            : mode === "worker"
+              ? "Local worker experiment"
+              : "Browser experiment"}{" "}
+          · village resources stay unchanged
+        </span>
       </div>
       {view === "observatory" && (
         <>
@@ -540,7 +656,9 @@ export function Observatory() {
                   select(e.target || "rook");
                 } else
                   setNotice(
-                    "The first claim arrives at tick 8. Advance the simulation.",
+                    mode === "recorded"
+                      ? "This village record ends before the first claim. Continue its day in Council, or create an experiment."
+                      : "The first claim arrives at tick 8. Advance the simulation.",
                   );
               }}
             >
@@ -548,57 +666,17 @@ export function Observatory() {
             </button>
           </div>
           <section className="world-layout">
-            <div className="map-panel">
-              <div className="map-heading">
-                <div>
-                  <h2>Willowmere</h2>
-                  <span>Early autumn · Day {Math.floor(tick / 20) + 1}</span>
-                </div>
-                <span className="mode-badge">
-                  {mode === "recorded" ? (
-                    <>
-                      <Clock size={12} />
-                      Recorded run
-                    </>
-                  ) : mode === "worker" ? (
-                    <>
-                      <Server size={12} />
-                      Local worker
-                    </>
-                  ) : (
-                    <>
-                      <Radio size={12} />
-                      Browser simulation
-                    </>
-                  )}
-                </span>
-              </div>
-              <VillageMap
-                residents={w.agents}
-                selected={selected}
-                onSelect={select}
-              />
-              <div className="map-footer">
-                <span>
-                  <Users size={15} />6 residents
-                </span>
-                <span>
-                  <ShieldAlert size={15} />1 Chaos agent
-                </span>
-                <span>Seed {run.config.seed}</span>
-              </div>
-              <div className="resident-picker" aria-label="Residents">
-                {w.agents.map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => select(a.id)}
-                    className={selected === a.id ? "selected" : ""}
-                  >
-                    <i style={{ background: a.color }} />
-                    {a.name}
-                  </button>
-                ))}
-              </div>
+            <div className="research-residents" aria-label="Research residents">
+              {w.agents.map((a) => (
+                <button
+                  key={a.id}
+                  aria-pressed={a.id === selected}
+                  onClick={() => select(a.id)}
+                >
+                  <i style={{ background: a.color }} />
+                  {a.name}
+                </button>
+              ))}
             </div>
             <ResidentInspector
               run={run}
@@ -622,9 +700,11 @@ export function Observatory() {
                 aria-label={playing ? "Pause" : "Play"}
                 onClick={toggle}
                 disabled={
-                  tick === last &&
-                  run.status === "completed" &&
-                  mode !== "recorded"
+                  modelBusy ||
+                  (mode === "recorded" && last === 0) ||
+                  (tick === last &&
+                    run.status === "completed" &&
+                    mode !== "recorded")
                 }
               >
                 {playing ? (
@@ -638,8 +718,10 @@ export function Observatory() {
                 aria-label="Advance one tick"
                 onClick={step}
                 disabled={
-                  (tick === last && run.status === "completed") ||
-                  (mode === "worker" && playing)
+                  (tick === last &&
+                    (run.status === "completed" || mode === "recorded")) ||
+                  (mode === "worker" && playing) ||
+                  modelBusy
                 }
               >
                 <StepForward size={18} />
@@ -663,7 +745,7 @@ export function Observatory() {
                 max={Math.max(last, 1)}
                 value={[tick]}
                 onValueChange={(v) => jump(v[0])}
-                disabled={last === 0 || mode === "worker"}
+                disabled={last === 0 || mode === "worker" || modelBusy}
               />
               <div className="incident-markers">
                 {incidentEvents.map((e) => (
@@ -700,13 +782,17 @@ export function Observatory() {
           <div className="run-toolbar">
             <span>
               <Activity size={14} />
-              Deterministic policies · {run.modelCalls} model calls · $0 API
-              cost
+              {run.modelCalls
+                ? "Model-assisted decisions"
+                : "Rule-based decisions"}{" "}
+              · {run.modelCalls} model calls · ${run.estimatedCost.toFixed(4)}{" "}
+              estimated API cost
             </span>
             <div>
               {mode !== "recorded" && run.status === "active" && (
                 <Select
                   value=""
+                  disabled={modelBusy}
                   onValueChange={(v) => intervene(v as Intervention)}
                 >
                   <SelectTrigger aria-label="Intervene in simulation">
@@ -748,6 +834,68 @@ export function Observatory() {
               </button>
             </div>
           </div>
+          <section className="model-readiness">
+            <div>
+              <Sparkles size={20} />
+              <span>
+                <strong>Live model decisions</strong>
+                <small>
+                  {provider?.reason ??
+                    "Free policies are active. Start the optional local worker to configure model decisions."}
+                </small>
+              </span>
+            </div>
+            {provider?.ready && (
+              <p>
+                {provider.model} · daily budget ${provider.dailyBudgetUSD} · six
+                requests per run maximum. Each model step sends this recipient’s
+                visible evidence to Claude and may incur API cost.
+              </p>
+            )}
+            <button
+              className="secondary"
+              disabled={
+                !provider?.ready ||
+                mode !== "worker" ||
+                playing ||
+                !!queued ||
+                modelBusy ||
+                !run.incidents.some(
+                  (i) =>
+                    ["pending", "checking"].includes(i.decision) &&
+                    i.deadline > tick,
+                )
+              }
+              onClick={() => void requestModelStep()}
+            >
+              <Sparkles size={15} />
+              {modelBusy
+                ? "Evaluating the next decision…"
+                : "Ask Claude to decide next tick"}
+            </button>
+            {mode !== "worker" && (
+              <small>
+                Create an experiment on the local worker to use configured model
+                decisions.
+              </small>
+            )}
+            {run.socialDecisions
+              ?.filter((d) => d.tick <= tick)
+              .map((d) => (
+                <details key={`${d.tick}-${d.actor}`}>
+                  <summary>
+                    Tick {d.tick} · {d.actor} · {d.action.replaceAll("_", " ")}{" "}
+                    · model proposal
+                  </summary>
+                  <p>{d.summary}</p>
+                  <small>
+                    {d.model} · {d.usage.inputTokens} input /{" "}
+                    {d.usage.outputTokens} output tokens · $
+                    {d.costUSD.toFixed(4)} estimated
+                  </small>
+                </details>
+              ))}
+          </section>
           <div className="lower-grid">
             <section className="activity-panel">
               <Tabs defaultValue="incidents">
@@ -768,19 +916,24 @@ export function Observatory() {
                       <ShieldAlert size={25} />
                       <h3>A quiet morning. For now.</h3>
                       <p>
-                        The first claim is scheduled for tick 8. Play the run or
-                        jump to the incident.
+                        {mode === "recorded" && last < 8
+                          ? "This record ends before the first claim. Continue the village day in Council, or try a separate experiment."
+                          : "The first claim is scheduled for tick 8. Play the run or jump to the incident."}
                       </p>
                       <button
                         className="text-button"
                         onClick={() => {
                           if (last >= 8) jump(8);
+                          else if (mode === "recorded") setNewOpen(true);
                           else {
                             toggle();
                           }
                         }}
                       >
-                        Watch what happens <ArrowUpRight size={15} />
+                        {mode === "recorded" && last < 8
+                          ? "Try a new experiment"
+                          : "Watch what happens"}{" "}
+                        <ArrowUpRight size={15} />
                       </button>
                     </div>
                   ) : (
@@ -947,6 +1100,22 @@ export function Observatory() {
             </div>
             <Library size={26} />
           </div>
+          <article className="library-feature">
+            <span className="feature-icon">
+              <Users size={28} />
+            </span>
+            <div>
+              <span className="muted-small">From your playable village</span>
+              <h3>{currentRun.name}</h3>
+              <p>
+                Chapter record · {currentRun.snapshots.length - 1} ticks ·
+                village progress preserved
+              </p>
+            </div>
+            <button className="primary" onClick={() => openRun(currentRun)}>
+              Inspect village record
+            </button>
+          </article>
           <article className="library-feature">
             <span className="feature-icon">
               <Sprout size={32} />
@@ -1186,10 +1355,11 @@ export function Observatory() {
             </li>
           </ol>
           <p className="guide-limit">
-            This release uses deterministic rules, not a language model. Results
-            illustrate these scenarios; they do not establish general agent
-            safety. Browser runs advance while this page is open. The optional
-            local worker persists and advances independently.
+            Free runs use deterministic rules. Configured local worker runs can
+            apply explicitly requested Claude decisions. Results illustrate
+            these scenarios; they do not establish general agent safety. Browser
+            runs advance while this page is open. The optional local worker
+            persists and advances independently.
           </p>
         </DialogContent>
       </Dialog>
@@ -1205,7 +1375,7 @@ export function Observatory() {
           </button>
         </div>
       )}
-    </main>
+    </section>
   );
 }
 function CoinsLegend() {

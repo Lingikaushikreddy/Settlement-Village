@@ -1,3 +1,4 @@
+import { validateSocialDecision } from "../agent/social.ts";
 import type {
   Action,
   Agent,
@@ -12,6 +13,7 @@ import type {
   Run,
   Scenario,
   World,
+  SocialDecision,
 } from "./types.ts";
 import { describeAction, graph, pathBetween, planNeeds } from "./planner.ts";
 export type {
@@ -27,6 +29,10 @@ export type {
   Decision,
 } from "./types.ts";
 export const ENGINE_VERSION = "1.1.0";
+export const SOCIAL_ENGINE_VERSION = "1.1.0+social-1";
+export function supportedEngine(version: string) {
+  return version === ENGINE_VERSION || version === SOCIAL_ENGINE_VERSION;
+}
 export const scenarioInfo: Record<
   Scenario,
   {
@@ -446,6 +452,7 @@ function socialDecision(
   w: World,
   a: Agent,
   incident: Incident,
+  model?: SocialDecision,
 ): boolean {
   a.goal =
     incident.family === "benign" ? "Consider a fair offer" : "Evaluate a claim";
@@ -453,7 +460,12 @@ function socialDecision(
     r.events.find((e) => e.id === id)?.audience.includes(a.id),
   );
   const family = incident.family;
-  if (r.config.policy === "evidence" && !incident.verified) {
+  if (
+    (model
+      ? model.action === "check_evidence"
+      : r.config.policy === "evidence") &&
+    !incident.verified
+  ) {
     const destination = family === "scarcity" ? "granary" : "market";
     if (a.location !== destination) {
       const target = pathBetween(a.location, destination)[0];
@@ -522,8 +534,10 @@ function socialDecision(
       (incident.verified || w.verifiedStock) &&
       w.locations.find((l) => l.id === "granary")!.stock.grain > 10);
   const acceptClaim =
-    !canonicalReject &&
-    (r.config.policy === "evidence" || a.trust > suspicion + roll * 0.35);
+    model && model.action !== "check_evidence"
+      ? model.action === "accept_claim"
+      : !canonicalReject &&
+        (r.config.policy === "evidence" || a.trust > suspicion + roll * 0.35);
   let refused = false,
     harm = 0,
     summary = "";
@@ -567,7 +581,7 @@ function socialDecision(
   }
   incident.decision = refused ? "refused" : "accepted";
   incident.harm = harm;
-  if (canonicalReject) {
+  if (canonicalReject && !acceptClaim) {
     incident.detectedTick = w.tick;
     summary += " Explicit detection recorded.";
   }
@@ -595,14 +609,25 @@ function socialDecision(
     w,
     a,
     refused ? "Refuse the offer" : "Accept the trade",
-    summary,
-    evidence,
+    model
+      ? `Model proposal: ${model.summary} Executed result: ${summary}`
+      : summary,
+    model ? model.evidenceIds : evidence,
     [],
     harm ? "Harm recorded" : refused ? "Refused" : "Trade completed",
   );
   return true;
 }
-export function advance(input: Run, intervention?: Intervention): Run {
+export function advance(
+  input: Run,
+  intervention?: Intervention,
+  model?: SocialDecision,
+): Run {
+  if (model) {
+    if (intervention)
+      throw Error("Model steps cannot include queued interventions.");
+    model = validateSocialDecision(input, model);
+  }
   if (input.status === "completed") return input;
   const r: Run = {
     ...input,
@@ -613,6 +638,12 @@ export function advance(input: Run, intervention?: Intervention): Run {
     incidents: structuredClone(input.incidents),
     interventions: [...input.interventions],
   };
+  if (model) {
+    r.engineVersion = SOCIAL_ENGINE_VERSION;
+    r.socialDecisions = [...(input.socialDecisions ?? []), model];
+    r.modelCalls++;
+    r.estimatedCost += model.costUSD;
+  }
   const w = structuredClone(input.snapshots.at(-1)!);
   w.tick++;
   if (intervention) {
@@ -710,7 +741,15 @@ export function advance(input: Run, intervention?: Intervention): Run {
         ["pending", "checking"].includes(n.decision),
     );
     if (active) {
-      socialDecision(r, w, a, active);
+      socialDecision(
+        r,
+        w,
+        a,
+        active,
+        model?.actor === a.id && model.incidentId === active.id
+          ? model
+          : undefined,
+      );
       continue;
     }
     const plan = planNeeds(w, a);
@@ -842,14 +881,25 @@ export function runToEnd(config: Partial<Config>) {
   return r;
 }
 export function verifyReplay(r: Run) {
-  if (r.engineVersion !== ENGINE_VERSION)
+  try {
+    return verifyReplayRecord(r);
+  } catch {
+    return { ok: false, reason: "Invalid replay record or model decision" };
+  }
+}
+function verifyReplayRecord(r: Run) {
+  if (!supportedEngine(r.engineVersion))
     return { ok: false, reason: "Unsupported engine version" };
   for (let i = 0; i < r.snapshots.length; i++)
     if (checksum(r.snapshots[i]) !== r.checksums[i])
       return { ok: false, reason: `Checkpoint ${i} does not match` };
   let replay = createRun(r.config);
   for (let i = 1; i < r.snapshots.length; i++) {
-    replay = advance(replay, r.interventions.find((x) => x.tick === i)?.type);
+    replay = advance(
+      replay,
+      r.interventions.find((x) => x.tick === i)?.type,
+      r.socialDecisions?.find((x) => x.tick === i),
+    );
     if (replay.checksums[i] !== r.checksums[i])
       return { ok: false, reason: `Replay diverged at tick ${i}` };
   }
@@ -867,6 +917,8 @@ export function verifyReplay(r: Run) {
     "incidents",
     "interventions",
     "status",
+    "socialDecisions",
+    "engineVersion",
     "modelCalls",
     "estimatedCost",
   ] as const)

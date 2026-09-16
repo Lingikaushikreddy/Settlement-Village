@@ -4,7 +4,7 @@ import {
   advance,
   createRun,
   normalizeConfig,
-  ENGINE_VERSION,
+  supportedEngine,
 } from "../lib/sim/engine.ts";
 import type { Config, Intervention, Run } from "../lib/sim/types.ts";
 export type Command = {
@@ -34,6 +34,15 @@ export class RunStore {
       .exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=3000;
  CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY,data TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,running INTEGER NOT NULL DEFAULT 0,queued TEXT);
  CREATE TABLE IF NOT EXISTS commands(run_id TEXT NOT NULL REFERENCES runs(id),id TEXT NOT NULL,request TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(run_id,id));`);
+    this.db.exec(
+      `CREATE TABLE IF NOT EXISTS model_requests(run_id TEXT NOT NULL REFERENCES runs(id),id TEXT NOT NULL,expected_version INTEGER NOT NULL,status TEXT NOT NULL,reserved REAL NOT NULL,cost REAL,response TEXT,result TEXT,error TEXT,day TEXT NOT NULL,PRIMARY KEY(run_id,id));`,
+    );
+    // No automatic paid retry after an uncertain crash. Keep the cost reservation.
+    this.db
+      .prepare(
+        "UPDATE model_requests SET status='failed',error='Interrupted model request. Provider usage may be unknown; no automatic retry.' WHERE status='pending'",
+      )
+      .run();
   }
   create(config: Partial<Config>): StoredRun {
     const count = this.db.prepare("SELECT COUNT(*) AS n FROM runs").get() as {
@@ -56,7 +65,7 @@ export class RunStore {
       | undefined;
     if (!row) throw Error("Run not found");
     const run = JSON.parse(row.data) as Run;
-    if (run.engineVersion !== ENGINE_VERSION)
+    if (!supportedEngine(run.engineVersion))
       throw Error(
         "Run uses an incompatible engine version. Export the database and start a new run.",
       );
@@ -143,6 +152,8 @@ export class RunStore {
         return JSON.parse(receipt.result);
       }
       const current = this.get(id);
+      if (this.modelPending(id))
+        throw Error("A model request is in progress. Wait for it to finish.");
       if (
         current.version !== command.expectedVersion &&
         !["pause", "resume"].includes(command.action)
@@ -200,6 +211,151 @@ export class RunStore {
       this.db.exec("ROLLBACK");
       throw e;
     }
+  }
+  modelPending(id: string) {
+    return !!this.db
+      .prepare(
+        "SELECT 1 FROM model_requests WHERE run_id=? AND status='pending'",
+      )
+      .get(id);
+  }
+  modelUsage() {
+    const day = new Date().toISOString().slice(0, 10);
+    const row = this.db
+      .prepare(
+        "SELECT COUNT(*) AS requests,COALESCE(SUM(MAX(reserved,COALESCE(cost,0))),0) AS reservedUSD FROM model_requests WHERE day=?",
+      )
+      .get(day) as { requests: number; reservedUSD: number };
+    return row;
+  }
+  modelReceipt(
+    id: string,
+    command: { id: string; expectedVersion: number },
+  ): StoredRun | null {
+    if (
+      !command ||
+      typeof command.id !== "string" ||
+      !/^[a-zA-Z0-9-]{1,100}$/.test(command.id) ||
+      !Number.isInteger(command.expectedVersion)
+    )
+      throw Error("Invalid model request");
+    const row = this.db
+      .prepare(
+        "SELECT expected_version,status,result,error FROM model_requests WHERE run_id=? AND id=?",
+      )
+      .get(id, command.id) as
+      | {
+          expected_version: number;
+          status: string;
+          result: string | null;
+          error: string | null;
+        }
+      | undefined;
+    if (!row) return null;
+    if (row.expected_version !== command.expectedVersion)
+      throw Error("Model request ID reused with a different version");
+    if (row.status === "completed") return JSON.parse(row.result!) as StoredRun;
+    throw Error(
+      row.error || "This model request is in progress; do not submit it again.",
+    );
+  }
+  reserveModel(
+    id: string,
+    command: { id: string; expectedVersion: number },
+    reserve: number,
+    budget: number,
+  ) {
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      if (this.modelReceipt(id, command))
+        throw Error("Model request already completed");
+      const current = this.get(id);
+      if (current.version !== command.expectedVersion)
+        throw Error("World version conflict");
+      if (current.running || current.queued || current.run.status !== "active")
+        throw Error(
+          "Pause the run and clear queued interventions before a model step.",
+        );
+      if (this.modelPending(id))
+        throw Error("A model request is already in progress.");
+      const count = this.db
+        .prepare("SELECT COUNT(*) AS n FROM model_requests WHERE run_id=?")
+        .get(id) as { n: number };
+      const usage = this.modelUsage();
+      if (count.n >= 6 || usage.requests >= 20)
+        throw Error(
+          "Model call limit reached. Continue with the declared free policy.",
+        );
+      if (
+        !Number.isFinite(reserve) ||
+        reserve <= 0 ||
+        usage.reservedUSD + reserve > budget
+      )
+        throw Error("Daily model budget exhausted before dispatch.");
+      this.db
+        .prepare(
+          "INSERT INTO model_requests(run_id,id,expected_version,status,reserved,day) VALUES (?,?,?,'pending',?,?)",
+        )
+        .run(
+          id,
+          command.id,
+          command.expectedVersion,
+          reserve,
+          new Date().toISOString().slice(0, 10),
+        );
+      this.db.exec("COMMIT");
+    } catch (e) {
+      this.db.exec("ROLLBACK");
+      throw e;
+    }
+  }
+  recordModelResponse(id: string, requestId: string, response: unknown) {
+    this.db
+      .prepare(
+        "UPDATE model_requests SET response=? WHERE run_id=? AND id=? AND status='pending'",
+      )
+      .run(JSON.stringify(response), id, requestId);
+  }
+  commitModel(
+    id: string,
+    command: { id: string; expectedVersion: number },
+    run: Run,
+    cost: number,
+  ): StoredRun {
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const current = this.get(id);
+      const request = this.db
+        .prepare(
+          "SELECT response FROM model_requests WHERE run_id=? AND id=? AND status='pending'",
+        )
+        .get(id, command.id) as { response: string | null } | undefined;
+      if (!request?.response || current.version !== command.expectedVersion)
+        throw Error("Model commit version conflict");
+      const next: StoredRun = {
+        run,
+        version: current.version + 1,
+        running: false,
+      };
+      this.write(id, next);
+      this.db
+        .prepare(
+          "UPDATE model_requests SET status='completed',result=?,cost=? WHERE run_id=? AND id=?",
+        )
+        .run(JSON.stringify(next), cost, id, command.id);
+      this.db.exec("COMMIT");
+      return next;
+    } catch (e) {
+      this.db.exec("ROLLBACK");
+      throw e;
+    }
+  }
+  failModel(id: string, requestId: string, error: string) {
+    this.db
+      .prepare(
+        "UPDATE model_requests SET status='failed',error=? WHERE run_id=? AND id=? AND status='pending'",
+      )
+      .run(error, id, requestId);
   }
   close() {
     this.db.close();

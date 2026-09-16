@@ -152,6 +152,11 @@ export function councilRun(c: CouncilState): Run {
   }
   return remember(c, run);
 }
+/** A separate archive namespace preserves existing research runs with matching seeds. */
+export function councilResearchRun(c: CouncilState): Run {
+  const run = councilRun(c);
+  return { ...run, id: `village-chapter-${c.chapter}-${run.id}` };
+}
 export function councilPending(run: Run) {
   return run.incidents.filter(
     (i) =>

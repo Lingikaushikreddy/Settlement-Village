@@ -1,5 +1,12 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Coins,
   TreePine,
@@ -57,11 +64,17 @@ import type {
 import { CouncilPanel, VillageLife } from "./council";
 import {
   councilCommand,
-  councilPending,
   councilRun,
+  councilResearchRun,
   newCouncil,
 } from "@/lib/game/council";
+import type { Run } from "@/lib/sim/types";
+import type { ResearchFrame } from "../observatory";
 import "./game.css";
+import "./research.css";
+const Research = lazy(() =>
+  import("../observatory").then((m) => ({ default: m.Observatory })),
+);
 const KEY = "settlement-village-game-v2";
 const resourceIcons = { gold: Coins, wood: TreePine, food: Wheat };
 function Cost({ cost }: { cost: Partial<Resources> }) {
@@ -100,6 +113,10 @@ export function SettlementGame() {
     ),
     [councilOpen, setCouncilOpen] = useState(false),
     [resident, setResident] = useState("mira"),
+    [research, setResearch] = useState<{ run: Run; section: string } | null>(
+      null,
+    ),
+    [researchFrame, setResearchFrame] = useState<ResearchFrame | null>(null),
     [placing, setPlacing] = useState<string | null>(null),
     [notice, setNotice] = useState(""),
     [troop, setTroop] = useState<TroopKind>("knight"),
@@ -206,12 +223,57 @@ export function SettlementGame() {
     return false;
   }
   function openCouncil(id?: string) {
+    setResearch(null);
+    setResearchFrame(null);
     if (id) setResident(id);
     update((g) => councilCommand(g, { type: "pause" }));
     setSelected(null);
     setCouncilOpen(true);
   }
+  const openResearch = useCallback(
+    (section = "observatory") => {
+      if (current.current.battle) return;
+      update((g) => councilCommand(g, { type: "pause" }));
+      setResearch((r) =>
+        r
+          ? { ...r, section }
+          : {
+              run: councilResearchRun(current.current.council ?? newCouncil()),
+              section,
+            },
+      );
+      setCouncilOpen(false);
+      setPanel(null);
+      setSelected(null);
+      setPlacing(null);
+    },
+    [update],
+  );
+  const researchSection = useCallback(
+    (section: string) => setResearch((r) => r && { ...r, section }),
+    [],
+  );
+  function closeResearch() {
+    setResearch(null);
+    setResearchFrame(null);
+  }
+  useEffect(() => {
+    if (!ready) return;
+    const q = new URLSearchParams(location.search);
+    if (
+      q.has("seed") ||
+      ["research", "archive"].includes(q.get("view") ?? "")
+    ) {
+      const timer = setTimeout(
+        () =>
+          openResearch(q.get("view") === "archive" ? "library" : "observatory"),
+        0,
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [ready, openResearch]);
   function choose(id: string) {
+    if (research) return;
     if (id.startsWith("collect:")) {
       act({ type: "collect", id: id.slice(8) }, "Resources collected!");
       return;
@@ -260,8 +322,14 @@ export function SettlementGame() {
     )
       setPlacing(null);
   }
+  const displayedRun =
+    researchFrame?.run ??
+    research?.run ??
+    councilRun(game.council ?? newCouncil());
+  const displayedTick =
+    researchFrame?.tick ?? displayedRun.snapshots.length - 1;
   return (
-    <main className="village-game">
+    <main className={`village-game ${research ? "research-active" : ""}`}>
       {councilOpen && !game.battle && (
         <CouncilPanel
           key={game.council?.chapter ?? 0}
@@ -276,14 +344,17 @@ export function SettlementGame() {
         game={game}
         selected={selected}
         placing={placing}
-        residents={
-          councilRun(game.council ?? newCouncil()).snapshots.at(-1)!.agents
-        }
-        activeIncidents={councilPending(
-          councilRun(game.council ?? newCouncil()),
-        ).map((i) => i.target)}
-        selectedResident={councilOpen ? resident : null}
-        onResident={openCouncil}
+        residents={displayedRun.snapshots[displayedTick].agents}
+        activeIncidents={displayedRun.incidents
+          .filter(
+            (i) =>
+              i.tick <= displayedTick &&
+              (i.resolvedTick === null || i.resolvedTick > displayedTick),
+          )
+          .map((i) => i.target)}
+        selectedResident={councilOpen || research ? resident : null}
+        onResident={research ? setResident : openCouncil}
+        readOnly={!!research}
         onSelect={choose}
         onTile={place}
         onDeploy={(zone) => {
@@ -353,252 +424,331 @@ export function SettlementGame() {
           {sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
         </button>
       </header>
-      {!raiding ? (
+      {!raiding && (
+        <nav
+          className="settlement-navigation"
+          aria-label="Settlement navigation"
+        >
+          <button
+            aria-pressed={!research && !councilOpen}
+            onClick={() => {
+              closeResearch();
+              setCouncilOpen(false);
+            }}
+          >
+            <Home size={16} />
+            Village
+          </button>
+          <button aria-pressed={councilOpen} onClick={() => openCouncil()}>
+            <BookOpen size={16} />
+            Council
+          </button>
+          <button
+            aria-pressed={!!research && research.section !== "library"}
+            onClick={() => openResearch()}
+          >
+            <Shield size={16} />
+            Research
+          </button>
+          <button
+            aria-pressed={research?.section === "library"}
+            onClick={() => openResearch("library")}
+          >
+            <Clock size={16} />
+            Archive
+          </button>
+        </nav>
+      )}
+      {research && (
         <>
-          <VillageLife game={game} onOpen={openCouncil} />
-          <aside className={`quest-panel ${goalsOpen ? "" : "collapsed"}`}>
-            <button
-              className="quest-title"
-              onClick={() => setGoalsOpen(!goalsOpen)}
-            >
-              <span>
-                <Flag size={16} /> Your next chapter
-              </span>
-              <ChevronRight className={goalsOpen ? "rotate" : ""} size={16} />
-            </button>
-            {goalsOpen ? (
-              <>
-                <h1>
-                  A village worth
-                  <br />
-                  fighting for.
-                </h1>
-                <p>
-                  Build your home. Gather your army.
-                  <br />
-                  Meet the people who call it home.
-                </p>
-                {quests
-                  .filter((q) => !game.claimed.includes(q.id))
-                  .slice(0, 2)
-                  .map((q) => {
-                    const progress = Math.min(q.goal, game.stats[q.stat]),
-                      complete = progress >= q.goal;
-                    return (
-                      <button
-                        className={`quest-item ${complete ? "complete" : ""}`}
-                        key={q.id}
-                        onClick={() => {
-                          if (complete)
-                            act(
-                              { type: "claim", id: q.id },
-                              `Quest complete! +${q.reward} gold`,
-                            );
-                          else if (q.id === "build") setPanel("build");
-                          else if (q.id === "raid") setPanel("raid");
-                          else if (q.id === "upgrade") setSelected("hall");
-                          else
-                            setNotice(
-                              "Tap the resource bubbles above your mine, mill and farm.",
-                            );
-                        }}
-                      >
-                        <span className="quest-check">
-                          {complete ? <Check size={15} /> : <Flag size={13} />}
-                        </span>
-                        <span>
-                          <b>{q.name}</b>
-                          <small>
-                            {complete ? `Claim ${q.reward} gold` : q.detail}
-                          </small>
-                          <i>
-                            <em
-                              style={{ width: `${(progress / q.goal) * 100}%` }}
-                            />
-                          </i>
-                        </span>
-                        <ChevronRight size={14} />
-                      </button>
-                    );
-                  })}
-                {!unlockedQuest ? (
-                  <div className="all-quests">
-                    <Trophy />
-                    All village goals complete!
-                  </div>
-                ) : null}
-              </>
-            ) : null}
-          </aside>
-          <div className="village-badge">
-            <Trophy size={17} />
-            <strong>{game.trophies}</strong>
-            <span>Explorer league</span>
+          <div className="research-map-caption">
+            <strong>{displayedRun.name}</strong>
+            <span>
+              Tick {displayedTick} ·{" "}
+              {researchFrame?.mode === "worker"
+                ? "Worker experiment"
+                : researchFrame?.mode === "local"
+                  ? "Browser experiment"
+                  : "Recorded replay"}
+            </span>
+            <p>Select a resident on the map to follow their decisions.</p>
           </div>
-          {placing ? (
-            <div className="placement-notice">
-              <Hammer size={20} />
-              <div>
-                <b>
-                  {game.buildings.some((b) => b.id === placing)
-                    ? "Choose a new location"
-                    : `Place your ${buildings[placing.slice(4) as BuildingKind].name.toLowerCase()}`}
-                </b>
-                <span>Tap an empty diamond. Drag the map to explore.</span>
-              </div>
+          <aside
+            className="unified-workbench"
+            aria-label="Village research desk"
+          >
+            <Suspense
+              fallback={
+                <p className="research-loading">Opening the village records…</p>
+              }
+            >
+              <Research
+                currentRun={research.run}
+                section={research.section}
+                onSection={researchSection}
+                selectedResident={resident}
+                onSelected={setResident}
+                onFrame={setResearchFrame}
+                onExit={closeResearch}
+              />
+            </Suspense>
+          </aside>
+        </>
+      )}
+      {!raiding ? (
+        !research && (
+          <>
+            <VillageLife game={game} onOpen={openCouncil} />
+            <aside className={`quest-panel ${goalsOpen ? "" : "collapsed"}`}>
               <button
-                onClick={() => setPlacing(null)}
-                aria-label="Cancel placement"
+                className="quest-title"
+                onClick={() => setGoalsOpen(!goalsOpen)}
               >
-                <X />
+                <span>
+                  <Flag size={16} /> Your next chapter
+                </span>
+                <ChevronRight className={goalsOpen ? "rotate" : ""} size={16} />
               </button>
+              {goalsOpen ? (
+                <>
+                  <h1>
+                    A village worth
+                    <br />
+                    fighting for.
+                  </h1>
+                  <p>
+                    Build your home. Gather your army.
+                    <br />
+                    Meet the people who call it home.
+                  </p>
+                  {quests
+                    .filter((q) => !game.claimed.includes(q.id))
+                    .slice(0, 2)
+                    .map((q) => {
+                      const progress = Math.min(q.goal, game.stats[q.stat]),
+                        complete = progress >= q.goal;
+                      return (
+                        <button
+                          className={`quest-item ${complete ? "complete" : ""}`}
+                          key={q.id}
+                          onClick={() => {
+                            if (complete)
+                              act(
+                                { type: "claim", id: q.id },
+                                `Quest complete! +${q.reward} gold`,
+                              );
+                            else if (q.id === "build") setPanel("build");
+                            else if (q.id === "raid") setPanel("raid");
+                            else if (q.id === "upgrade") setSelected("hall");
+                            else
+                              setNotice(
+                                "Tap the resource bubbles above your mine, mill and farm.",
+                              );
+                          }}
+                        >
+                          <span className="quest-check">
+                            {complete ? (
+                              <Check size={15} />
+                            ) : (
+                              <Flag size={13} />
+                            )}
+                          </span>
+                          <span>
+                            <b>{q.name}</b>
+                            <small>
+                              {complete ? `Claim ${q.reward} gold` : q.detail}
+                            </small>
+                            <i>
+                              <em
+                                style={{
+                                  width: `${(progress / q.goal) * 100}%`,
+                                }}
+                              />
+                            </i>
+                          </span>
+                          <ChevronRight size={14} />
+                        </button>
+                      );
+                    })}
+                  {!unlockedQuest ? (
+                    <div className="all-quests">
+                      <Trophy />
+                      All village goals complete!
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </aside>
+            <div className="village-badge">
+              <Trophy size={17} />
+              <strong>{game.trophies}</strong>
+              <span>Explorer league</span>
             </div>
-          ) : null}
-          {building && def && !placing ? (
-            <section className="building-panel">
-              <button
-                className="panel-close"
-                onClick={() => setSelected(null)}
-                aria-label="Close building details"
-              >
-                <X size={18} />
-              </button>
-              <Sprite index={def.sprite} />
-              <div className="building-info">
-                <small>
-                  Level {building.level}
-                  {building.readyAt ? " · Builder working" : ""}
-                </small>
-                <h2>{def.name}</h2>
-                <p>
-                  {building.readyAt
-                    ? `Ready in ${Math.ceil(building.readyAt - game.clock)} seconds`
-                    : def.resource
-                      ? `${def.rate * building.level} ${def.resource} / second · ${Math.floor(building.stored)} / ${def.capacity * building.level} stored`
-                      : def.description}
-                </p>
+            {placing ? (
+              <div className="placement-notice">
+                <Hammer size={20} />
+                <div>
+                  <b>
+                    {game.buildings.some((b) => b.id === placing)
+                      ? "Choose a new location"
+                      : `Place your ${buildings[placing.slice(4) as BuildingKind].name.toLowerCase()}`}
+                  </b>
+                  <span>Tap an empty diamond. Drag the map to explore.</span>
+                </div>
+                <button
+                  onClick={() => setPlacing(null)}
+                  aria-label="Cancel placement"
+                >
+                  <X />
+                </button>
               </div>
-              <div className="building-actions">
-                {def.resource ? (
+            ) : null}
+            {building && def && !placing ? (
+              <section className="building-panel">
+                <button
+                  className="panel-close"
+                  onClick={() => setSelected(null)}
+                  aria-label="Close building details"
+                >
+                  <X size={18} />
+                </button>
+                <Sprite index={def.sprite} />
+                <div className="building-info">
+                  <small>
+                    Level {building.level}
+                    {building.readyAt ? " · Builder working" : ""}
+                  </small>
+                  <h2>{def.name}</h2>
+                  <p>
+                    {building.readyAt
+                      ? `Ready in ${Math.ceil(building.readyAt - game.clock)} seconds`
+                      : def.resource
+                        ? `${def.rate * building.level} ${def.resource} / second · ${Math.floor(building.stored)} / ${def.capacity * building.level} stored`
+                        : def.description}
+                  </p>
+                </div>
+                <div className="building-actions">
+                  {def.resource ? (
+                    <button
+                      className="game-button gold small"
+                      onClick={() =>
+                        act(
+                          { type: "collect", id: building.id },
+                          "Resources collected!",
+                        )
+                      }
+                      disabled={building.stored < 1}
+                    >
+                      Collect{" "}
+                      <Cost
+                        cost={{ [def.resource]: Math.floor(building.stored) }}
+                      />
+                    </button>
+                  ) : building.kind === "barracks" ? (
+                    <button
+                      className="game-button blue small"
+                      onClick={() => setPanel("train")}
+                    >
+                      Train troops
+                    </button>
+                  ) : null}
                   <button
-                    className="game-button gold small"
+                    className="game-button green small"
+                    disabled={!!building.readyAt || building.level >= 5}
                     onClick={() =>
                       act(
-                        { type: "collect", id: building.id },
-                        "Resources collected!",
+                        { type: "upgrade", id: building.id },
+                        "Upgrade started!",
                       )
                     }
-                    disabled={building.stored < 1}
                   >
-                    Collect{" "}
-                    <Cost
-                      cost={{ [def.resource]: Math.floor(building.stored) }}
-                    />
+                    <ArrowUp size={16} />
+                    Upgrade{" "}
+                    {building.level < 5 ? (
+                      <Cost cost={upgradeCost(building.kind, building.level)} />
+                    ) : null}
                   </button>
-                ) : building.kind === "barracks" ? (
                   <button
-                    className="game-button blue small"
-                    onClick={() => setPanel("train")}
+                    className="move-button"
+                    aria-label={`Move ${def.name}`}
+                    disabled={!!building.readyAt}
+                    onClick={() => setPlacing(building.id)}
                   >
-                    Train troops
+                    <Move size={20} />
                   </button>
-                ) : null}
+                </div>
+              </section>
+            ) : null}
+            <footer className="game-bottom">
+              <div className="army-dock">
                 <button
-                  className="game-button green small"
-                  disabled={!!building.readyAt || building.level >= 5}
-                  onClick={() =>
-                    act(
-                      { type: "upgrade", id: building.id },
-                      "Upgrade started!",
-                    )
-                  }
-                >
-                  <ArrowUp size={16} />
-                  Upgrade{" "}
-                  {building.level < 5 ? (
-                    <Cost cost={upgradeCost(building.kind, building.level)} />
-                  ) : null}
-                </button>
-                <button
-                  className="move-button"
-                  aria-label={`Move ${def.name}`}
-                  disabled={!!building.readyAt}
-                  onClick={() => setPlacing(building.id)}
-                >
-                  <Move size={20} />
-                </button>
-              </div>
-            </section>
-          ) : null}
-          <footer className="game-bottom">
-            <div className="army-dock">
-              <button
-                className="army-heading"
-                onClick={() => setPanel("train")}
-              >
-                <Shield size={16} />
-                <span>
-                  Your army{" "}
-                  <b>
-                    {Object.values(game.army).reduce((a, b) => a + b, 0)}/40
-                  </b>
-                </span>
-                <ChevronRight size={16} />
-              </button>
-              <div className="army-cards">
-                {(Object.keys(troops) as TroopKind[]).map((k) => (
-                  <button
-                    className="army-card"
-                    key={k}
-                    onClick={() => setPanel("train")}
-                    aria-label={`Train ${troops[k].name}, ${game.army[k]} ready`}
-                  >
-                    <Sprite index={troops[k].sprite} />
-                    <span className="troop-count">{game.army[k]}</span>
-                    <small>{troops[k].name}</small>
-                  </button>
-                ))}
-                <button
-                  className="train-more"
+                  className="army-heading"
                   onClick={() => setPanel("train")}
                 >
-                  <Hammer size={19} />
-                  <span>Train</span>
-                  {game.training.length ? (
-                    <b>{game.training.length} queued</b>
-                  ) : null}
+                  <Shield size={16} />
+                  <span>
+                    Your army{" "}
+                    <b>
+                      {Object.values(game.army).reduce((a, b) => a + b, 0)}/40
+                    </b>
+                  </span>
+                  <ChevronRight size={16} />
+                </button>
+                <div className="army-cards">
+                  {(Object.keys(troops) as TroopKind[]).map((k) => (
+                    <button
+                      className="army-card"
+                      key={k}
+                      onClick={() => setPanel("train")}
+                      aria-label={`Train ${troops[k].name}, ${game.army[k]} ready`}
+                    >
+                      <Sprite index={troops[k].sprite} />
+                      <span className="troop-count">{game.army[k]}</span>
+                      <small>{troops[k].name}</small>
+                    </button>
+                  ))}
+                  <button
+                    className="train-more"
+                    onClick={() => setPanel("train")}
+                  >
+                    <Hammer size={19} />
+                    <span>Train</span>
+                    {game.training.length ? (
+                      <b>{game.training.length} queued</b>
+                    ) : null}
+                  </button>
+                </div>
+              </div>
+              <div className="village-actions">
+                <button
+                  className="game-button blue build-button"
+                  onClick={() => {
+                    setPanel("build");
+                    setSelected(null);
+                  }}
+                >
+                  <Hammer />
+                  <span>
+                    Build<small>Grow your village</small>
+                  </span>
+                </button>
+                <button
+                  className="game-button gold battle-button"
+                  onClick={() => {
+                    setPanel("raid");
+                    setSelected(null);
+                  }}
+                >
+                  <Swords />
+                  <span>
+                    Battle<small>Adventure awaits</small>
+                  </span>
+                  <ChevronRight />
                 </button>
               </div>
-            </div>
-            <div className="village-actions">
-              <button
-                className="game-button blue build-button"
-                onClick={() => {
-                  setPanel("build");
-                  setSelected(null);
-                }}
-              >
-                <Hammer />
-                <span>
-                  Build<small>Grow your village</small>
-                </span>
-              </button>
-              <button
-                className="game-button gold battle-button"
-                onClick={() => {
-                  setPanel("raid");
-                  setSelected(null);
-                }}
-              >
-                <Swords />
-                <span>
-                  Battle<small>Adventure awaits</small>
-                </span>
-                <ChevronRight />
-              </button>
-            </div>
-          </footer>
-        </>
+            </footer>
+          </>
+        )
       ) : (
         <>
           <div className="battle-banner">
@@ -703,7 +853,7 @@ export function SettlementGame() {
           ) : null}
         </>
       )}
-      {!raiding ? (
+      {!raiding && !research ? (
         <div className="save-status">
           <span />
           {saved}
@@ -927,7 +1077,9 @@ export function SettlementGame() {
                 </div>
                 <p className="guide-limit">
                   Single-player campaign. Progress saves on this device; offline
-                  production is capped at 8 hours. No purchases or paid AI.
+                  production is capped at 8 hours. Free resident policies are
+                  the default. Optional model decisions are configured in
+                  Research.
                 </p>
                 <div className="guide-links">
                   <button onClick={() => download(game)}>
@@ -938,7 +1090,9 @@ export function SettlementGame() {
                     <BookOpen size={16} />
                     Import save
                   </button>
-                  <a href="/lab">Open simulation lab</a>
+                  <button onClick={() => openResearch()}>
+                    Open village research
+                  </button>
                 </div>
                 <input
                   type="file"
@@ -954,6 +1108,10 @@ export function SettlementGame() {
                       const imported = restoreGame(await f.text());
                       current.current = imported;
                       setGame(imported);
+                      closeResearch();
+                      setCouncilOpen(false);
+                      setSelected(null);
+                      setPlacing(null);
                       setPanel(null);
                       setNotice("Village restored from your save.");
                     } catch (error) {

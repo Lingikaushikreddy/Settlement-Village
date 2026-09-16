@@ -1,4 +1,4 @@
-/** Server-only optional adapter. No application path invokes it in the free release.
+/** Server-only optional adapter. Invoked only by explicit, configured worker model steps.
  * Messages/tool-use contract: https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
  */
 export type SocialInput = {

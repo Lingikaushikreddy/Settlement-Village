@@ -1,0 +1,11 @@
+# Unified Settlement
+
+User approved: merge the game and lab in one interface and prepare live model decisions too. Keep the existing free default and preserve saved villages and experiment libraries.
+
+The root game owns the map and navigation. Village, Council, Experiments and Archive are modes of the same app. The research tools reuse the village scene for the inspected run, showing its mode and selected tick. Campaign operations are unavailable while viewing research. Lab tools retain custom runs, playback, evidence, public board, replay verification, export, matched-seed evaluations, browser library and optional local worker. The lab's separate page becomes a compatibility redirect into the unified app, including old shared run parameters.
+
+The default research inspection begins with a recorded copy of the player's current council chapter. Experimental worlds are clearly labeled and cannot affect campaign rewards. Leaving research restores the live village map; social progression is paused before entering. The app exposes one navigation, one scene and one contextual research panel; no iframe or second village map.
+
+Prepare an opt-in server-side Claude decision path with provider status and clear disabled/configuration states. Only an explicit player action can request model work; no key is sent to the browser and no call occurs with absent/disabled configuration. Model proposals must use current actor-visible evidence and allowed actions, be validated before simulation resolution, and be retained with usage for replay. Free policies remain available without the worker or provider. Configured model runs are experimental and separately identified from rule-based comparisons. Never enable provider spend during development; verify with injected transports.
+
+Quality gates: previous saves and libraries preserved, current run opens in shared scene, /lab resolves into root, archive and batch tools accessible, return to village leaves resources unchanged, late async work cannot replace another viewed run, model-disabled path makes no network call, invalid/private evidence rejected, recorded proposal replay matches, limits and errors visible, full tests/types/lint/build pass, browser verifies navigation and phone layout.

@@ -2,7 +2,7 @@
 
 Build a village. Know your residents. Investigate their stories. Lead raids beyond the treeline.
 
-Settlement is a single-player village strategy game with an original illustrated isometric world and an integrated, inspectable resident simulation. The same six residents and Chaos agent from the original lab now occupy the playable village. Their work produces village supplies, and social decisions have real treasury consequences. The standalone observatory remains at `/lab` for detailed experiments.
+Settlement is a single-player village strategy game with an original illustrated isometric world and an integrated, inspectable resident simulation. The same six residents and Chaos agent from the original lab now occupy the playable village. Their work produces village supplies, and social decisions have real treasury consequences. Village, Council, Research and Archive now share one app and the same village map. `/lab` redirects to Research.
 
 ## Play locally
 
@@ -45,6 +45,17 @@ Successful gathering earns a **gameplay work dividend**, separate from the resid
 
 Scenario harm costs **20 village gold per harm unit**, capped at available whole gold. Any uncovered amount is recorded, without debt or negative balances. Reputation harm represents a lost-trade opportunity penalty, not stolen funds. Dividends, costs and penalties are applied once as the corresponding tick commits, and appear in the treasury trail. These explicit gameplay rules bridge the simulation to construction and recruitment; they are not claims about real economics or general agent robustness.
 
+## One village, one research desk
+
+Use the navigation beneath the resource bar:
+
+- **Village:** build, gather, train and raid.
+- **Council:** progress the resident story, intervene and inspect its treasury consequences.
+- **Research:** inspect a recorded copy of the current chapter, create experiments, follow private memories and evidence, replay ticks, or compare policies across matched seeds.
+- **Archive:** revisit your village record, saved browser experiments, the reference run, and local worker runs.
+
+Research uses the same map. Its caption identifies the viewed run and tick. Entering Research pauses the campaign's council; experiments cannot earn or spend campaign resources. Production and training timers still progress. Return to Village to resume play, and use Council to resume its day. Save or export a browser experiment before leaving Research. Worker runs keep their durable history; reconnect from Archive. Free policy comparisons never invoke a model.
+
 ## Progress and controls
 
 Drag empty ground to pan. Use the zoom and center buttons to adjust the camera. Collapse the chapter panel for a clearer view. Sounds are optional and start muted.
@@ -65,7 +76,7 @@ This is a playable single-player browser release. It does not yet include multip
 
 ## Architecture and verification
 
-`lib/game` contains pure economy, battle and council transitions. The council adapter reuses `lib/sim` unchanged and reconstructs versioned scenario runs from compact saved inputs, with a bounded run cache. It does not store full simulation snapshots inside every game tick. Version-2 saves without council data migrate to a paused first chapter without changing previous progress. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
+`lib/game` contains pure economy, battle and council transitions. The council adapter reuses the free policy path in `lib/sim` and reconstructs versioned scenario runs from compact saved inputs, with a bounded run cache. It does not store full simulation snapshots inside every game tick. Version-2 saves without council data migrate to a paused first chapter without changing previous progress. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
 
 ```bash
 npm test
@@ -76,7 +87,7 @@ npm run build
 
 The game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. Council tests additionally cover migration, production dividends, ready workplaces, incident pauses, paid interventions, replay-safe reloads, fair reputation trades, actual treasury losses, private historical evidence, read-only comparisons, chapter progression and invalid saves. The original engine and worker tests remain in the suite.
 
-The game integrates the deterministic social engine locally. The optional SQLite worker remains a lab service; the browser game does not use that worker or gain its durability guarantees. The optional Claude adapter is still not wired into live gameplay. No paid model calls are enabled. See `docs/observatory-guide.md` for that subsystem's commands and limits.
+The village council runs locally. The optional SQLite worker powers durable research experiments inside the same interface; campaign saves remain browser-local. Claude decisions are connected to explicit worker experiment steps, disabled by default. Model actions use actor-visible evidence, validated actions, persisted responses and usage, budget reservations, idempotent requests, and replay without additional provider calls. They currently affect experimental worlds, not campaign currency. See [Research guide](docs/observatory-guide.md) and [Live model setup](docs/live-models.md).
 
 ## Art provenance
 
@@ -84,7 +95,7 @@ The terrain and sprite atlas were generated with the built-in image-generation t
 
 ## Current simulation limits
 
-The residents use bounded deterministic policies, with fixed initial trust tendencies. Rook's opportunities and claims are authored. Four finite scenarios are integrated; this is not an open-ended generative society. The shared surface, work dividends, treasury consequences, evidence, and policy comparisons are implemented. Persistent relationships across chapters, model-assisted social interpretation, public immutable replay links, production multi-user operation, and the complete research-inspired thesis remain outside this release.
+The residents use bounded deterministic policies, with fixed initial trust tendencies. Rook's opportunities and claims are authored. Four finite scenarios are integrated; this is not an open-ended generative society. The shared surface, work dividends, treasury consequences, evidence, and policy comparisons are implemented. Persistent relationships across chapters, automatic model-driven campaign play, public immutable replay links, production multi-user operation, and the complete research-inspired thesis remain outside this release. Optional model-assisted interpretation is available only for explicit steps in configured worker experiments.
 
 ## Hosting
 
