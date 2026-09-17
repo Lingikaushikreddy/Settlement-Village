@@ -1,3 +1,4 @@
+import type { CrewState } from "./crew-types.ts";
 import type { CouncilState } from "./council.ts";
 export type Resource = "gold" | "wood" | "food";
 export type Resources = Record<Resource, number>;
@@ -56,6 +57,7 @@ export type Battle = {
 export type Game = {
   version: 2;
   council?: CouncilState;
+  crew?: CrewState;
   clock: number;
   serial: number;
   resources: Resources;

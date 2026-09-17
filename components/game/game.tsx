@@ -61,7 +61,10 @@ import type {
   Resources,
   Command,
 } from "@/lib/game/model";
-import { CouncilPanel, VillageLife } from "./council";
+import { CrewBoard, CrewInspector } from "./crew";
+import { crewCommand, crewRoster } from "@/lib/game/crew";
+import type { CrewCommand } from "@/lib/game/crew-types";
+import { CouncilPanel } from "./council";
 import {
   councilCommand,
   councilRun,
@@ -112,6 +115,7 @@ export function SettlementGame() {
       null,
     ),
     [councilOpen, setCouncilOpen] = useState(false),
+    [crewOpen, setCrewOpen] = useState(false),
     [resident, setResident] = useState("mira"),
     [research, setResearch] = useState<{ run: Run; section: string } | null>(
       null,
@@ -139,6 +143,7 @@ export function SettlementGame() {
             restored = restoreGame(JSON.stringify(data.game));
           const elapsed = Math.max(0, (Date.now() - data.savedAt) / 1000);
           setGame(advanceGame(restored, elapsed, false));
+          if (restored.crew?.objective) setGoalsOpen(false);
         }
       } catch {
         setNotice(
@@ -222,18 +227,41 @@ export function SettlementGame() {
     }
     return false;
   }
+  function crewAct(c: CrewCommand) {
+    if (update((g) => crewCommand(g, c)) && c.type === "start") {
+      setGoalsOpen(false);
+      setCouncilOpen(false);
+      setSelected(null);
+      setPlacing(null);
+      setNotice("Objective set. Your residents are choosing their jobs.");
+    }
+  }
+  function openCrew(id?: string) {
+    if (id) setResident(id);
+    setSelected(null);
+    setCrewOpen(true);
+  }
   function openCouncil(id?: string) {
+    setCrewOpen(false);
     setResearch(null);
     setResearchFrame(null);
     if (id) setResident(id);
-    update((g) => councilCommand(g, { type: "pause" }));
+    update((g) =>
+      councilCommand(g.crew ? crewCommand(g, { type: "pause" }) : g, {
+        type: "pause",
+      }),
+    );
     setSelected(null);
     setCouncilOpen(true);
   }
   const openResearch = useCallback(
     (section = "observatory") => {
       if (current.current.battle) return;
-      update((g) => councilCommand(g, { type: "pause" }));
+      update((g) =>
+        councilCommand(g.crew ? crewCommand(g, { type: "pause" }) : g, {
+          type: "pause",
+        }),
+      );
       setResearch((r) =>
         r
           ? { ...r, section }
@@ -243,6 +271,7 @@ export function SettlementGame() {
             },
       );
       setCouncilOpen(false);
+      setCrewOpen(false);
       setPanel(null);
       setSelected(null);
       setPlacing(null);
@@ -330,6 +359,15 @@ export function SettlementGame() {
     researchFrame?.tick ?? displayedRun.snapshots.length - 1;
   return (
     <main className={`village-game ${research ? "research-active" : ""}`}>
+      {crewOpen && !game.battle && !research && (
+        <CrewInspector
+          game={game}
+          selected={resident}
+          onSelected={setResident}
+          onCommand={crewAct}
+          onClose={() => setCrewOpen(false)}
+        />
+      )}
       {councilOpen && !game.battle && (
         <CouncilPanel
           key={game.council?.chapter ?? 0}
@@ -344,7 +382,20 @@ export function SettlementGame() {
         game={game}
         selected={selected}
         placing={placing}
-        residents={displayedRun.snapshots[displayedTick].agents}
+        residents={displayedRun.snapshots[displayedTick].agents.map((a) => {
+          const crewPerson =
+            !research && !councilOpen && game.crew?.objective
+              ? crewRoster.find((r) => r.id === a.id)
+              : null;
+          return crewPerson
+            ? { ...a, occupation: crewPerson.role, color: crewPerson.color }
+            : a;
+        })}
+        crewAgents={
+          !research && !councilOpen && game.crew?.objective
+            ? game.crew.agents
+            : undefined
+        }
         activeIncidents={displayedRun.incidents
           .filter(
             (i) =>
@@ -352,8 +403,15 @@ export function SettlementGame() {
               (i.resolvedTick === null || i.resolvedTick > displayedTick),
           )
           .map((i) => i.target)}
-        selectedResident={councilOpen || research ? resident : null}
-        onResident={research ? setResident : openCouncil}
+        selectedResident={councilOpen || crewOpen || research ? resident : null}
+        onResident={
+          research
+            ? setResident
+            : (id) =>
+                game.crew?.objective && crewRoster.some((r) => r.id === id)
+                  ? openCrew(id)
+                  : openCouncil(id)
+        }
         readOnly={!!research}
         onSelect={choose}
         onTile={place}
@@ -498,7 +556,13 @@ export function SettlementGame() {
       {!raiding ? (
         !research && (
           <>
-            <VillageLife game={game} onOpen={openCouncil} />
+            <CrewBoard
+              game={game}
+              onCommand={crewAct}
+              onInspect={openCrew}
+              onCouncil={() => openCouncil()}
+              onRaid={() => setPanel("raid")}
+            />
             <aside className={`quest-panel ${goalsOpen ? "" : "collapsed"}`}>
               <button
                 className="quest-title"
@@ -1068,8 +1132,19 @@ export function SettlementGame() {
                 <div>
                   <BookOpen />
                   <p>
-                    <b>Care for your residents</b>Open Village life to meet six
-                    residents. Start their day, inspect rumors, and give
+                    <b>Give your crew an objective</b>Choose Prepare for a raid
+                    or Restock supplies in Village orders. Residents collect
+                    actual resources, organize recruitment, and replan around
+                    shortages. Inspect a resident to see their job and memories.
+                    Crew work pauses during raids, offline, in Council and in
+                    Research.
+                  </p>
+                </div>
+                <div>
+                  <BookOpen />
+                  <p>
+                    <b>Care for your residents</b>Open Council stories to meet
+                    six residents. Start their day, inspect rumors, and give
                     evidence before they decide. Work earns supplies; deception
                     can cost gold. Social stories pause during raids and while
                     offline.
@@ -1110,6 +1185,7 @@ export function SettlementGame() {
                       setGame(imported);
                       closeResearch();
                       setCouncilOpen(false);
+                      setCrewOpen(false);
                       setSelected(null);
                       setPlacing(null);
                       setPanel(null);

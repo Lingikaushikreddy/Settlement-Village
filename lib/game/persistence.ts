@@ -1,4 +1,5 @@
 import { councilSaveSchema, newCouncil } from "./council.ts";
+import { crewSchema } from "./crew-types.ts";
 import { z } from "zod";
 import type { Game } from "./model.ts";
 const number = z.number().finite().nonnegative().max(1e12);
@@ -12,6 +13,7 @@ const resources = z.object({ gold: number, wood: number, food: number });
 const schema = z.object({
   version: z.literal(2),
   council: councilSaveSchema.optional(),
+  crew: crewSchema.optional(),
   clock: number,
   serial: integer,
   resources,
@@ -116,6 +118,10 @@ export function parseSave(raw: string): Game {
     g.council ??= newCouncil();
     g.council.playing = false;
     g.council.timer = 0;
+    if (g.crew) {
+      g.crew.playing = false;
+      g.crew.timer = 0;
+    }
     return g;
   } catch {
     throw Error("This save is damaged or belongs to another version.");

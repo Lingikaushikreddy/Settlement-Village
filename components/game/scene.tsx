@@ -9,9 +9,12 @@ import {
   Wheat,
   TreePine,
   Flag,
+  Footprints,
+  Coffee,
 } from "lucide-react";
 import { buildings, troops } from "@/lib/game/catalog";
 import { councilLocations } from "@/lib/game/council-map";
+import type { CrewAgent } from "@/lib/game/crew-types";
 import type { Agent } from "@/lib/sim/types";
 import { zones } from "@/lib/game/battle";
 import type { Game, BuildingKind } from "@/lib/game/model";
@@ -51,9 +54,11 @@ export function Scene({
   selectedResident,
   onResident,
   readOnly = false,
+  crewAgents,
 }: {
   game: Game;
   readOnly?: boolean;
+  crewAgents?: CrewAgent[];
   residents: Agent[];
   activeIncidents: string[];
   selectedResident: string | null;
@@ -155,6 +160,39 @@ export function Scene({
             </g>
           ))}
         </svg>
+        {crewAgents &&
+          selectedResident &&
+          (() => {
+            const a = crewAgents.find((a) => a.id === selectedResident),
+              task = game.crew?.tasks.find((t) => t.id === a?.task),
+              b = game.buildings.find((b) => b.id === task?.buildingId);
+            if (!a || !b) return null;
+            const from = point(a.x, a.y),
+              to = point(b.x, b.y);
+            return (
+              <svg
+                className="crew-route"
+                viewBox="0 0 1536 1024"
+                aria-hidden="true"
+              >
+                <path
+                  d={`M${from.x} ${from.y}L${to.x} ${to.y}`}
+                  stroke="#fff1a8"
+                  strokeWidth="4"
+                  strokeDasharray="8 9"
+                  opacity=".8"
+                />
+                <circle
+                  cx={to.x}
+                  cy={to.y}
+                  r="20"
+                  fill="none"
+                  stroke="#ffdf79"
+                  strokeWidth="3"
+                />
+              </svg>
+            );
+          })()}
         {placing &&
           !battle &&
           Array.from({ length: 81 }, (_, i) => {
@@ -332,22 +370,32 @@ export function Scene({
               const location =
                 locations[a.location as keyof typeof locations] ??
                 locations.market;
-              const at = point(location.x, location.y);
-              const neighbors = residents.filter(
-                (b) => b.location === a.location,
-              );
+              const crewAgent = crewAgents?.find((c) => c.id === a.id);
+              const at = crewAgent
+                ? point(crewAgent.x, crewAgent.y)
+                : point(location.x, location.y);
+              const neighbors = residents.filter((b) => {
+                const other = crewAgents?.find((c) => c.id === b.id);
+                return crewAgent
+                  ? other?.x === crewAgent.x && other?.y === crewAgent.y
+                  : b.location === a.location;
+              });
               const order = neighbors.findIndex((b) => b.id === a.id);
               const p = {
                 x: at.x + (order - (neighbors.length - 1) / 2) * 48,
-                y: at.y + 54 + (order % 2) * 8,
+                y: at.y + (crewAgent ? 10 : 54) + (order % 2) * 8,
               };
               return (
                 <button
                   key={a.id}
-                  className={`sim-resident ${a.id === selectedResident ? "selected" : ""}`}
+                  className={`sim-resident ${crewAgent ? "crew-resident" : ""} ${a.id === selectedResident ? "selected" : ""}`}
                   style={{ left: p.x, top: p.y, zIndex: 25 + Math.round(p.y) }}
                   onClick={() => onResident(a.id)}
-                  aria-label={`Inspect ${a.name}, ${a.occupation}, at ${a.location}: ${a.goal}`}
+                  aria-label={
+                    crewAgent
+                      ? `Inspect ${a.name}, ${crewAgent.status}: ${crewAgent.reason}`
+                      : `Inspect ${a.name}, ${a.occupation}, at ${a.location}: ${a.goal}`
+                  }
                 >
                   <Sprite
                     index={i % 2 ? 6 : 7}
@@ -361,6 +409,23 @@ export function Scene({
                     }
                   />
                   <b>{a.name}</b>
+                  {crewAgent?.task && (
+                    <span
+                      className="crew-task-badge"
+                      aria-label={crewAgent.status}
+                    >
+                      {crewAgent.status === "moving" ? (
+                        <Footprints size={11} />
+                      ) : (
+                        <Hammer size={11} />
+                      )}
+                    </span>
+                  )}
+                  {crewAgent?.status === "resting" && (
+                    <span className="crew-task-badge">
+                      <Coffee size={11} />
+                    </span>
+                  )}
                   {activeIncidents.includes(a.id) && (
                     <span
                       className="resident-alert"
