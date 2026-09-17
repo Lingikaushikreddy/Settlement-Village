@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a reproducible problem with the game or research tools.
+title: "[Bug]: "
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Describe the expected result and the actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the objective, chapter or experiment settings involved.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, operating system, Node version if relevant, and release or commit.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, errors or minimal save
+      description: Remove credentials and personal content before attaching files. Report vulnerabilities privately through the Security tab.

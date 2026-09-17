@@ -16,7 +16,8 @@
     "worker": "node --experimental-strip-types worker/server.ts",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "evaluate": "node --experimental-strip-types scripts/evaluate.mjs"
+    "evaluate": "node --experimental-strip-types scripts/evaluate.mjs",
+    "test:integration": "node --experimental-strip-types --test tests/http.integration.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -69,5 +70,30 @@
     "miniflare": {
       "sharp": "0.35.4"
     }
-  }
+  },
+  "description": "A multi-agent village strategy game with autonomous residents, inspectable decisions, deterministic replay, and optional Claude research experiments.",
+  "license": "MIT",
+  "author": "Kaushik Reddy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lingikaushikreddy/Settlement-Village.git"
+  },
+  "homepage": "https://github.com/Lingikaushikreddy/Settlement-Village#readme",
+  "bugs": {
+    "url": "https://github.com/Lingikaushikreddy/Settlement-Village/issues"
+  },
+  "keywords": [
+    "multi-agent-systems",
+    "game-ai",
+    "agent-based-modeling",
+    "village-simulation",
+    "strategy-game",
+    "browser-game",
+    "typescript",
+    "react",
+    "pathfinding",
+    "deterministic-simulation",
+    "explainable-ai",
+    "claude"
+  ]
 }

@@ -1,115 +1,165 @@
+<div align="center">
+
 # Settlement
 
-Set the objective. Watch your residents organize the work. Lead raids beyond the treeline.
+### Set the objective. Let the village figure out the work.
 
-Settlement is a single-player village strategy game with an original illustrated isometric world and an integrated, inspectable resident simulation. Six residents coordinate collection and recruitment toward your objectives, move through the playable village, and adapt when work becomes unavailable. Their actions use the same treasury, buildings and army as manual play. Council stories and the investigation lab remain in the same app and share its map. `/lab` redirects to Research.
+A multi-agent village strategy game and an inspectable AI simulation lab.
 
-## Play locally
+[![CI](https://github.com/Lingikaushikreddy/Settlement-Village/actions/workflows/ci.yml/badge.svg)](https://github.com/Lingikaushikreddy/Settlement-Village/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-d9bd75.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
+[![No API key required](https://img.shields.io/badge/Play_without_an_API_key-38664a.svg)](#run-locally)
 
-Use Node 24+ and npm:
+[Quick start](#run-locally) · [How agents work](#how-the-agents-work) · [Player guide](docs/player-guide.md) · [Contribute](CONTRIBUTING.md)
+
+![Settlement gameplay: an isometric village, six residents, a shared objective, and an army ready for player commands](docs/media/village.png)
+
+</div>
+
+**Give six residents a shared goal—prepare for a raid or restock the village—and watch them claim jobs, navigate to workplaces, gather resources, and coordinate recruitment.** Inspect what each resident is doing, why they took the job, and what they remember. Then command your army in battle, or open the research desk to investigate social decisions and replay their evidence.
+
+The default game runs locally with **no API key, paid AI, account, or database required**. Campaign residents use deterministic game AI. Optional Claude decisions are available for explicit steps in local-worker research experiments.
+
+If you like games where agent decisions are visible, **star the repository** to follow Settlement's development.
+
+## Try this first
+
+1. Choose **Village orders → Prepare for a raid**. Review the recruitment budget.
+2. Watch residents divide collection and recruitment jobs. Their actions change your real treasury and army.
+3. Open **View plan → Shared jobs**, then inspect a resident's decision and memories.
+4. Give a working resident a **20-tick rest**. Another available resident can take over.
+5. Once 30 troops and the required reserves are ready, choose **Scout a raid** and lead the attack.
+
+Prefer a peaceful village? Choose **Restock supplies**. Prefer experiments? Open **Research** and compare how different policies respond to the same claims.
+
+## What you can play today
+
+| System                    | What it does                                                                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cooperating residents** | Six agents bid for exclusive jobs using role suitability, distance and bounded experience. They replan when workplaces or resources change.  |
+| **Village building**      | Place, move and upgrade six building types. Manage two builders, production, storage and your treasury.                                      |
+| **Troops and battles**    | Recruit knights, archers and catapults. Deploy and focus attacks across three enemy strongholds.                                             |
+| **Inspectable decisions** | Read current jobs, blocked work, spending limits, recent memories and the village action log.                                                |
+| **Council stories**       | Investigate four authored social chapters, inspect claims and evidence, and intervene with real treasury consequences.                       |
+| **Research and replay**   | Run seeded experiments, compare policies, inspect historical evidence, export runs and verify deterministic replay.                          |
+| **Optional live models**  | Ask Claude to propose a social action in a configured local-worker experiment, with validated actions, usage records and spend reservations. |
+| **Save continuity**       | Browser-local campaign saves, portable JSON exports and an optional SQLite worker for durable research runs.                                 |
+
+![Resident inspector showing Theo's completed objective, practice points and position](docs/media/agent-inspector.png)
+
+_Screenshots show the running game. Residents currently reuse the character sprite atlas with distinct names and labels._
+
+## Run locally
+
+Use **Node.js 24+** and npm. The optional `.nvmrc` selects Node 24.
 
 ```bash
+git clone https://github.com/Lingikaushikreddy/Settlement-Village.git
+cd Settlement-Village
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173`. The village game needs no API key, database, or paid AI. If dependencies are already installed, only `npm run dev` is needed.
+Open **http://localhost:5173**. Your village saves in that browser. Keep one active game tab per origin and export valuable saves from the village guide.
 
-## Give the village an objective
+To include the optional local research worker:
 
-1. In **Village orders**, choose **Prepare for a raid**. The board shows the maximum recruitment budget before starting. The goal is 30 ready troops and reserves of 1,200 gold, 800 timber and 600 food.
-2. Watch residents claim jobs, walk to workplaces, collect existing building stores and recruit missing troops. Production and training take real game time. No objective-completion reward creates extra resources.
-3. Open **View plan** or select a resident. **Resident** explains their current job, route plan, experience and memories. **Shared jobs** shows owners, blocked work, reserves and actual spending. **Village log** records actions and handoffs.
-4. Give a resident a **20-tick rest** to see available residents take over their work. Moved buildings, blocked routes, construction, manual collection and recruitment cause replanning.
-5. When preparations finish, choose **Scout a raid**. You still choose when to attack and command the battle.
+```bash
+npm run dev:all
+```
 
-For a peaceful goal, choose **Restock supplies** to add at least 300 of each resource to the starting treasury, with no spending. Collection transfers an entire building store, so totals can exceed the target. Only one objective runs at a time. Pause or cancel it from the inspector; completed work remains in your village.
+The worker listens on `127.0.0.1:8787` and stores research runs in `work/settlement.sqlite`. No model key is needed. For explicit paid model steps, follow [Live model setup](docs/live-models.md); provider calls stay disabled until configured.
 
-Crew decisions run at one tick per live second and pause offline, during raids, or when you enter Council or Research. Restored saves pause the crew until you resume. Production and training timers continue. This is free, deterministic game AI with job bidding, pathfinding and bounded experience—not language-model calls or neural training. See [Objective agents](docs/objective-agents.md).
+To preview a production build locally:
 
-## Build and command manually
+```bash
+npm run build
+npm start -- --port 5173
+```
 
-1. Tap the gold, timber and food bubbles above productive buildings.
-2. Open **Build**, choose a building, and tap an empty diamond to place it. Construction consumes resources and occupies one of two builders.
-3. Select a building to collect, upgrade, or move it. Town hall upgrades unlock higher building levels.
-4. Open **Train** to recruit knights, archers and catapults. Your camp holds 40 troops including its training queue.
-5. Open **Battle → Scout**. Choose a troop and deploy it from an edge. Switch between deploying one or five at a time.
-6. Tap an enemy building to focus attacks. Knights have high health, archers attack from range, and catapults deal heavy siege damage. Enemy towers shoot back.
-7. Destroy the town hall, half the village, and every building to earn up to three stars. Return home to receive loot and unlock the next stronghold.
+This repository contains the full local application. A public repository is not a hosted game server; deployment requires a compatible runtime. The optional research worker is designed for local use.
 
-Deployed troops are spent; undeployed troops remain in reserve. Raids last up to 90 seconds after the first deployment. You can end a raid early and keep rewards for the structures already destroyed.
+## How the agents work
 
-## Your first village story
+```mermaid
+flowchart LR
+    Player[Player objective] --> Jobs[Shared job board]
+    World[Village resources and buildings] --> Jobs
+    Jobs --> Crew[Six residents: bid, claim, navigate, replan]
+    Crew --> Tools[Validated collect and train commands]
+    Tools --> World
+    Crew --> Record[Decisions, memories and action log]
+    Record --> Inspector[Resident inspector]
+    World --> Save[Versioned campaign save]
+```
 
-1. Open **Council stories** or **Council** in the main navigation.
-2. Choose the chapter's social policy: Trust first, Cautious, or Check evidence. Start the village day or advance one tick at a time.
-3. At tick 8, Rook's claim pauses the day before the recipient responds. Read the claim and inspect that resident's goal, action, and source evidence.
-4. Publish a verified stock ledger for **20 village gold**, deliver **12 communal grain for 60 village food**, or continue and let the policy decide. Each order advances one tick and is recorded alongside its treasury cost.
-5. Use the timeline to inspect the past without changing live progress. **Treasury trail** links each work dividend, order, and loss to the exact tick and evidence.
-6. **Compare policies** runs all three policies with the same scenario and seed, without your interventions or treasury rewards. It reports harm, evaluated cases, detection, unresolved cases, honest-offer refusals, and inspection effort.
-7. Complete each 32-tick chapter to unlock the next: The Missing Grain, A Question of Trust, The Forged Notice, and An Honest Offer. Previous chapters remain in the archive and can be exported with their evidence.
+**World layer:** buildings produce resources, the treasury pays for recruitment, and training produces actual troops. Agents use the same commands as the player's manual controls.
 
-Each chapter begins a fresh authored resident scenario; your village, army, and treasury persist. Completed chapters cannot be restarted for rewards. Social simulation pauses at new claims, during raids, and while offline. Loading a save resumes it paused. No consequential social choices are fast-forwarded while you are away.
+**Behavior layer:** the planner decomposes one shared objective into useful jobs. Each job has one owner. Residents follow walkable grid routes, release work when resting, and reconsider blocked or obsolete tasks.
 
-### How residents affect your economy
+**Tools and records:** actions validate current funds, capacity and the objective's spending allowance. Saved state preserves claims, positions, spending and recent memories. Loading pauses decisions until you resume.
 
-Successful gathering earns a **gameplay work dividend**, separate from the resident's personal inventory: each gathered grain produces four village food multiplied by the highest ready farm level; each gathered wood produces four timber multiplied by the highest ready lumbermill level. Each gathered water earns two gold for communal service when the town hall is ready. Valid fair trades earn six gold. A building under construction or upgrade does not qualify for its work dividend.
+Crew work pauses offline, during raids, and when entering Council or Research. Production and existing training timers continue. Research worlds are separate from campaign currency; their evidence and replay tools share the same application.
 
-Scenario harm costs **20 village gold per harm unit**, capped at available whole gold. Any uncovered amount is recorded, without debt or negative balances. Reputation harm represents a lost-trade opportunity penalty, not stolen funds. Dividends, costs and penalties are applied once as the corresponding tick commits, and appear in the treasury trail. These explicit gameplay rules bridge the simulation to construction and recruitment; they are not claims about real economics or general agent robustness.
+See [Objective agents](docs/objective-agents.md) for exact rules and boundaries.
 
-## One village, one research desk
+## Stack and project map
 
-Use the navigation beneath the resource bar:
+**TypeScript · React · Next-compatible routing with vinext/Vite · Zod · Tailwind CSS · optional Node.js/SQLite worker**
 
-- **Village:** set objectives, inspect coordinated work, build, gather, train and raid.
-- **Council:** progress the resident story, intervene and inspect its treasury consequences.
-- **Research:** inspect a recorded copy of the current chapter, create experiments, follow private memories and evidence, replay ticks, or compare policies across matched seeds.
-- **Archive:** revisit your village record, saved browser experiments, the reference run, and local worker runs.
+```text
+app/                 Application entry points
+components/game/     Village, combat, crew inspector and research views
+lib/game/            Pure campaign, crew, economy and battle transitions
+lib/sim/             Deterministic social engine and bounded planner
+lib/agent/           Optional Claude proposals and action validation
+worker/              Local persistence, scheduling and model request ledger
+tests/               Engine, game, crew, replay and worker tests
+public/game/         Original generated terrain and sprite artwork
+docs/                Guides, design notes and verification records
+```
 
-Research uses the same map. Its caption identifies the viewed run and tick. Entering Research pauses both the campaign's council and objective crew; experiments cannot earn or spend campaign resources. Production and training timers still progress. Return to Village and resume the crew explicitly, or use Council to resume its day. Crew work and Council stories run separately; starting one pauses the other. Save or export a browser experiment before leaving Research. Worker runs keep their durable history; reconnect from Archive. Free policy comparisons never invoke a model.
-
-## Progress and controls
-
-Drag empty ground to pan. Use the zoom and center buttons to adjust the camera. Collapse the chapter panel for a clearer view. Sounds are optional and start muted.
-
-The village automatically saves to this browser every two seconds. Production and training progress while you are away, with offline advancement capped at eight hours. Raids resume from their last saved state. Use the village crest to open the guide and export or import a JSON save. Keep one active game tab per browser to avoid competing saves. Browser data can be cleared or evicted; exported saves provide a portable backup.
-
-## Implemented game systems
-
-- Six building types, tile placement and relocation, five levels, two builders, resource costs and storage limits.
-- Gold, timber and food production, atomic collection, timed upgrades and troop training.
-- Three troop types with different health, movement, attack range and damage.
-- Three enemy strongholds, deterministic combat, focus targeting, tower attacks, troop deaths, destruction, stars, and rewards credited once.
-- Village goals, campaign unlocks and trophies.
-- Two player objectives, six cooperating residents, exclusive job claims, walkable routes, real collection and recruitment, spending limits, rest handoffs, bounded experience, saved memories and a visible action log.
-- Six autonomous residents, one authored Chaos agent, named map interactions, four social chapters, bounded planning, private evidence inspection, historical playback, chief interventions, a treasury audit trail, and matched policy comparisons.
-- Original generated terrain and a transparent sprite atlas, animated troop movement, attack effects, responsive controls and reduced-motion support.
-
-This is a playable single-player browser release. It does not yet include multiplayer clans, PvP matchmaking, enemy attacks on your home village, a server-authoritative economy, or a full commercial content/live-operations system. The home watchtower is currently a village building; its combat behavior is used by enemy towers during raids. Building upgrades increase production and progression; this version reuses each building's base artwork across levels.
-
-## Architecture and verification
-
-`lib/game` contains pure economy, battle, crew and council transitions. The crew planner in `crew.ts` uses the same validated actions in `commands.ts` as manual play. Its optional versioned save state preserves objectives, positions, claims, spending, experience and memories; loading pauses decisions. The council adapter reuses the free policy path in `lib/sim` and reconstructs versioned scenario runs from compact saved inputs, with a bounded run cache. It does not store full simulation snapshots inside every game tick. Version-2 saves without council or crew data preserve previous progress. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
+## Verification
 
 ```bash
 npm test
+npm run test:integration
 npm run typecheck
 npm run lint
 npm run build
 ```
 
-The game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. Crew tests cover real objective completion, empty-treasury recovery, exclusive claims, rest handoffs, blocked workplaces, alternative barracks, spending limits, manual interference, save validation and deterministic continuation. Council tests additionally cover migration, production dividends, ready workplaces, incident pauses, paid interventions, replay-safe reloads, fair reputation trades, actual treasury losses, private historical evidence, read-only comparisons, chapter progression and invalid saves. The original engine and worker tests remain in the suite.
+The v0.1.0 gameplay verification includes **78 passing tests plus the HTTP integration flow**, with desktop and phone browser checks. CI runs these checks on pushes and pull requests. Tests cover resource conservation, duplicate spending, job claims and handoffs, inaccessible workplaces, save validation, deterministic replay and worker recovery. See [verification notes](docs/objective-agents-verification.md).
 
-The village council runs locally. The optional SQLite worker powers durable research experiments inside the same interface; campaign saves remain browser-local. Claude decisions are connected to explicit worker experiment steps, disabled by default. Model actions use actor-visible evidence, validated actions, persisted responses and usage, budget reservations, idempotent requests, and replay without additional provider calls. They currently affect experimental worlds, not campaign currency. See [Research guide](docs/observatory-guide.md) and [Live model setup](docs/live-models.md).
+Model tests use injected provider responses. A live paid provider was not called during development.
 
-## Art provenance
+## Current scope and next steps
 
-The terrain and sprite atlas were generated with the built-in image-generation tool for this project, then copied into `public/game/terrain.png` and `public/game/sprites.png`. They are original assets, not extracted game assets. Prompts specified colorful orthographic isometric terrain with an empty buildable clearing, and a transparent 3 × 3 atlas of six buildings and three units. No external franchise logos or character designs were requested. The well and market props are project-authored SVG artwork. Named residents reuse the existing character atlas with identifying labels; distinct animated civilian art is future work.
+This is a playable single-player foundation for an agent-driven game. Campaign AI is rule-based: it does not train a neural network or understand arbitrary natural-language objectives. Council scenarios are authored. Multiplayer, autonomous construction, agent-led combat and model-controlled campaign play are not implemented.
 
-## Current simulation limits
+Areas for future contributions:
 
-The objective crew uses deterministic policies and a bounded experience score, not neural learning. It supports collection and recruitment for two preset objectives; natural-language objectives, autonomous construction and agent-led combat are not implemented. The council has fixed initial trust tendencies, authored Rook claims and four finite scenarios. Crew memories and Council evidence are separate records, identified by their respective views; this is not an open-ended generative society. Persistent relationships across chapters, automatic model-driven campaign play, public immutable replay links, production multi-user operation, and the complete research-inspired thesis remain outside this release. Optional model-assisted interpretation is available only for explicit steps in configured worker experiments.
+- [ ] Richer objectives, dependencies and recovery behavior
+- [ ] Distinct civilian art and activity animations
+- [ ] Persistent relationships across social chapters
+- [ ] More adversarial and honest-control research scenarios
+- [ ] Carefully bounded model-assisted campaign planning
 
-## Hosting
+The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points and how to validate a change. Bug reports with a reproducible save and screenshots are especially helpful.
 
-The existing Sites project identity is retained in `.openai/hosting.json`. Publication previously failed because Sites returned `project_not_found`. The local game and source remain independent of that hosting issue. Do not create a duplicate project without resolving that identity/access mismatch.
+## Guides
+
+- [Player guide](docs/player-guide.md) — building, battles, objectives and Council stories
+- [Objective agents](docs/objective-agents.md) — assignment, pathfinding, budgets and adaptation
+- [Research guide](docs/observatory-guide.md) — experiments, evidence, comparisons and replay
+- [Live model setup](docs/live-models.md) — optional Claude configuration and usage controls
+- [Security policy](SECURITY.md) — local runtime boundaries and vulnerability reporting
+
+## License and credits
+
+Created by **Kaushik Reddy**. Released under the [MIT License](LICENSE).
+
+Terrain and sprites are original AI-generated artwork created for Settlement. No franchise assets were extracted. Existing third-party license notices remain with their source files; see [Third-party notices](THIRD_PARTY_NOTICES.md).
+
+The social simulation is inspired by [Generative Agents](https://arxiv.org/abs/2304.03442) and [AI Town](https://github.com/a16z-infra/ai-town). Settlement implements its own bounded gameplay and research loops; it is not affiliated with those projects.

@@ -2,9 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Settlement — Build. Battle. Belong.",
+  title: "Settlement — Multi-Agent Village Game",
   description:
-    "Build Willowmere, train your army, and lead raids beyond the treeline. An original village strategy game.",
+    "Set village objectives and watch six autonomous residents coordinate, gather and recruit. Build, battle, inspect agent decisions and explore deterministic AI experiments.",
+  keywords: [
+    "multi-agent systems",
+    "game AI",
+    "village simulation",
+    "strategy game",
+    "agent-based modeling",
+    "Settlement",
+  ],
   other: {
     "codex-preview": "development",
   },
