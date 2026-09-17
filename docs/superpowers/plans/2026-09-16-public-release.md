@@ -11,5 +11,5 @@
 - [x] Confirm target, public visibility, empty repository and admin access; inspect tracked history for private runtime files and common credential patterns.
 - [x] Prepare README, actual screenshots, MIT license, contribution/security guidance, metadata, issue/PR templates and CI. Keep model limitations explicit.
 - [x] Verify local documentation links, unit/integration tests, types, lint and production build. Commit the release material.
-- [ ] Push full history to `main`; configure description, relevant topics, private vulnerability reporting and default branch. Verify the remote commit and public visibility.
-- [ ] Observe the first GitHub Actions result and fix any failure. Publish `v0.1.0` release notes against the verified commit and refresh the source archive.
+- [x] Push full history to `main`; configure description, relevant topics, private vulnerability reporting and default branch. Verify the remote commit and public visibility.
+- [x] Observe the first GitHub Actions result and fix any failure. Publish `v0.1.0` release notes against the verified commit and refresh the source archive.
