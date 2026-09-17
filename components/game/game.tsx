@@ -37,7 +37,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Scene, Sprite } from "./scene";
-import { newGame, command, advanceGame, restoreGame } from "@/lib/game/economy";
+import { command, advanceGame, restoreGame } from "@/lib/game/economy";
+import {
+  CampaignSession,
+  type CampaignSessionState,
+} from "@/lib/game/campaign-session";
 import {
   startBattle,
   deploy,
@@ -75,10 +79,10 @@ import type { Run } from "@/lib/sim/types";
 import type { ResearchFrame } from "../observatory";
 import "./game.css";
 import "./research.css";
+import "./session.css";
 const Research = lazy(() =>
   import("../observatory").then((m) => ({ default: m.Observatory })),
 );
-const KEY = "settlement-village-game-v2";
 const resourceIcons = { gold: Coins, wood: TreePine, food: Wheat };
 function Cost({ cost }: { cost: Partial<Resources> }) {
   return (
@@ -108,8 +112,151 @@ function download(g: Game) {
   URL.revokeObjectURL(url);
 }
 export function SettlementGame() {
-  const [game, setGame] = useState<Game>(newGame),
-    [ready, setReady] = useState(false),
+  const [attempt, setAttempt] = useState(0);
+  const [view, setView] = useState<{
+    session: CampaignSession;
+    state: CampaignSessionState;
+    attempt: number;
+  } | null>(null);
+  const [confirmReplacement, setConfirmReplacement] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
+
+  useEffect(() => {
+    let disposed = false;
+    const session = new CampaignSession({
+      locks: navigator.locks,
+      storage: {
+        getItem: (key) => window.localStorage.getItem(key),
+        setItem: (key, value) => window.localStorage.setItem(key, value),
+      },
+      onChange: (current) => {
+        if (!disposed)
+          setView({ session: current, state: current.state, attempt });
+      },
+    });
+    session.start();
+    const leave = () => session.close();
+    const returnToPage = () => {
+      // A page restored from the back-forward cache must obtain a fresh lock
+      // and read the latest save before mounting its campaign again.
+      if (session.state === "closed") setAttempt((value) => value + 1);
+    };
+    window.addEventListener("pagehide", leave);
+    window.addEventListener("pageshow", returnToPage);
+    return () => {
+      disposed = true;
+      window.removeEventListener("pagehide", leave);
+      window.removeEventListener("pageshow", returnToPage);
+      session.close();
+    };
+  }, [attempt]);
+
+  if (view?.state === "active" && view.session.active && view.session.game) {
+    return (
+      <CampaignGame
+        key={view.attempt}
+        session={view.session}
+        initialGame={view.session.game}
+      />
+    );
+  }
+  const state = view?.state ?? "checking";
+  const title =
+    state === "blocked"
+      ? "Your village is open in another tab"
+      : state === "unsupported"
+        ? "This browser cannot safely save your village"
+        : state === "recovery"
+          ? "Your saved village needs attention"
+          : state === "unavailable"
+            ? "Your village save is unavailable"
+            : "Opening your village";
+  const description =
+    state === "blocked"
+      ? "Close the other Settlement tab, then retry here. Your progress will load from its latest save."
+      : state === "unsupported"
+        ? "Use a current browser with Web Locks support, and open Settlement through localhost or HTTPS. Your saved village has not been changed."
+        : state === "recovery"
+          ? "The saved village could not be loaded. Its original data is preserved. Export a backup before choosing to replace it."
+          : state === "unavailable"
+            ? "Browser access to campaign storage or its save lock failed. Allow site storage, then retry. Your saved village has not been changed."
+            : "Checking that your campaign can save safely on this device.";
+  function exportOriginal() {
+    if (view?.session.rawSave == null) return;
+    const url = URL.createObjectURL(
+      new Blob([view.session.rawSave], { type: "application/json" }),
+    );
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "Settlement-original-save.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+  return (
+    <main className="campaign-session">
+      <section
+        className="campaign-session-card"
+        aria-labelledby="session-title"
+      >
+        <p className="campaign-session-brand">SETTLEMENT · YOUR CAMPAIGN</p>
+        <Lock size={30} aria-hidden="true" />
+        <h1 id="session-title">{title}</h1>
+        <p role="status">{description}</p>
+        <div className="campaign-session-actions">
+          {(state === "blocked" || state === "unavailable") && (
+            <button onClick={() => setAttempt((value) => value + 1)}>
+              {state === "blocked" ? "Retry after closing other tab" : "Retry"}
+            </button>
+          )}
+          {view?.session.rawSave != null && state !== "blocked" && (
+            <button onClick={exportOriginal}>Export original save</button>
+          )}
+          {state === "recovery" && !confirmReplacement && (
+            <button onClick={() => setConfirmReplacement(true)}>
+              Start a new village
+            </button>
+          )}
+        </div>
+        {state === "recovery" && confirmReplacement && (
+          <div className="campaign-session-confirm" role="alert">
+            <p>
+              Replace this device’s saved village? Keep the exported backup if
+              you want to recover it later.
+            </p>
+            <div className="campaign-session-actions">
+              <button
+                onClick={() => {
+                  try {
+                    view?.session.replaceDamagedSave();
+                  } catch {
+                    setRecoveryError(
+                      "The new village could not be saved. Your original save is still preserved.",
+                    );
+                  }
+                }}
+              >
+                Replace saved village
+              </button>
+              <button onClick={() => setConfirmReplacement(false)}>
+                Keep original save
+              </button>
+            </div>
+          </div>
+        )}
+        {recoveryError && <p role="alert">{recoveryError}</p>}
+      </section>
+    </main>
+  );
+}
+
+function CampaignGame({
+  session,
+  initialGame,
+}: {
+  session: CampaignSession;
+  initialGame: Game;
+}) {
+  const [game, setGame] = useState<Game>(initialGame),
     [selected, setSelected] = useState<string | null>(null),
     [panel, setPanel] = useState<"build" | "train" | "raid" | "guide" | null>(
       null,
@@ -127,59 +274,46 @@ export function SettlementGame() {
     [squad, setSquad] = useState(1),
     [saved, setSaved] = useState("Saved on this device"),
     [sound, setSound] = useState(false),
-    [goalsOpen, setGoalsOpen] = useState(true);
+    [goalsOpen, setGoalsOpen] = useState(!initialGame.crew?.objective);
   const current = useRef(game),
     audio = useRef<AudioContext | null>(null),
     file = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    current.current = game;
-  }, [game]);
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        const raw = localStorage.getItem(KEY);
-        if (raw) {
-          const data = JSON.parse(raw),
-            restored = restoreGame(JSON.stringify(data.game));
-          const elapsed = Math.max(0, (Date.now() - data.savedAt) / 1000);
-          setGame(advanceGame(restored, elapsed, false));
-          if (restored.crew?.objective) setGoalsOpen(false);
-        }
-      } catch {
-        setNotice(
-          "Your saved village could not be loaded. A new village is ready.",
-        );
-      }
-      setReady(true);
-    }, 0);
-    return () => clearTimeout(t);
-  }, []);
-  useEffect(() => {
-    if (!ready) return;
-    const t = setInterval(() => setGame((g) => advanceGame(g, 0.2)), 200);
-    return () => clearInterval(t);
-  }, [ready]);
-  useEffect(() => {
-    if (!ready) return;
+    let stopped = false;
     const save = () => {
+      if (!session.active) return;
       try {
-        localStorage.setItem(
-          KEY,
-          JSON.stringify({ game: current.current, savedAt: Date.now() }),
-        );
+        session.save(current.current);
         setSaved("Saved on this device");
       } catch {
-        setSaved("Storage full · export your village");
+        setSaved("Cannot save on this device · export your village");
       }
     };
-    const t = setInterval(save, 2000);
-    window.addEventListener("pagehide", save);
-    return () => {
-      clearInterval(t);
-      window.removeEventListener("pagehide", save);
+    const advance = setInterval(() => {
+      if (stopped || !session.active) return;
+      const next = advanceGame(current.current, 0.2);
+      current.current = next;
+      setGame(next);
+    }, 200);
+    const autosave = setInterval(save, 2000);
+    const hide = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    document.addEventListener("visibilitychange", hide);
+    const shutdown = () => {
+      if (stopped) return;
+      stopped = true;
+      clearInterval(advance);
+      clearInterval(autosave);
+      document.removeEventListener("visibilitychange", hide);
       save();
     };
-  }, [ready]);
+    const unregister = session.registerShutdown(shutdown);
+    return () => {
+      shutdown();
+      unregister();
+    };
+  }, [session]);
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(""), 4500);
@@ -208,17 +342,31 @@ export function SettlementGame() {
       });
     } catch {}
   }
-  const update = useCallback((fn: (g: Game) => Game) => {
-    try {
-      const next = fn(current.current);
-      current.current = next;
-      setGame(next);
-      return true;
-    } catch (e) {
-      setNotice(e instanceof Error ? e.message : "That action is unavailable.");
-      return false;
-    }
-  }, []);
+  const update = useCallback(
+    (fn: (g: Game) => Game) => {
+      if (!session.active) return false;
+      try {
+        const next = fn(current.current);
+        current.current = next;
+        setGame(next);
+        // Browsers may terminate a tab without pagehide. Persist player actions
+        // before returning, rather than relying on the next autosave or close.
+        try {
+          session.save(next);
+          setSaved("Saved on this device");
+        } catch {
+          setSaved("Cannot save on this device · export your village");
+        }
+        return true;
+      } catch (e) {
+        setNotice(
+          e instanceof Error ? e.message : "That action is unavailable.",
+        );
+        return false;
+      }
+    },
+    [session],
+  );
   function act(c: Command, message?: string) {
     if (update((g) => command(g, c))) {
       chime();
@@ -287,7 +435,6 @@ export function SettlementGame() {
     setResearchFrame(null);
   }
   useEffect(() => {
-    if (!ready) return;
     const q = new URLSearchParams(location.search);
     if (
       q.has("seed") ||
@@ -300,7 +447,7 @@ export function SettlementGame() {
       );
       return () => clearTimeout(timer);
     }
-  }, [ready, openResearch]);
+  }, [openResearch]);
   function choose(id: string) {
     if (research) return;
     if (id.startsWith("collect:")) {
@@ -918,7 +1065,7 @@ export function SettlementGame() {
         </>
       )}
       {!raiding && !research ? (
-        <div className="save-status">
+        <div className="save-status" role="status">
           <span />
           {saved}
           <button
@@ -1181,8 +1328,7 @@ export function SettlementGame() {
                       if (f.size > 2000000)
                         throw Error("Choose a save smaller than 2 MB.");
                       const imported = restoreGame(await f.text());
-                      current.current = imported;
-                      setGame(imported);
+                      if (!update(() => imported)) return;
                       closeResearch();
                       setCouncilOpen(false);
                       setCrewOpen(false);

@@ -34,12 +34,15 @@ For a large feature, open an issue describing the player experience and scope be
 ```bash
 npm test
 npm run test:integration
+npm run evaluate -- --verify docs/evaluation-results.json
 npm run typecheck
 npm run lint
 npm run build
 ```
 
 The HTTP test uses port 8899 and a temporary SQLite database. Do not run competing instances on that port. Do not commit `.env` files, provider keys, local databases, generated build directories or personal saved runs. Paid model tests should use injected responses unless a maintainer explicitly arranges a live-provider check.
+
+If an intentional engine change affects reference outcomes, review the new results and run `npm run evaluate` to regenerate the report. Explain changed metrics in the pull request; see [Evaluation reports](docs/evaluation-reports.md).
 
 ## Report a bug
 

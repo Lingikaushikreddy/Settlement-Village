@@ -72,7 +72,11 @@ Research uses the same map. Its caption identifies the viewed run and tick. Ente
 
 Drag empty ground to pan. Use the zoom and center buttons to adjust the camera. Collapse the chapter panel for a clearer view. Sounds are optional and start muted.
 
-The village automatically saves to this browser every two seconds. Production and training progress while you are away, with offline advancement capped at eight hours. Raids resume from their last saved state. Use the village crest to open the guide and export or import a JSON save. Keep one active game tab per browser to avoid competing saves. Browser data can be cleared or evicted; exported saves provide a portable backup.
+The village saves player actions and imports immediately, and ongoing simulation every two seconds. It also attempts to save when the page becomes hidden or closes. A forced browser termination can still lose the most recent simulation interval. Production and training progress while you are away, with offline advancement capped at eight hours. Raids resume from their last saved state. Use the village crest to open the guide and export or import a JSON save.
+
+Only one tab can own the campaign for a given browser origin. If another tab is active, close it and choose **Retry after closing other tab**; the waiting tab then loads the latest save. A waiting tab cannot simulate or overwrite your village. This requires a browser with Web Locks support on localhost or HTTPS. Different browser profiles, devices and origins still have separate saves.
+
+If a save cannot be loaded, Settlement preserves it and offers **Export original save**. Starting over requires **Start a new village → Replace saved village**. Browser data can still be cleared or evicted; exported saves provide a portable backup.
 
 ## Implemented game systems
 

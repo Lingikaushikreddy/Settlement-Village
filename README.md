@@ -42,9 +42,9 @@ Prefer a peaceful village? Choose **Restock supplies**. Prefer experiments? Open
 | **Troops and battles**    | Recruit knights, archers and catapults. Deploy and focus attacks across three enemy strongholds.                                             |
 | **Inspectable decisions** | Read current jobs, blocked work, spending limits, recent memories and the village action log.                                                |
 | **Council stories**       | Investigate four authored social chapters, inspect claims and evidence, and intervene with real treasury consequences.                       |
-| **Research and replay**   | Run seeded experiments, compare policies, inspect historical evidence, export runs and verify deterministic replay.                          |
+| **Research and replay**   | Compare matched seeds, inspect historical evidence, export JSON/CSV reports and independently reproduce every recorded result.               |
 | **Optional live models**  | Ask Claude to propose a social action in a configured local-worker experiment, with validated actions, usage records and spend reservations. |
-| **Save continuity**       | Browser-local campaign saves, portable JSON exports and an optional SQLite worker for durable research runs.                                 |
+| **Save continuity**       | One active campaign tab protects browser-local saves; damaged saves remain available for backup and explicit recovery.                       |
 
 ![Resident inspector showing Theo's completed objective, practice points and position](docs/media/agent-inspector.png)
 
@@ -61,7 +61,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://localhost:5173**. Your village saves in that browser. Keep one active game tab per origin and export valuable saves from the village guide.
+Open **http://localhost:5173**. Your village saves in that browser. A second tab waits until the active village closes; retry there to load the latest save. Export valuable saves from the village guide. Saving requires a browser with Web Locks support on localhost or HTTPS.
 
 To include the optional local research worker:
 
@@ -104,6 +104,22 @@ Crew work pauses offline, during raids, and when entering Council or Research. P
 
 See [Objective agents](docs/objective-agents.md) for exact rules and boundaries.
 
+## Reproduce the agent evaluation
+
+Open **Research → Compare** to choose scenarios, matched seeds and run length. Every run must pass conservation checks and exact replay before its results appear. Inspect any included seed, export a compact JSON report or CSV table, and import or paste a report to independently rerun its cases.
+
+The included reference report runs four authored scenarios × three deterministic policies × ten seeds, with **zero model calls**. At 60 ticks, the scarcity scenario produces 36 successful attacks out of 40 evaluated attempts for Trust first, versus 0/40 for Check evidence. Honest controls expose a different cost: Cautious refuses 33/40 honest offers, versus 0/40 for Check evidence. These results describe the authored rules; the evidence policy is deliberately suited to them and they do not measure general AI safety.
+
+```bash
+# Independently reproduce the checked-in report; fail on any mismatch
+npm run evaluate -- --verify docs/evaluation-results.json
+
+# Generate a fresh reference report
+npm run evaluate
+```
+
+See [Evaluation reports](docs/evaluation-reports.md) for the format, denominators, limits and measured results.
+
 ## Stack and project map
 
 **TypeScript · React · Next-compatible routing with vinext/Vite · Zod · Tailwind CSS · optional Node.js/SQLite worker**
@@ -125,12 +141,13 @@ docs/                Guides, design notes and verification records
 ```bash
 npm test
 npm run test:integration
+npm run evaluate -- --verify docs/evaluation-results.json
 npm run typecheck
 npm run lint
 npm run build
 ```
 
-The v0.1.0 gameplay verification includes **78 passing tests plus the HTTP integration flow**, with desktop and phone browser checks. CI runs these checks on pushes and pull requests. Tests cover resource conservation, duplicate spending, job claims and handoffs, inaccessible workplaces, save validation, deterministic replay and worker recovery. See [verification notes](docs/objective-agents-verification.md).
+The suite covers resource conservation, duplicate spending, job claims and handoffs, inaccessible workplaces, save ownership and recovery, report tampering, deterministic replay and worker recovery. CI runs the tests, HTTP integration flow, report reproduction, types, lint and production build on pushes and pull requests. See [release verification](docs/readiness-verification.md).
 
 Model tests use injected provider responses. A live paid provider was not called during development.
 
@@ -153,6 +170,8 @@ The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points
 - [Player guide](docs/player-guide.md) — building, battles, objectives and Council stories
 - [Objective agents](docs/objective-agents.md) — assignment, pathfinding, budgets and adaptation
 - [Research guide](docs/observatory-guide.md) — experiments, evidence, comparisons and replay
+- [Evaluation reports](docs/evaluation-reports.md) — reproducible results and their limits
+- [Product roadmap](docs/product-roadmap.md) — priorities and acceptance criteria
 - [Live model setup](docs/live-models.md) — optional Claude configuration and usage controls
 - [Security policy](SECURITY.md) — local runtime boundaries and vulnerability reporting
 

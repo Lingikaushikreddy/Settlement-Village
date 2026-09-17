@@ -35,6 +35,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run test:integration
+      - run: npm run evaluate -- --verify docs/evaluation-results.json
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build

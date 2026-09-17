@@ -17,7 +17,7 @@ Open `http://localhost:5173`. The website works without the worker; `npm run dev
 
 1. Open **Research** in the village navigation. It begins with your current chapter record. Use **Archive → Included reference run → Open replay**, then **Find an incident** to reach tick 8 of The Missing Grain.
 2. Advance one tick. Select the targeted resident and inspect its decision and evidence.
-3. Open **Compare** and run a policy comparison. Honest-offer controls reveal the cost of indiscriminate refusal.
+3. Open **Compare**, select a scenario, first seed, seed count and run length, then run a policy comparison. Honest-offer controls reveal the cost of indiscriminate refusal. Inspect an included seed or export the JSON report/CSV table. Import or paste JSON to reproduce its recorded cases. See [Evaluation reports](evaluation-reports.md).
 4. Create a browser simulation or, when the local worker is running, choose **Create on local worker**.
 5. Play, pause, single-step, and queue interventions. Publish verified stock to change the social decisions.
 6. Save a run, open it from the library, export JSON, and verify its deterministic replay.
@@ -60,12 +60,13 @@ npm test
 npm run typecheck
 node --test tests/http.integration.mjs
 npm run evaluate
+npm run evaluate -- --verify docs/evaluation-results.json
 npm run build
 ```
 
 The test suite covers conservation, trade consent, conflicting offers, duplicate commands, bounded planning, hidden stock isolation, replay tampering, same-tick evidence, mechanical failure accounting, and worker recovery. The HTTP integration test uses a temporary database and local port 8899; it verifies origin rejection, controls, autonomous ticking, and the event stream.
 
-`docs/evaluation-results.json` contains measured results for 120 deterministic runs: four scenario families × three policies × ten seeds. All runs check invariants and exact replay. Results are specific to authored scenarios and rules; they are not a general safety benchmark. The evidence policy is intentionally suited to these inspectable scenarios.
+`docs/evaluation-results.json` contains a versioned compact report for 120 deterministic runs: four scenario families × three policies × ten seeds. It records each configuration, metrics, tick checksums and evidence checksum, alongside aggregate rows. All runs check invariants and exact replay. Verification regenerates every case with the matching engine and rejects any mismatch. Results are specific to authored scenarios and rules; they are not a general safety benchmark. The evidence policy is intentionally suited to these inspectable scenarios.
 
 ## Important design limits
 

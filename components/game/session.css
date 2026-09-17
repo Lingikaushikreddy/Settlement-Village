@@ -1,0 +1,63 @@
+.campaign-session {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #172b42;
+  color: #fff1d6;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+.campaign-session-card {
+  width: min(100%, 560px);
+  padding: clamp(24px, 6vw, 48px);
+  border: 1px solid #778493;
+  border-radius: 18px;
+  background: #203b54;
+  box-shadow: 0 16px 50px #0b162855;
+}
+.campaign-session-brand {
+  margin: 0 0 28px;
+  color: #ffca58;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.campaign-session h1 {
+  margin: 16px 0;
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.15;
+}
+.campaign-session p:not(.campaign-session-brand) {
+  line-height: 1.65;
+}
+.campaign-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+.campaign-session button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #ffca58;
+  border-radius: 8px;
+  background: #ffca58;
+  color: #172b42;
+  font:
+    700 14px/1.4 "Trebuchet MS",
+    Arial,
+    sans-serif;
+  cursor: pointer;
+}
+.campaign-session button:hover {
+  background: #ffdb86;
+}
+.campaign-session button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+.campaign-session-confirm {
+  margin-top: 24px;
+  padding-top: 8px;
+  border-top: 1px solid #778493;
+}
