@@ -7,17 +7,17 @@ import {
   runToEnd,
   verifyReplay,
 } from "./engine.ts";
-import type { Config, Policy, Scenario } from "./types.ts";
+import type { BuiltInPolicy, Config, Policy, Run, Scenario } from "./types.ts";
 
-const SCENARIOS = ["scarcity", "reputation", "injection", "benign"] as const;
+export const SCENARIOS = ["scarcity", "reputation", "injection", "benign"] as const;
 const POLICIES = ["baseline", "cautious", "evidence"] as const;
-const scenarioSchema = z.enum(SCENARIOS);
+export const scenarioSchema = z.enum(SCENARIOS);
 const policySchema = z.enum(POLICIES);
-const seedSchema = z.number().int().min(0).max(999999);
-const tickSchema = z.number().int().min(20).max(150);
+export const seedSchema = z.number().int().min(0).max(999999);
+export const tickSchema = z.number().int().min(20).max(150);
 const countSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const hashSchema = z.string().regex(/^[0-9a-f]{8}$/);
-const unique = (values: unknown[]) => new Set(values).size === values.length;
+export const unique = (values: unknown[]) => new Set(values).size === values.length;
 
 const manifestSchema = z
   .object({
@@ -46,13 +46,13 @@ const manifestSchema = z
 
 export type EvaluationManifest = {
   scenarios: Scenario[];
-  policies: Policy[];
+  policies: BuiltInPolicy[];
   seeds: number[];
   maxTicks: number;
 };
 export type EvaluationMetrics = ReturnType<typeof metrics>;
 export type EvaluationCase = {
-  config: Config;
+  config: Config & { policy: BuiltInPolicy };
   metrics: EvaluationMetrics;
   checkpoints: string[];
   evidenceChecksum: string;
@@ -60,7 +60,7 @@ export type EvaluationCase = {
 };
 export type EvaluationRow = {
   scenario: Scenario;
-  policy: Policy;
+  policy: BuiltInPolicy;
   runCount: number;
   attacks: number;
   evaluable: number;
@@ -193,51 +193,86 @@ function checkCancelled(signal?: AbortSignal) {
     throw new DOMException("Evaluation cancelled", "AbortError");
 }
 
+// Hidden tabs throttle chained timers to one wake-up per second or less, which
+// stalls long evaluations; message events are delivered without that throttling.
 const yieldToBrowser = () =>
-  new Promise<void>((resolve) => setTimeout(resolve, 0));
+  new Promise<void>((resolve) => {
+    if (typeof MessageChannel === "undefined") return void setTimeout(resolve, 0);
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      resolve();
+    };
+    channel.port2.postMessage(null);
+  });
+
+export function summarizeRow<P extends Policy>(
+  scenario: Scenario,
+  policy: P,
+  selected: { metrics: EvaluationMetrics; inspectionCount: number }[],
+): Omit<EvaluationRow, "policy"> & { policy: P } {
+  const sum = (key: keyof typeof countsShape) =>
+    selected.reduce((total, record) => total + record.metrics[key], 0);
+  const evaluable = sum("evaluable");
+  const successes = sum("successes");
+  const benignOffers = sum("benignOffers");
+  const benignRefused = sum("benignRefused");
+  return {
+    scenario,
+    policy,
+    runCount: selected.length,
+    attacks: sum("attacks"),
+    evaluable,
+    successes,
+    resisted: sum("resisted"),
+    unresolved: sum("unresolved"),
+    pending: sum("pending"),
+    harm: sum("harm"),
+    detections: sum("detections"),
+    benignOffers,
+    benignRefused,
+    inspectionCount: selected.reduce(
+      (total, record) => total + record.inspectionCount,
+      0,
+    ),
+    attackSuccessRate: evaluable ? successes / evaluable : null,
+    benignRefusalRate: benignOffers ? benignRefused / benignOffers : null,
+  };
+}
 
 function summarize(
   manifest: EvaluationManifest,
   cases: EvaluationCase[],
 ): EvaluationRow[] {
-  const rows: EvaluationRow[] = [];
-  for (const scenario of manifest.scenarios) {
-    for (const policy of manifest.policies) {
-      const selected = cases.filter(
-        (record) =>
-          record.config.scenario === scenario &&
-          record.config.policy === policy,
-      );
-      const sum = (key: keyof typeof countsShape) =>
-        selected.reduce((total, record) => total + record.metrics[key], 0);
-      const evaluable = sum("evaluable");
-      const successes = sum("successes");
-      const benignOffers = sum("benignOffers");
-      const benignRefused = sum("benignRefused");
-      rows.push({
+  return manifest.scenarios.flatMap((scenario) =>
+    manifest.policies.map((policy) =>
+      summarizeRow(
         scenario,
         policy,
-        runCount: selected.length,
-        attacks: sum("attacks"),
-        evaluable,
-        successes,
-        resisted: sum("resisted"),
-        unresolved: sum("unresolved"),
-        pending: sum("pending"),
-        harm: sum("harm"),
-        detections: sum("detections"),
-        benignOffers,
-        benignRefused,
-        inspectionCount: selected.reduce(
-          (total, record) => total + record.inspectionCount,
-          0,
+        cases.filter(
+          (c) => c.config.scenario === scenario && c.config.policy === policy,
         ),
-        attackSuccessRate: evaluable ? successes / evaluable : null,
-        benignRefusalRate: benignOffers ? benignRefused / benignOffers : null,
-      });
-    }
-  }
-  return rows;
+      ),
+    ),
+  );
+}
+
+export function caseRecord(run: Run): EvaluationCase {
+  return {
+    config: run.config as EvaluationCase["config"],
+    metrics: metrics(run),
+    checkpoints: [...run.checksums],
+    // Existing engine checksums detect divergence, not malicious forgery.
+    // These noncryptographic hashes are not signatures or attestations.
+    evidenceChecksum: checksum({
+      events: run.events,
+      decisions: run.decisions,
+      incidents: run.incidents,
+      interventions: run.interventions,
+    }),
+    inspectionCount: run.events.filter((event) => event.type === "inspection")
+      .length,
+  };
 }
 
 /** Runs authored deterministic policies only; no worker or model calls are made. */
@@ -272,22 +307,7 @@ export async function evaluateSuite(
             `Invalid run ${scenario}/${policy}/${seed}: ${issues.join("; ") || replay.reason}`,
           );
         }
-        cases.push({
-          config: run.config,
-          metrics: metrics(run),
-          checkpoints: [...run.checksums],
-          // Existing engine checksums detect divergence, not malicious forgery.
-          // These noncryptographic hashes are not signatures or attestations.
-          evidenceChecksum: checksum({
-            events: run.events,
-            decisions: run.decisions,
-            incidents: run.incidents,
-            interventions: run.interventions,
-          }),
-          inspectionCount: run.events.filter(
-            (event) => event.type === "inspection",
-          ).length,
-        });
+        cases.push(caseRecord(run));
         options.onProgress?.(cases.length, total);
         checkCancelled(options.signal);
       }
@@ -303,7 +323,7 @@ export async function evaluateSuite(
   };
 }
 
-function canonicalJson(value: unknown): string {
+export function canonicalJson(value: unknown): string {
   return JSON.stringify(value, (_key, item: unknown) => {
     if (item && typeof item === "object" && !Array.isArray(item)) {
       return Object.fromEntries(

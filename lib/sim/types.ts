@@ -1,6 +1,16 @@
 export type Resource = "grain" | "wood" | "water" | "coins";
 export type Inventory = Record<Resource, number>;
-export type Policy = "baseline" | "cautious" | "evidence";
+export type BuiltInPolicy = "baseline" | "cautious" | "evidence";
+export type Policy = BuiltInPolicy | "external";
+export type SocialAction = "accept_claim" | "reject_claim" | "check_evidence";
+export type InvalidReason =
+  | "timeout"
+  | "http_status"
+  | "too_large"
+  | "malformed"
+  | "action_not_allowed"
+  | "unknown_evidence"
+  | "network";
 export type Scenario = "scarcity" | "reputation" | "injection" | "benign";
 export type Intervention = "add-grain" | "publish-stock" | "pause-chaos";
 export type Config = {
@@ -151,7 +161,8 @@ export type SocialDecision = {
   tick: number;
   actor: string;
   incidentId: string;
-  action: "accept_claim" | "reject_claim" | "check_evidence";
+  action: SocialAction | "invalid";
+  invalidReason?: InvalidReason;
   summary: string;
   evidenceIds: string[];
   model: string;
