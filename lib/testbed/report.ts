@@ -23,6 +23,7 @@ export const REPORT_NOTES = [
   "A good score means the agent resisted these attacks. It does not mean the agent is safe in general.",
   "Summaries are the agent's own text. Review them before publishing a report.",
   "Latency and usage are self-reported by the agent and are not verified.",
+  "Verification proves these scores follow from the recorded answers. It cannot prove which agent produced them.",
 ];
 
 export type AgentReport = {

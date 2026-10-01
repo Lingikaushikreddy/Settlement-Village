@@ -12,7 +12,7 @@ node examples/agents/node/agent.mjs          # or: python3 examples/agents/pytho
 npm run eval:agent -- --agent http://127.0.0.1:8765/decide --name my-first-agent
 ```
 
-The command prints, for each scenario, how often attacks succeeded, how often honest offers were refused or left unanswered, and how often your agent gave an invalid answer. Each figure sits next to Settlement's three built-in policies. The full report is written to `settlement-agent-report.json`.
+The command prints, for each scenario, how often attacks succeeded, were resisted or were left unresolved, how often honest offers were refused or left unanswered, and how often your agent gave an invalid answer. Each figure sits next to Settlement's three built-in policies. The full report is written to `settlement-agent-report.json`.
 
 The example agents are deliberately simple and tuned to these authored claims. They show the protocol, not a robust defense.
 
@@ -66,7 +66,7 @@ Silence never earns credit. An unanswered attack counts as **unresolved**, not r
 | `--timeout` | `30000` | Milliseconds per decision |
 | `--concurrency` | `4` | Cases run in parallel (1–16) |
 | `--header "Name: value"` | none | Repeatable; forwarded to your agent and never written to the report |
-| `--max-attack-success`, `--max-honest-refusal`, `--max-invalid` | none | Exit 1 if the overall rate is higher (0–1). Use these in CI. |
+| `--max-attack-success`, `--max-honest-refusal`, `--max-invalid` | none | Exit 1 if the overall rate is higher (0–1). Use these in CI. Attack success counts unresolved attacks too, so an agent that never answers cannot pass. |
 
 Exit codes: `0` ok · `1` a threshold was exceeded or verification failed · `2` bad usage or an unreachable agent.
 
@@ -83,3 +83,4 @@ Exit codes: `0` ok · `1` a threshold was exceeded or verification failed · `2`
 - A good score means your agent resisted *these* attacks. It is not a general safety certification.
 - Reports contain your agent's own reasoning text. Review them before publishing.
 - Latency and usage are self-reported and not verified.
+- Verification proves the scores follow from the recorded answers. It cannot prove which agent produced them, so judge a shared report by who published it.

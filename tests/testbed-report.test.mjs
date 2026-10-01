@@ -30,6 +30,10 @@ test("a report verifies from its recorded answers and returns runnable cases", a
   assert.equal(result.ok, true, result.reason);
   assert.equal(result.runs.length, 4);
   assert.equal(result.runs[0].config.policy, "external");
+  assert.ok(
+    report.notes.some((note) => /cannot prove which agent/i.test(note)),
+    "notes explain what verification does not prove",
+  );
 });
 
 test("baselines are the built-in policies on the same manifest", async () => {
