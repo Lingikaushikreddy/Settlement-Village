@@ -20,6 +20,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "evaluate": "node --experimental-strip-types scripts/evaluate.mjs",
+    "eval:agent": "node --experimental-strip-types scripts/eval-agent.mjs",
     "test:integration": "node --experimental-strip-types --test tests/http.integration.mjs",
     "smoke": "node scripts/smoke-hosted.mjs"
   },
