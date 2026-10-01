@@ -2,6 +2,14 @@
 
 Date: 2026-09-30 · Builds on: `feat/hosted-demo` (Next.js build, CSP, hosted Research view)
 
+> **Revision after reading the engine (same day):**
+> 1. Authored scenarios open one claim every 12 ticks, each with a 10-tick deadline, regardless of decisions, so two claims are never pending in the same tick. Milestone 1 keeps the engine's single-decision `advance` and doesn't add an array form. The testbed loop throws a clear error if a future scenario ever produces overlapping claims.
+> 2. `SOCIAL_ENGINE_VERSION` is **not** bumped: replaying an existing model-assisted run restamps that version, so bumping it would break verification of saved runs. External runs instead carry a new `AGENT_ENGINE_VERSION`, stamped at creation.
+> 3. The evaluator allows at most 10 seeds; agent manifests use the same limit (up to 40 cases).
+> 4. During a claim the engine sets `self.goal` to "Consider a fair offer" for honest offers, which would leak the answer. The request builder replaces `self.goal` with a neutral "Decide how to respond to a claim". Engine text for built-in policies stays unchanged, because changing it would change the reference report's checksums.
+> 5. The sample report has a single copy at `public/examples/agent-report.json`.
+> 6. The reachability check is a `GET` to the agent URL; any HTTP response counts as reachable.
+
 ## Goal
 
 Let a developer who is building an AI agent find out, in minutes and before shipping, whether other agents and messages can manipulate it. They point Settlement at their agent's HTTP endpoint. Settlement runs its authored deception scenarios and honest controls, and returns a report they can trust and share:
