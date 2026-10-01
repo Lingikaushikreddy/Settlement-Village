@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 — 2026-09-30
+
+- Settlement is playable in the browser on Vercel. No clone, install or account needed. Saves stay in each visitor's browser.
+- The default `dev`, `build` and `start` scripts use standard Next.js. The previous vinext/Cloudflare Workers build remains available as `dev:cloudflare`, `build:cloudflare` and `start:cloudflare`.
+- Security headers on every response: Content-Security-Policy, `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`.
+- Shared links render a preview card with a 1200×630 village image.
+- On the hosted site, Research explains that free simulations, comparisons and replays run in the browser, while live-model experiments need the optional local worker.
+- `npm run smoke -- <url>` checks a running build's page, assets, artwork, research redirect, headers and preview image. CI runs it against the production server, and a GitHub workflow runs it against each successful Vercel production deployment.
+
+The research worker and Claude experiments remain local-only. The hosted demo has no accounts, server-side saves or analytics.
+
 ## 0.2.0 — 2026-09-17
 
 - One shared evaluator powers browser comparisons and the command line, with bounded seed/tick controls, progress and cancellation.
