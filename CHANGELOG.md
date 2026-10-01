@@ -9,7 +9,7 @@
 - Research → Compare imports agent reports, replays any case on the map with the agent's reasoning, and opens share links from GitHub raw or Gist URLs.
 - Node and Python example agents, and a verified sample report in `public/examples/`.
 - Comparisons and verifications no longer stall in background tabs: evaluation yields through message events instead of throttled timers.
-- Residents are renamed: Theo → Jhansi, Ada → Kavya, Finn → Sasi, Lina → Hitesh, Oscar → Anil (Mira and Rook unchanged). Resident ids are unchanged, so campaign saves and Council chapters keep working. Research runs saved before this change no longer replay, because their recorded text uses the old names. Reference results are identical; only checksums changed.
+- Research event text and the decision panel name residents instead of showing their ids. Research runs saved before this change no longer replay, because their recorded text changed. Reference results are identical; only checksums changed.
 - Troops are renamed: knights are now Kavyas and archers are now Jhansis. Troop ids are unchanged, so campaign saves and armies keep loading.
 
 ## 0.3.0 — 2026-09-30

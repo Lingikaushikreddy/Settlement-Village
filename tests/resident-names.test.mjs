@@ -3,20 +3,21 @@ import assert from "node:assert/strict";
 import { createRun, observe, runToEnd, scenarioInfo } from "../lib/sim/engine.ts";
 import { crewRoster } from "../lib/game/crew.ts";
 
-// Display names changed; ids stay stable so existing saves, art and replays keep working.
+// Ids stay stable and separate from display names, so saves, art and replays keep working.
 const NAMES = {
   mira: "Mira",
-  theo: "Jhansi",
-  ada: "Kavya",
-  finn: "Sasi",
-  lina: "Hitesh",
-  oscar: "Anil",
+  theo: "Theo",
+  ada: "Ada",
+  finn: "Finn",
+  lina: "Lina",
+  oscar: "Oscar",
   rook: "Rook",
 };
-const OLD_NAMES = /\b(Theo|Ada|Finn|Lina|Oscar)\b/;
+// The short-lived rename to these names was reverted; they now belong to troops only.
+const OLD_NAMES = /\b(Jhansi|Kavya|Sasi|Hitesh|Anil)\b/;
 const IDS_AS_NAMES = / (to|with) (mira|theo|ada|finn|lina|oscar)\b/;
 
-test("research residents use the village names with unchanged ids", () => {
+test("research residents use their original names with unchanged ids", () => {
   const agents = createRun({ seed: 1 }).snapshots[0].agents;
   assert.deepEqual(Object.fromEntries(agents.map((a) => [a.id, a.name])), NAMES);
 });
