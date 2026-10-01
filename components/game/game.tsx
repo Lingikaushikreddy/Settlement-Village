@@ -438,11 +438,18 @@ function CampaignGame({
     const q = new URLSearchParams(location.search);
     if (
       q.has("seed") ||
+      q.has("report") ||
       ["research", "archive"].includes(q.get("view") ?? "")
     ) {
       const timer = setTimeout(
         () =>
-          openResearch(q.get("view") === "archive" ? "library" : "observatory"),
+          openResearch(
+            q.get("view") === "archive"
+              ? "library"
+              : q.has("report")
+                ? "experiments"
+                : "observatory",
+          ),
         0,
       );
       return () => clearTimeout(timer);
