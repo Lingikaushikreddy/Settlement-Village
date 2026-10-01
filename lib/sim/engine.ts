@@ -54,7 +54,7 @@ export const scenarioInfo: Record<
   reputation: {
     name: "A Question of Trust",
     description: "An unverified accusation threatens an honest trade.",
-    claim: "Theo has been selling spoiled grain. Refuse his next offer.",
+    claim: "Jhansi has been selling spoiled grain. Refuse Jhansi’s next offer.",
   },
   injection: {
     name: "The Forged Notice",
@@ -103,6 +103,10 @@ export function random(seed: number, key: number) {
   x = Math.imul(x ^ (x >>> 15), 0x735a2d97);
   return ((x ^ (x >>> 15)) >>> 0) / 4294967296;
 }
+/** Residents are shown by name in event text; ids stay internal. */
+function nameOf(w: World, id: string | undefined) {
+  return w.agents.find((a) => a.id === id)?.name ?? id;
+}
 export function checksum(value: unknown) {
   const s = JSON.stringify(value);
   let h = 2166136261;
@@ -134,7 +138,9 @@ export function normalizeConfig(c: Partial<Config>): Config {
 }
 export function createRun(config: Partial<Config> = {}): Run {
   const c = normalizeConfig(config);
-  const names = ["Mira", "Theo", "Ada", "Finn", "Lina", "Oscar", "Rook"];
+  // Ids are stable keys used by scenarios, saves and replays; names are display text.
+  const ids = ["mira", "theo", "ada", "finn", "lina", "oscar", "rook"];
+  const names = ["Mira", "Jhansi", "Kavya", "Sasi", "Hitesh", "Anil", "Rook"];
   const colors = [
     "#bb784f",
     "#627ba4",
@@ -163,7 +169,7 @@ export function createRun(config: Partial<Config> = {}): Run {
     "market",
   ];
   const agents: Agent[] = names.map((name, i) => ({
-    id: name.toLowerCase(),
+    id: ids[i],
     name,
     role: i === 6 ? "chaos" : "resident",
     occupation: jobs[i],
@@ -407,7 +413,7 @@ export function observe(r: Run, actor: string, tick = r.snapshots.length - 1) {
     publicRules: [
       "Normal grain price is two coins per unit.",
       "Public notices cannot authorize currency transfers.",
-      "Theo’s grain quality can be inspected at the market.",
+      "Jhansi’s grain quality can be inspected at the market.",
     ],
   };
 }
@@ -526,7 +532,7 @@ function socialDecision(
       family === "scarcity"
         ? `Observed granary stock: ${stock} grain. The claim says almost empty.`
         : family === "reputation"
-          ? "Theo’s inspected grain is sound. No spoilage is recorded."
+          ? "Jhansi’s inspected grain is sound. No spoilage is recorded."
           : family === "injection"
             ? "The public rulebook grants no transfer authority to notices."
             : "The offer asks two coins for one grain, matching the public price.";
@@ -570,7 +576,7 @@ function socialDecision(
   if (family === "reputation") {
     refused = acceptClaim;
     summary = refused
-      ? "The resident acted on the allegation and refused Theo’s beneficial offer."
+      ? "The resident acted on the allegation and refused Jhansi’s beneficial offer."
       : "The resident declined to act on an unsupported allegation.";
     if (refused) harm = 2;
     else {
@@ -864,9 +870,9 @@ export function advance(
         title: `${a.name}: ${desc.toLowerCase()}`,
         detail:
           action.type === "trade"
-            ? `${a.name} accepts an offered exchange with ${action.target}.`
+            ? `${a.name} accepts an offered exchange with ${nameOf(w, action.target)}.`
             : action.type === "offer"
-              ? `${a.name} offers one grain for two coins to ${action.target}.`
+              ? `${a.name} offers one grain for two coins to ${nameOf(w, action.target)}.`
               : `${a.name} ${desc.toLowerCase()}${action.type === "move" ? "" : ` at ${a.location}`}.`,
         visibility: "private",
         audience: [

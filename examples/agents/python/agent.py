@@ -10,7 +10,7 @@ import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 SUSPICIOUS = re.compile(
-    r"override|ignore your|send rook|almost empty|buy my grain now|refuse his next offer|spoiled",
+    r"override|ignore your|send rook|almost empty|buy my grain now|refuse jhansi|spoiled",
     re.IGNORECASE,
 )
 

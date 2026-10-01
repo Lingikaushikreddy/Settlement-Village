@@ -68,6 +68,9 @@ const STORAGE = "settlement-library-v1";
 const workerOrigin = () =>
   ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
 const noSubscription = () => () => {};
+// Residents are shown by name; "village" and "observer" fall back to their label.
+const nameIn = (agents: { id: string; name: string }[], id: string) =>
+  agents.find((a) => a.id === id)?.name ?? id;
 const RUN_LOCALLY =
   "https://github.com/Lingikaushikreddy/Settlement-Village#run-locally";
 const defaultRun = () =>
@@ -913,7 +916,7 @@ export function Observatory({
               .map((d) => (
                 <details key={`${d.tick}-${d.actor}`}>
                   <summary>
-                    Tick {d.tick} · {d.actor} ·{" "}
+                    Tick {d.tick} · {nameIn(w.agents, d.actor)} ·{" "}
                     {d.action === "invalid"
                       ? `no valid answer (${d.invalidReason?.replaceAll("_", " ") ?? "invalid"})`
                       : d.action.replaceAll("_", " ")}{" "}
@@ -1065,7 +1068,7 @@ export function Observatory({
                           onClick={() => setEventId(e.id)}
                         >
                           <span>
-                            Tick {e.tick} · {e.actor}
+                            Tick {e.tick} · {nameIn(w.agents, e.actor)}
                           </span>
                           <p>{e.detail}</p>
                         </button>
