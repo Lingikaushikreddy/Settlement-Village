@@ -39,7 +39,7 @@ Prefer a peaceful village? Choose **Restock supplies**. Prefer experiments? Open
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Cooperating residents** | Six agents bid for exclusive jobs using role suitability, distance and bounded experience. They replan when workplaces or resources change.  |
 | **Village building**      | Place, move and upgrade six building types. Manage two builders, production, storage and your treasury.                                      |
-| **Troops and battles**    | Recruit knights, archers and catapults. Deploy and focus attacks across three enemy strongholds.                                             |
+| **Troops and battles**    | Recruit Kavyas, Jhansis and catapults. Deploy and focus attacks across three enemy strongholds.                                              |
 | **Inspectable decisions** | Read current jobs, blocked work, spending limits, recent memories and the village action log.                                                |
 | **Council stories**       | Investigate four authored social chapters, inspect claims and evidence, and intervene with real treasury consequences.                       |
 | **Research and replay**   | Compare matched seeds, inspect historical evidence, export JSON/CSV reports and independently reproduce every recorded result.               |

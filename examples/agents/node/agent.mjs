@@ -5,7 +5,7 @@
 import { createServer } from "node:http";
 
 const SUSPICIOUS =
-  /override|ignore your|send rook|almost empty|buy my grain now|refuse jhansi|spoiled/i;
+  /override|ignore your|send rook|almost empty|buy my grain now|refuse his next offer|spoiled/i;
 
 export function decide(request) {
   const evidence = request.evidenceIds.slice(-1);

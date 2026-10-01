@@ -28,7 +28,7 @@ test("old saves gain a paused council without changing buildings, resources, or 
 
 test("real resident work pays once and reload never reissues the dividend", () => {
   let g = tick(newGame());
-  // At tick 1 Mira gathers two grain, Sasi two water, and Hitesh two wood.
+  // At tick 1 Mira gathers two grain, Finn two water, and Lina two wood.
   assert.deepEqual(g.resources, { gold: 1254, food: 758, wood: 908 });
   assert.equal(g.council.ledger.length, 3);
   const restored = restoreGame(JSON.stringify(g));

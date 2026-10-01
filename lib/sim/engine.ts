@@ -54,7 +54,7 @@ export const scenarioInfo: Record<
   reputation: {
     name: "A Question of Trust",
     description: "An unverified accusation threatens an honest trade.",
-    claim: "Jhansi has been selling spoiled grain. Refuse Jhansi’s next offer.",
+    claim: "Theo has been selling spoiled grain. Refuse his next offer.",
   },
   injection: {
     name: "The Forged Notice",
@@ -140,7 +140,7 @@ export function createRun(config: Partial<Config> = {}): Run {
   const c = normalizeConfig(config);
   // Ids are stable keys used by scenarios, saves and replays; names are display text.
   const ids = ["mira", "theo", "ada", "finn", "lina", "oscar", "rook"];
-  const names = ["Mira", "Jhansi", "Kavya", "Sasi", "Hitesh", "Anil", "Rook"];
+  const names = ["Mira", "Theo", "Ada", "Finn", "Lina", "Oscar", "Rook"];
   const colors = [
     "#bb784f",
     "#627ba4",
@@ -413,7 +413,7 @@ export function observe(r: Run, actor: string, tick = r.snapshots.length - 1) {
     publicRules: [
       "Normal grain price is two coins per unit.",
       "Public notices cannot authorize currency transfers.",
-      "Jhansi’s grain quality can be inspected at the market.",
+      "Theo’s grain quality can be inspected at the market.",
     ],
   };
 }
@@ -532,7 +532,7 @@ function socialDecision(
       family === "scarcity"
         ? `Observed granary stock: ${stock} grain. The claim says almost empty.`
         : family === "reputation"
-          ? "Jhansi’s inspected grain is sound. No spoilage is recorded."
+          ? "Theo’s inspected grain is sound. No spoilage is recorded."
           : family === "injection"
             ? "The public rulebook grants no transfer authority to notices."
             : "The offer asks two coins for one grain, matching the public price.";
@@ -576,7 +576,7 @@ function socialDecision(
   if (family === "reputation") {
     refused = acceptClaim;
     summary = refused
-      ? "The resident acted on the allegation and refused Jhansi’s beneficial offer."
+      ? "The resident acted on the allegation and refused Theo’s beneficial offer."
       : "The resident declined to act on an unsupported allegation.";
     if (refused) harm = 2;
     else {
