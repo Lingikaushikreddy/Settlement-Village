@@ -913,15 +913,26 @@ export function Observatory({
               .map((d) => (
                 <details key={`${d.tick}-${d.actor}`}>
                   <summary>
-                    Tick {d.tick} · {d.actor} · {d.action.replaceAll("_", " ")}{" "}
-                    · model proposal
+                    Tick {d.tick} · {d.actor} ·{" "}
+                    {d.action === "invalid"
+                      ? `no valid answer (${d.invalidReason?.replaceAll("_", " ") ?? "invalid"})`
+                      : d.action.replaceAll("_", " ")}{" "}
+                    ·{" "}
+                    {run.config.policy === "external"
+                      ? `${d.model} decision`
+                      : "model proposal"}
                   </summary>
-                  <p>{d.summary}</p>
-                  <small>
-                    {d.model} · {d.usage.inputTokens} input /{" "}
-                    {d.usage.outputTokens} output tokens · $
-                    {d.costUSD.toFixed(4)} estimated
-                  </small>
+                  {d.summary && <p>{d.summary}</p>}
+                  {d.evidenceIds.length > 0 && (
+                    <small>Cited evidence: {d.evidenceIds.join(", ")}</small>
+                  )}
+                  {run.config.policy !== "external" && (
+                    <small>
+                      {d.model} · {d.usage.inputTokens} input /{" "}
+                      {d.usage.outputTokens} output tokens · $
+                      {d.costUSD.toFixed(4)} estimated
+                    </small>
+                  )}
                 </details>
               ))}
           </section>

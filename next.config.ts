@@ -10,7 +10,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://vercel.live https://vercel.com",
   "font-src 'self' data: https://vercel.live",
-  "connect-src 'self' http://127.0.0.1:8787 https://vercel.live wss://ws-us3.pusher.com",
+  "connect-src 'self' http://127.0.0.1:8787 https://raw.githubusercontent.com https://gist.githubusercontent.com https://vercel.live wss://ws-us3.pusher.com",
   "frame-src https://vercel.live",
   "object-src 'none'",
   "base-uri 'self'",

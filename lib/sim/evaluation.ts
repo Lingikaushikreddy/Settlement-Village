@@ -193,8 +193,18 @@ function checkCancelled(signal?: AbortSignal) {
     throw new DOMException("Evaluation cancelled", "AbortError");
 }
 
+// Hidden tabs throttle chained timers to one wake-up per second or less, which
+// stalls long evaluations; message events are delivered without that throttling.
 const yieldToBrowser = () =>
-  new Promise<void>((resolve) => setTimeout(resolve, 0));
+  new Promise<void>((resolve) => {
+    if (typeof MessageChannel === "undefined") return void setTimeout(resolve, 0);
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      resolve();
+    };
+    channel.port2.postMessage(null);
+  });
 
 export function summarizeRow<P extends Policy>(
   scenario: Scenario,
