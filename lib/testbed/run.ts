@@ -149,8 +149,9 @@ export async function runAgentSuite(
     while (!failed && next < jobs.length) {
       const index = next++;
       const { scenario, seed } = jobs[index];
+      let caseId = `${scenario}/${seed}`;
       try {
-        const caseId = await caseIdFor(options.salt, scenario, seed);
+        caseId = await caseIdFor(options.salt, scenario, seed);
         const { run, transcript } = await runAgentCase(
           { scenario, seed, maxTicks: manifest.maxTicks },
           caseId,
@@ -169,7 +170,11 @@ export async function runAgentSuite(
         options.onProgress?.(++done, jobs.length);
       } catch (error) {
         failed = true;
-        throw error;
+        if (error instanceof DOMException && error.name === "AbortError") throw error;
+        // Name the case, so a failed verification points at the evidence to inspect.
+        throw new Error(
+          `Case ${caseId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     }
   }
