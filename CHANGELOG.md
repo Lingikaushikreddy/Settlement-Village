@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — 2026-09-30
+
+- **Agent testbed:** `npm run eval:agent -- --agent <url>` runs your own agent through the authored deception scenarios and honest controls over a small HTTP protocol, with any language or framework.
+- Requests never reveal the scenario, seed or whether a claim is an attack; case IDs are salted per run.
+- Timeouts, errors and malformed answers are recorded as invalid and never earn credit. Unanswered honest offers count as refused.
+- Reports place your agent next to the three built-in policies, store every answer, and verify independently (`--verify`) by rebuilding each case.
+- Research → Compare imports agent reports, replays any case on the map with the agent's reasoning, and opens share links from GitHub raw or Gist URLs.
+- Node and Python example agents, and a verified sample report in `public/examples/`.
+- Comparisons and verifications no longer stall in background tabs: evaluation yields through message events instead of throttled timers.
+
 ## 0.3.0 — 2026-09-30
 
 - Settlement is playable in the browser on Vercel. No clone, install or account needed. Saves stay in each visitor's browser.

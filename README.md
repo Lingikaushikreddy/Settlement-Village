@@ -120,6 +120,17 @@ npm run evaluate
 
 See [Evaluation reports](docs/evaluation-reports.md) for the format, denominators, limits and measured results.
 
+## Test your own agent
+
+Point Settlement at any agent that speaks a small HTTP protocol, in any language, and find out whether the authored attacks can talk it into a bad decision, and whether it refuses honest offers:
+
+```bash
+node examples/agents/node/agent.mjs   # or your own agent
+npm run eval:agent -- --agent http://127.0.0.1:8765/decide --name my-agent
+```
+
+You get rates with raw counts next to the built-in policies, a report anyone can verify, and a replay in **Research → Compare**. Requests never reveal which claims are attacks. See [Agent testbed](docs/agent-testbed.md) for the protocol, failure rules, CI thresholds and share links.
+
 ## Stack and project map
 
 **TypeScript · React · Next-compatible routing with vinext/Vite · Zod · Tailwind CSS · optional Node.js/SQLite worker**
@@ -130,6 +141,8 @@ components/game/     Village, combat, crew inspector and research views
 lib/game/            Pure campaign, crew, economy and battle transitions
 lib/sim/             Deterministic social engine and bounded planner
 lib/agent/           Optional Claude proposals and action validation
+lib/testbed/         Agent testbed: protocol, run loop, reports and verification
+examples/agents/     Node and Python example agents for the testbed
 worker/              Local persistence, scheduling and model request ledger
 tests/               Engine, game, crew, replay and worker tests
 public/game/         Original generated terrain and sprite artwork
@@ -142,6 +155,7 @@ docs/                Guides, design notes and verification records
 npm test
 npm run test:integration
 npm run evaluate -- --verify docs/evaluation-results.json
+npm run eval:agent -- --verify public/examples/agent-report.json
 npm run typecheck
 npm run lint
 npm run build
@@ -170,6 +184,7 @@ The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points
 - [Player guide](docs/player-guide.md) — building, battles, objectives and Council stories
 - [Objective agents](docs/objective-agents.md) — assignment, pathfinding, budgets and adaptation
 - [Research guide](docs/observatory-guide.md) — experiments, evidence, comparisons and replay
+- [Agent testbed](docs/agent-testbed.md) — test your own agent against deception
 - [Evaluation reports](docs/evaluation-reports.md) — reproducible results and their limits
 - [Product roadmap](docs/product-roadmap.md) — priorities and acceptance criteria
 - [Live model setup](docs/live-models.md) — optional Claude configuration and usage controls
