@@ -52,11 +52,18 @@ import {
   supportedEngine,
   metrics,
   policyInfo,
+  policyName,
   runToEnd,
   scenarioInfo,
   verifyReplay,
 } from "@/lib/sim/engine";
-import type { Run, Scenario, Policy, Intervention } from "@/lib/sim/types";
+import type {
+  BuiltInPolicy,
+  Run,
+  Scenario,
+  Policy,
+  Intervention,
+} from "@/lib/sim/types";
 const STORAGE = "settlement-library-v1";
 const workerOrigin = () =>
   ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
@@ -118,7 +125,7 @@ export function Observatory({
     [notice, setNotice] = useState(""),
     [library, setLibrary] = useState<Run[]>([]),
     [draftScenario, setDraftScenario] = useState<Scenario>("scarcity"),
-    [draftPolicy, setDraftPolicy] = useState<Policy>("baseline"),
+    [draftPolicy, setDraftPolicy] = useState<BuiltInPolicy>("baseline"),
     [draftSeed, setDraftSeed] = useState("42"),
     [queued, setQueued] = useState<Intervention>(),
     [workerAvailable, setWorkerAvailable] = useState(false),
@@ -652,7 +659,7 @@ export function Observatory({
               <span>{scenarioInfo[run.config.scenario].description}</span>
             </div>
             <span className="policy-label">
-              {policyInfo[run.config.policy].name}
+              {policyName(run.config.policy, run.socialDecisions?.[0]?.model)}
             </span>
             <button
               className="text-button"
@@ -1191,7 +1198,7 @@ export function Observatory({
                 <div>
                   <h3>{r.name}</h3>
                   <p>
-                    Seed {r.config.seed} · {policyInfo[r.config.policy].name} ·{" "}
+                    Seed {r.config.seed} · {policyName(r.config.policy)} ·{" "}
                     {r.snapshots.length - 1} ticks
                   </p>
                 </div>
@@ -1248,7 +1255,7 @@ export function Observatory({
             <label>Resident policy</label>
             <Select
               value={draftPolicy}
-              onValueChange={(v) => setDraftPolicy(v as Policy)}
+              onValueChange={(v) => setDraftPolicy(v as BuiltInPolicy)}
             >
               <SelectTrigger aria-label="New run policy">
                 <SelectValue />

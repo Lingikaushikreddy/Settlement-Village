@@ -7,7 +7,7 @@ import {
   runToEnd,
   ENGINE_VERSION,
 } from "../sim/engine.ts";
-import type { Run, Policy, Scenario } from "../sim/types.ts";
+import type { Run, BuiltInPolicy, Scenario } from "../sim/types.ts";
 import type { Game, Resources, BuildingKind } from "./model.ts";
 
 export const CHAPTER_TICKS = 32;
@@ -107,7 +107,7 @@ export type CouncilState = z.infer<typeof councilSaveSchema>;
 export type CouncilEntry = z.infer<typeof ledgerSchema>;
 export type CouncilCommand =
   | { type: "play" | "pause" | "step" | "next" }
-  | { type: "policy"; policy: Policy }
+  | { type: "policy"; policy: BuiltInPolicy }
   | { type: "intervene"; action: "publish-stock" | "add-grain" };
 
 export function newCouncil(): CouncilState {

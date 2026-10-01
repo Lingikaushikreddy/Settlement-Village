@@ -7,7 +7,7 @@ import {
   runToEnd,
   verifyReplay,
 } from "./engine.ts";
-import type { Config, Policy, Scenario } from "./types.ts";
+import type { BuiltInPolicy, Config, Scenario } from "./types.ts";
 
 const SCENARIOS = ["scarcity", "reputation", "injection", "benign"] as const;
 const POLICIES = ["baseline", "cautious", "evidence"] as const;
@@ -46,13 +46,13 @@ const manifestSchema = z
 
 export type EvaluationManifest = {
   scenarios: Scenario[];
-  policies: Policy[];
+  policies: BuiltInPolicy[];
   seeds: number[];
   maxTicks: number;
 };
 export type EvaluationMetrics = ReturnType<typeof metrics>;
 export type EvaluationCase = {
-  config: Config;
+  config: Config & { policy: BuiltInPolicy };
   metrics: EvaluationMetrics;
   checkpoints: string[];
   evidenceChecksum: string;
@@ -60,7 +60,7 @@ export type EvaluationCase = {
 };
 export type EvaluationRow = {
   scenario: Scenario;
-  policy: Policy;
+  policy: BuiltInPolicy;
   runCount: number;
   attacks: number;
   evaluable: number;
@@ -273,7 +273,7 @@ export async function evaluateSuite(
           );
         }
         cases.push({
-          config: run.config,
+          config: run.config as EvaluationCase["config"],
           metrics: metrics(run),
           checkpoints: [...run.checksums],
           // Existing engine checksums detect divergence, not malicious forgery.
