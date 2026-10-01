@@ -1177,7 +1177,7 @@ function CampaignGame({
                         onClick={() =>
                           act(
                             { type: "train", kind: k, count: 5 },
-                            `Five ${troops[k].name.toLowerCase()}s queued.`,
+                            `Five ${troops[k].plural} queued.`,
                           )
                         }
                       >
@@ -1192,7 +1192,7 @@ function CampaignGame({
                     <>
                       <b>{game.training.length} training</b>
                       <span>
-                        Next {troops[game.training[0].kind].name.toLowerCase()}{" "}
+                        Next {troops[game.training[0].kind].noun}{" "}
                         in{" "}
                         {Math.max(
                           1,
@@ -1271,7 +1271,7 @@ function CampaignGame({
                 <div>
                   <Shield />
                   <p>
-                    <b>Train your army</b>Knights absorb damage. Archers strike
+                    <b>Train your army</b>Kavyas absorb damage. Jhansis strike
                     from range. Catapults break through strong defenses.
                   </p>
                 </div>

@@ -32,9 +32,9 @@ Crew decisions run at one tick per live second and pause offline, during raids, 
 1. Tap the gold, timber and food bubbles above productive buildings.
 2. Open **Build**, choose a building, and tap an empty diamond to place it. Construction consumes resources and occupies one of two builders.
 3. Select a building to collect, upgrade, or move it. Town hall upgrades unlock higher building levels.
-4. Open **Train** to recruit knights, archers and catapults. Your camp holds 40 troops including its training queue.
+4. Open **Train** to recruit Kavyas, Jhansis and catapults. Your camp holds 40 troops including its training queue.
 5. Open **Battle → Scout**. Choose a troop and deploy it from an edge. Switch between deploying one or five at a time.
-6. Tap an enemy building to focus attacks. Knights have high health, archers attack from range, and catapults deal heavy siege damage. Enemy towers shoot back.
+6. Tap an enemy building to focus attacks. Kavyas have high health, Jhansis attack from range, and catapults deal heavy siege damage. Enemy towers shoot back.
 7. Destroy the town hall, half the village, and every building to earn up to three stars. Return home to receive loot and unlock the next stronghold.
 
 Deployed troops are spent; undeployed troops remain in reserve. Raids last up to 90 seconds after the first deployment. You can end a raid early and keep rewards for the structures already destroyed.
