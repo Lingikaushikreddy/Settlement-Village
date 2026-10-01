@@ -2,6 +2,8 @@
 
 Date: 2026-09-30 · Roadmap item: Priority 5, "Hosted demonstration"
 
+> **Revision (2026-09-30): the owner chose Vercel over Cloudflare Workers.** Standard `next build` compiles the app without code changes, so Vercel builds it natively. Vercel's Git integration replaces the planned `deploy.yml`, and `production-smoke.yml` runs the smoke test on each successful production `deployment_status`. Headers are set in `next.config.ts`; the preview image uses Next's `app/opengraph-image.jpg` convention, with `metadataBase` taken from `VERCEL_PROJECT_PRODUCTION_URL`. The vinext/Cloudflare build is kept as `build:cloudflare`. Sections below that mention Wrangler, Workers secrets or `_headers` describe the superseded plan.
+
 ## Goal
 
 Anyone with a link can play Settlement in a browser over HTTPS, without cloning, installing Node or creating an account. A recruiter, player or contributor should reach a working village within one click from the README or a shared link.

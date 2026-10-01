@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   Sprout,
@@ -59,6 +60,9 @@ import type { Run, Scenario, Policy, Intervention } from "@/lib/sim/types";
 const STORAGE = "settlement-library-v1";
 const workerOrigin = () =>
   ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
+const noSubscription = () => () => {};
+const RUN_LOCALLY =
+  "https://github.com/Lingikaushikreddy/Settlement-Village#run-locally";
 const defaultRun = () =>
   runToEnd({
     seed: 42,
@@ -121,6 +125,11 @@ export function Observatory({
     [workerRuns, setWorkerRuns] = useState<
       { id: string; name: string; tick: number; running: boolean }[]
     >([]);
+  const hosted = useSyncExternalStore(
+    noSubscription,
+    () => !workerOrigin(),
+    () => false,
+  );
   const selected = selectedResident,
     select = onSelected,
     view = section,
@@ -841,7 +850,20 @@ export function Observatory({
                 <strong>Live model decisions</strong>
                 <small>
                   {provider?.reason ??
-                    "Free policies are active. Start the optional local worker to configure model decisions."}
+                    (hosted ? (
+                      <>
+                        You&apos;re playing the hosted demo. Free simulations,
+                        comparisons and replays run here in your browser.
+                        Live-model experiments need the optional local worker
+                        — see{" "}
+                        <a href={RUN_LOCALLY} target="_blank" rel="noreferrer">
+                          Run locally
+                        </a>
+                        .
+                      </>
+                    ) : (
+                      "Free policies are active. Start the optional local worker to configure model decisions."
+                    ))}
                 </small>
               </span>
             </div>
