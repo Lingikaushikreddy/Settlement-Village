@@ -40,16 +40,10 @@ import { policyInfo } from "@/lib/sim/engine";
 import type { Agent, Policy, Run } from "@/lib/sim/types";
 import type { Game } from "@/lib/game/model";
 import "./council.css";
+import { ResidentAvatar } from "./resident-avatar";
 
 function Face({ agent, small = false }: { agent: Agent; small?: boolean }) {
-  return (
-    <span
-      className={`resident-face ${small ? "small" : ""}`}
-      style={{ "--resident-color": agent.color } as React.CSSProperties}
-    >
-      {agent.name[0]}
-    </span>
-  );
+  return <ResidentAvatar id={agent.id} size={small ? 32 : 48} />;
 }
 function Change({ entry }: { entry: CouncilEntry }) {
   return (

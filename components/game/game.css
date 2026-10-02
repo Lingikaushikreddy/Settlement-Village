@@ -1019,35 +1019,35 @@
   }
 }
 .game-dialog {
-  font-family: "Trebuchet MS", Arial, sans-serif !important;
-  background: linear-gradient(145deg, #243e55, #152a3e) !important;
-  border: 1px solid #a9946380 !important;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  background: linear-gradient(145deg, #243e55, #152a3e);
+  border: 1px solid #a9946380;
   box-shadow:
     0 10px 0 #101d2b7a,
-    0 25px 100px #061523cc !important;
-  color: #f9efd6 !important;
-  border-radius: 22px !important;
-  padding: 30px !important;
-  max-width: 800px !important;
-  gap: 12px !important;
+    0 25px 100px #061523cc;
+  color: #f9efd6;
+  border-radius: 22px;
+  padding: 30px;
+  max-width: 800px;
+  gap: 12px;
   max-height: 90dvh;
   overflow-y: auto;
 }
 .game-dialog > button {
-  color: #e5d5aa !important;
+  color: #e5d5aa;
 }
 .game-dialog-title {
-  font-family: inherit !important;
-  color: #fff1cd !important;
-  font-size: 29px !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.8px !important;
-  margin: 0 !important;
+  font-family: inherit;
+  color: #fff1cd;
+  font-size: 29px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  margin: 0;
 }
 .game-dialog [data-slot="dialog-description"] {
-  color: #b9ccc6 !important;
-  line-height: 1.6 !important;
-  font-size: 12px !important;
+  color: #b9ccc6;
+  line-height: 1.6;
+  font-size: 12px;
 }
 .build-shop {
   display: grid;
@@ -2202,4 +2202,8 @@
     bottom: 122px;
   }
 }
-.battle-unit{transition:left .2s linear,top .2s linear}
+.battle-unit {
+  transition:
+    left 0.2s linear,
+    top 0.2s linear;
+}

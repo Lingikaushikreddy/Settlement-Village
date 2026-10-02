@@ -2,7 +2,7 @@
 
 Set the objective. Watch your residents organize the work. Lead raids beyond the treeline.
 
-Settlement is a single-player village strategy game with an original illustrated isometric world and an integrated, inspectable resident simulation. Six residents coordinate collection and recruitment toward your objectives, move through the playable village, and adapt when work becomes unavailable. Their actions use the same treasury, buildings and army as manual play. Council stories and the investigation lab remain in the same app and share its map. `/lab` redirects to Research.
+Settlement is a single-player village strategy game with an original illustrated isometric world and an integrated, inspectable resident simulation. Six residents coordinate collection, construction, upgrades and recruitment toward your objectives, move through the playable village, and adapt when work becomes unavailable. Their actions use the same treasury, buildings and army as manual play. Council stories and the investigation lab remain in the same app and share its map. `/lab` redirects to Research.
 
 ## Play locally
 
@@ -17,13 +17,19 @@ Open `http://localhost:5173`. The village game needs no API key, database, or pa
 
 ## Give the village an objective
 
-1. In **Village orders**, choose **Prepare for a raid**. The board shows the maximum recruitment budget before starting. The goal is 30 ready troops and reserves of 1,200 gold, 800 timber and 600 food.
-2. Watch residents claim jobs, walk to workplaces, collect existing building stores and recruit missing troops. Production and training take real game time. No objective-completion reward creates extra resources.
-3. Open **View plan** or select a resident. **Resident** explains their current job, route plan, experience and memories. **Shared jobs** shows owners, blocked work, reserves and actual spending. **Village log** records actions and handoffs.
-4. Give a resident a **20-tick rest** to see available residents take over their work. Moved buildings, blocked routes, construction, manual collection and recruitment cause replanning.
-5. When preparations finish, choose **Scout a raid**. You still choose when to attack and command the battle.
+Choose one of three objectives in **Village orders**:
 
-For a peaceful goal, choose **Restock supplies** to add at least 300 of each resource to the starting treasury, with no spending. Collection transfers an entire building store, so totals can exceed the target. Only one objective runs at a time. Pause or cancel it from the inspector; completed work remains in your village.
+- **Grow the village:** review a plan to build one additional farm and raise it to level 3. Residents also upgrade the Town hall to level 2 if needed.
+- **Prepare for a raid:** ready 30 troops and treasury reserves of 1,200 gold, 800 timber and 600 food. The displayed recruitment budget is the crew's maximum spending allowance.
+- **Restock supplies:** collect at least 300 more of each resource than the starting treasury balance. This objective never spends resources.
+
+For village growth, choose **Grow the village → Start village development** after reviewing the plan. A fresh village authorizes **1,560 gold and 1,240 timber**, with no food spending. Every crew payment keeps at least **250 gold, 200 timber and 150 food** in reserve. A Town hall already at level 2 needs no prerequisite upgrade; an upgrade you already paid for contributes no new cost. The preview follows current village conditions until you start, then the plan and maximum budget stay fixed.
+
+The new farm must finish construction before its level-2 upgrade. Its level-3 upgrade also needs the Town hall prerequisite. Independent work can share the two builders. Residents wait visibly for supplies, a free builder or a reachable site. They use real building stores and commands; starting an objective does not grant resources. If you place an additional farm or finish a planned upgrade yourself, the crew adopts that progress and avoids paying for it again. If you occupy a proposed site, residents choose another suitable location.
+
+Open **View plan** or select a resident. **Resident** explains the current job, route, practice points and memories. **Village plan** shows development steps, dependencies, owners, waiting reasons, reserves and actual spending. **Village log** records actions and handoffs. A selected resident's route reflects the same walkable path used for work.
+
+Give a working resident a **20-tick rest** to release their job for someone else. Only one objective runs at a time. Pause or cancel it from the inspector; paid work and construction already underway remain in the village. Cancellation does not refund spending. Collection transfers a whole building store, so balances may exceed targets. After a raid objective finishes, **Scout a raid** lets you decide when and where to attack.
 
 Crew decisions run at one tick per live second and pause offline, during raids, or when you enter Council or Research. Restored saves pause the crew until you resume. Production and training timers continue. This is free, deterministic game AI with job bidding, pathfinding and bounded experience—not language-model calls or neural training. See [Objective agents](objective-agents.md).
 
@@ -31,7 +37,7 @@ Crew decisions run at one tick per live second and pause offline, during raids, 
 
 1. Tap the gold, timber and food bubbles above productive buildings.
 2. Open **Build**, choose a building, and tap an empty diamond to place it. Construction consumes resources and occupies one of two builders.
-3. Select a building to collect, upgrade, or move it. Town hall upgrades unlock higher building levels.
+3. Select a building to collect, upgrade, or move it. Town hall upgrades unlock higher building levels. Build, upgrade and training controls show why an action is unavailable, including resource shortages, busy builders and a full army camp.
 4. Open **Train** to recruit knights, archers and catapults. Your camp holds 40 troops including its training queue.
 5. Open **Battle → Scout**. Choose a troop and deploy it from an edge. Switch between deploying one or five at a time.
 6. Tap an enemy building to focus attacks. Knights have high health, archers attack from range, and catapults deal heavy siege damage. Enemy towers shoot back.
@@ -70,7 +76,9 @@ Research uses the same map. Its caption identifies the viewed run and tick. Ente
 
 ## Progress and controls
 
-Drag empty ground to pan. Use the zoom and center buttons to adjust the camera. Collapse the chapter panel for a clearer view. Sounds are optional and start muted.
+Drag empty ground to pan. **Zoom in**, **Zoom out** and **Center village** adjust the camera; centering fits the village into the available map area. With the map focused, use the **arrow keys** to pan, **+ / −** to zoom and **Home** to fit the village. Collapse Village orders or the chapter panel for more map space. Sounds are optional and start muted.
+
+Open **Village journal** for your four milestone goals, trophies, current production rates and stored resources. Completed milestones offer a one-time gold reward to claim; these are separate from the crew's objective budget. Select a resident portrait to open their inspector. **Open the field guide** explains building, objectives and expeditions and gives access to save import/export. The village crest also opens this guide.
 
 The village saves player actions and imports immediately, and ongoing simulation every two seconds. It also attempts to save when the page becomes hidden or closes. A forced browser termination can still lose the most recent simulation interval. Production and training progress while you are away, with offline advancement capped at eight hours. Raids resume from their last saved state. Use the village crest to open the guide and export or import a JSON save.
 
@@ -85,15 +93,16 @@ If a save cannot be loaded, Settlement preserves it and offers **Export original
 - Three troop types with different health, movement, attack range and damage.
 - Three enemy strongholds, deterministic combat, focus targeting, tower attacks, troop deaths, destruction, stars, and rewards credited once.
 - Village goals, campaign unlocks and trophies.
-- Two player objectives, six cooperating residents, exclusive job claims, walkable routes, real collection and recruitment, spending limits, rest handoffs, bounded experience, saved memories and a visible action log.
+- Three player objectives, six cooperating residents, exclusive job claims, walkable routes, real collection, construction, upgrades and recruitment, frozen development plans, spending limits, protected reserves, rest handoffs, bounded experience, saved memories and a visible action log.
 - Six autonomous residents, one authored Chaos agent, named map interactions, four social chapters, bounded planning, private evidence inspection, historical playback, chief interventions, a treasury audit trail, and matched policy comparisons.
-- Original generated terrain and a transparent sprite atlas, animated troop movement, attack effects, responsive controls and reduced-motion support.
+- Original generated terrain, building/troop artwork and six distinct civilian identities shared across map and inspectors; movement, attack and construction cues, responsive controls and reduced-motion support.
+- A village journal with milestones, production summaries and resident shortcuts, plus pointer and keyboard camera controls.
 
-This is a playable single-player browser release. It does not yet include multiplayer clans, PvP matchmaking, enemy attacks on your home village, a server-authoritative economy, or a full commercial content/live-operations system. The home watchtower is currently a village building; its combat behavior is used by enemy towers during raids. Building upgrades increase production and progression; this version reuses each building's base artwork across levels.
+This is a playable single-player browser release. It does not yet include multiplayer clans, PvP matchmaking, enemy attacks on your home village, a server-authoritative economy, or a full commercial content/live-operations system. The home watchtower is currently a village building; its combat behavior is used by enemy towers during raids. Building upgrades increase production and progression; level and construction markers identify their current state.
 
 ## Architecture and verification
 
-`lib/game` contains pure economy, battle, crew and council transitions. The crew planner in `crew.ts` uses the same validated actions in `commands.ts` as manual play. Its optional versioned save state preserves objectives, positions, claims, spending, experience and memories; loading pauses decisions. The council adapter reuses the free policy path in `lib/sim` and reconstructs versioned scenario runs from compact saved inputs, with a bounded run cache. It does not store full simulation snapshots inside every game tick. Version-2 saves without council or crew data preserve previous progress. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
+`lib/game` contains pure economy, battle, crew and council transitions. The crew planner in `crew.ts` uses the same validated actions in `commands.ts` as manual play. Its optional versioned save state preserves objectives, development dependencies, positions, claims, spending, experience and memories; loading pauses decisions. The council adapter reuses the free policy path in `lib/sim` and reconstructs versioned scenario runs from compact saved inputs, with a bounded run cache. It does not store full simulation snapshots inside every game tick. Version-2 saves without council or crew data preserve previous progress. `components/game` renders the interactive village and game controls. All art used by the game is stored in `public/game`.
 
 ```bash
 npm test
@@ -102,14 +111,14 @@ npm run lint
 npm run build
 ```
 
-The game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. Crew tests cover real objective completion, empty-treasury recovery, exclusive claims, rest handoffs, blocked workplaces, alternative barracks, spending limits, manual interference, save validation and deterministic continuation. Council tests additionally cover migration, production dividends, ready workplaces, incident pauses, paid interventions, replay-safe reloads, fair reputation trades, actual treasury losses, private historical evidence, read-only comparisons, chapter progression and invalid saves. The original engine and worker tests remain in the suite.
+The game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. Crew tests cover real objective completion, empty-treasury recovery, exclusive claims, rest handoffs, blocked workplaces, alternative barracks, spending limits, manual interference, save validation and deterministic continuation. Development tests additionally cover prerequisite readiness, actual construction timers, protected reserves, occupied builders, unreachable or changed construction sites, unique building IDs, manual work adoption and preserved progress during subsequent upgrades. Council tests additionally cover migration, production dividends, ready workplaces, incident pauses, paid interventions, replay-safe reloads, fair reputation trades, actual treasury losses, private historical evidence, read-only comparisons, chapter progression and invalid saves. The original engine and worker tests remain in the suite. See [v0.3.0 verification](village-v3-verification.md) for the release checks.
 
 The village council runs locally. The optional SQLite worker powers durable research experiments inside the same interface; campaign saves remain browser-local. Claude decisions are connected to explicit worker experiment steps, disabled by default. Model actions use actor-visible evidence, validated actions, persisted responses and usage, budget reservations, idempotent requests, and replay without additional provider calls. They currently affect experimental worlds, not campaign currency. See [Research guide](observatory-guide.md) and [Live model setup](live-models.md).
 
 ## Art provenance
 
-The terrain and sprite atlas were generated with the built-in image-generation tool for this project, then copied into `public/game/terrain.png` and `public/game/sprites.png`. They are original assets, not extracted game assets. Prompts specified colorful orthographic isometric terrain with an empty buildable clearing, and a transparent 3 × 3 atlas of six buildings and three units. No external franchise logos or character designs were requested. The well and market props are project-authored SVG artwork. Named residents reuse the existing character atlas with identifying labels; distinct animated civilian art is future work.
+The terrain and sprite atlas were generated with the built-in image-generation tool for this project, then copied into `public/game/terrain.png` and `public/game/sprites.png`. They are original assets, not extracted game assets. Prompts specified colorful orthographic isometric terrain with an empty buildable clearing, and a transparent 3 × 3 atlas of six buildings and three units. No external franchise logos or character designs were requested. The well and market props are project-authored SVG artwork. Six distinct civilian identities use the project's `residents-v3.png` artwork across the map, crew inspector, Council and village journal. The illustrated village vista is also project artwork. See [Art provenance](art-provenance.md) for the generated asset details.
 
 ## Current simulation limits
 
-The objective crew uses deterministic policies and a bounded experience score, not neural learning. It supports collection and recruitment for two preset objectives; natural-language objectives, autonomous construction and agent-led combat are not implemented. The council has fixed initial trust tendencies, authored Rook claims and four finite scenarios. Crew memories and Council evidence are separate records, identified by their respective views; this is not an open-ended generative society. Persistent relationships across chapters, automatic model-driven campaign play, public immutable replay links, production multi-user operation, and the complete research-inspired thesis remain outside this release. Optional model-assisted interpretation is available only for explicit steps in configured worker experiments.
+The objective crew uses deterministic policies and a bounded experience score, not neural learning. It supports three preset objectives, including bounded autonomous construction and upgrades for an additional level-three farm. Arbitrary natural-language goals, unrestricted construction planning and agent-led combat are not implemented. The council has fixed initial trust tendencies, authored Rook claims and four finite scenarios. Crew memories and Council evidence are separate records, identified by their respective views; this is not an open-ended generative society. Persistent relationships across chapters, automatic model-driven campaign play, public immutable replay links, production multi-user operation, and the complete research-inspired thesis remain outside this release. Optional model-assisted interpretation is available only for explicit steps in configured worker experiments.

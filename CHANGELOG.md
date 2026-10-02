@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 — 2026-10-02
+
+- **Grow the village:** residents build an additional farm, upgrade it to level 3, and complete its Town hall prerequisite through the same validated commands used by players.
+- Reviewable construction steps, dependencies and costs before starting. The plan and spending ceiling then freeze; crew payments preserve 250 gold, 200 timber and 150 food in reserve.
+- Construction waits for supplies, reachable sites and one of two builders. Manual construction and upgrades satisfy planned work without duplicate payment; occupied sites trigger replanning. Completion waits for the actual timers.
+- Saved plans retain decisions and spending, then restore paused. Existing version-2 campaigns and older crew objectives remain compatible.
+- Six distinct illustrated civilian identities shared across the village, resident inspectors, Council and journal; clearer job, route and construction feedback on the map.
+- A redesigned strategy interface with compact resource controls, a village journal, production summaries, resident shortcuts and claimable milestone rewards.
+- A camera that fits the usable map area, bounded panning, keyboard movement/zoom/fit controls and responsive layouts.
+- Build, training and upgrade controls explain resource, builder and capacity constraints before an action is attempted.
+
+Campaign policies remain free and deterministic. The new construction objective is a preset plan; arbitrary natural-language goals, model-controlled campaigns, multiplayer and hosted operation are outside this release.
+
 ## 0.2.0 — 2026-09-17
 
 - One shared evaluator powers browser comparisons and the command line, with bounded seed/tick controls, progress and cancellation.
@@ -25,4 +38,4 @@ First public release of Settlement's playable single-player village and agent in
 - Responsive desktop and phone controls, browser-local campaign saves and portable exports.
 - 78 gameplay/engine/worker tests plus a separate HTTP integration flow.
 
-Campaign agents use deterministic policies. Multiplayer, arbitrary natural-language goals, autonomous construction and model-driven campaign decisions are not included.
+At the 0.1.0 release, campaign agents used deterministic policies. Multiplayer, arbitrary natural-language goals, autonomous construction and model-driven campaign decisions were not included.

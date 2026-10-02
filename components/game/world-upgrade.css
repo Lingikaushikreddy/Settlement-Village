@@ -1,0 +1,131 @@
+.world-upgrade {
+  background: #6f963e url("/game/terrain.png") center / cover;
+}
+.world-upgrade:focus-visible {
+  outline: 3px solid #f3d684;
+  outline-offset: -5px;
+}
+.world-upgrade .terrain-art {
+  transform-origin: center;
+}
+.world-upgrade .camera-controls {
+  gap: 5px;
+}
+.world-upgrade .camera-controls button {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #19372fed;
+  border-color: #b9c6a674;
+}
+.world-upgrade .camera-controls button:focus-visible {
+  outline-color: #ffdf85;
+}
+.world-upgrade .camera-controls button:disabled {
+  opacity: 0.55;
+}
+.world-upgrade .camera-hint {
+  font-size: 12px;
+  background: #173d32c9;
+  border-radius: 6px;
+  padding: 6px 9px;
+  margin-left: 5px;
+}
+.world-upgrade .sim-resident > .resident-avatar {
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  transform: translateX(-50%);
+}
+.world-upgrade .sim-resident::before {
+  left: 0;
+  right: 0;
+  bottom: 1px;
+}
+.world-upgrade .sim-resident.selected::before {
+  outline: 3px solid #f7d473;
+  outline-offset: 2px;
+}
+.world-upgrade .sim-resident > b {
+  font-size: 12px;
+  line-height: 1.25;
+  padding: 3px 8px;
+  bottom: -20px;
+  color: #fff5d9;
+  border-color: #c5c6a77d;
+  background: #1b3c32ee;
+}
+.world-upgrade .world-construction {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  min-width: 132px;
+  padding: 8px 10px;
+  background: #203e47f5;
+  border: 1px solid #b8cfc0;
+  border-radius: 9px;
+  box-shadow:
+    0 3px 0 #15312c,
+    0 5px 15px #162d3140;
+}
+.world-construction-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.world-construction-label b {
+  margin-left: auto;
+  padding-left: 8px;
+  color: #f7d77a;
+}
+.world-upgrade .world-construction svg {
+  animation: none;
+}
+.world-construction-progress {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #102d32;
+}
+.world-construction-progress i {
+  display: block;
+  height: 100%;
+  background: #e8c976;
+  border-radius: inherit;
+}
+.world-upgrade .crew-route {
+  z-index: 14;
+}
+.world-route-underlay {
+  fill: none;
+  stroke: #173d3299;
+  stroke-width: 9;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.world-route-line {
+  fill: none;
+  stroke: #f9e7ab;
+  stroke-width: 4;
+  stroke-dasharray: 6 8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+@media (max-width: 760px) {
+  .world-upgrade .camera-hint {
+    display: none;
+  }
+  .world-upgrade .camera-controls {
+    gap: 4px;
+  }
+  .world-upgrade .camera-controls button {
+    width: 44px;
+    height: 44px;
+  }
+}
+/* Shade viewport edges, never the smaller transformed map rectangle. */
+.world-upgrade > .world-vignette {
+  z-index: 1;
+}

@@ -14,10 +14,13 @@ import {
 } from "lucide-react";
 import { buildings, troops } from "@/lib/game/catalog";
 import { councilLocations } from "@/lib/game/council-map";
+import { crewRoute } from "@/lib/game/crew";
 import type { CrewAgent } from "@/lib/game/crew-types";
 import type { Agent } from "@/lib/sim/types";
 import { zones } from "@/lib/game/battle";
 import type { Game, BuildingKind } from "@/lib/game/model";
+import { ResidentAvatar } from "./resident-avatar";
+import "./world-upgrade.css";
 export function Sprite({
   index,
   className = "",
@@ -73,21 +76,89 @@ export function Scene({
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(
     null,
   );
-  const [size, setSize] = useState({ w: 1440, h: 900 }),
+  const [size, setSize] = useState({
+      w: 1440,
+      h: 900,
+      top: 150,
+      bottom: 160,
+      left: 24,
+      right: 24,
+    }),
     [camera, setCamera] = useState({ x: 0, y: 0, z: 1 });
+  const battle = game.battle;
+  const isBattle = !!battle;
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
-    const observer = new ResizeObserver(([r]) =>
-      setSize({ w: r.contentRect.width, h: r.contentRect.height }),
-    );
+    const measure = () => {
+      const { width: w, height: h } = el.getBoundingClientRect();
+      const styles = getComputedStyle(el);
+      const margin = (side: string, fallback: number) => {
+        const value = Number.parseFloat(
+          styles.getPropertyValue(`--world-safe-${side}`),
+        );
+        return Number.isFinite(value) ? value : fallback;
+      };
+      const compact = w <= 760;
+      setSize({
+        w,
+        h,
+        top: margin("top", readOnly ? 45 : compact ? 172 : 150),
+        bottom: margin("bottom", readOnly ? 38 : compact ? 148 : 160),
+        left: margin("left", compact ? 20 : 30),
+        right: margin("right", compact ? 20 : 30),
+      });
+    };
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
+    measure();
     return () => observer.disconnect();
-  }, []);
-  const scale = Math.max(size.w / 1536, size.h / 1024) * camera.z;
-  const battle = game.battle;
+  }, [readOnly, placing, isBattle]);
   const locations = councilLocations(game);
   const village = battle ? battle.buildings : game.buildings;
+  const worldPoints = placing
+    ? [point(0, 0), point(0, 8), point(8, 0), point(8, 8)]
+    : [
+        ...village.map((b) => point(b.x, b.y)),
+        ...(battle
+          ? Object.values(zones).map((p) => point(p.x, p.y))
+          : [
+              point(locations.market.x, locations.market.y),
+              point(locations.well.x, locations.well.y),
+            ]),
+      ];
+  const bounds = {
+    left: Math.min(...worldPoints.map((p) => p.x)) - 115,
+    right: Math.max(...worldPoints.map((p) => p.x)) + 115,
+    top: Math.min(...worldPoints.map((p) => p.y)) - 230,
+    bottom: Math.max(...worldPoints.map((p) => p.y)) + 65,
+  };
+  const fit = Math.min(
+    1.25,
+    Math.max(160, size.w - size.left - size.right) /
+      (bounds.right - bounds.left),
+    Math.max(120, size.h - size.top - size.bottom) /
+      (bounds.bottom - bounds.top),
+  );
+  const scale = fit * camera.z;
+  const center = {
+    x: (bounds.left + bounds.right) / 2,
+    y: (bounds.top + bounds.bottom) / 2,
+  };
+  const offset = {
+    x: (768 - center.x) * scale + (size.left - size.right) / 2 + camera.x,
+    y: (512 - center.y) * scale + (size.top - size.bottom) / 2 + camera.y,
+  };
+  const panLimit = {
+    x: Math.max(size.w / 2, 700 * scale),
+    y: Math.max(size.h / 2, 500 * scale),
+  };
+  const zoom = (change: number) =>
+    setCamera((c) => ({
+      ...c,
+      z: Math.max(0.65, Math.min(2.5, c.z + change)),
+    }));
+  const resetCamera = () => setCamera({ x: 0, y: 0, z: 1 });
   const pathPairs = battle
     ? []
     : game.buildings
@@ -98,13 +169,42 @@ export function Scene({
         ]);
   return (
     <div
-      className="game-stage"
+      className={`game-stage world-upgrade ${placing ? "world-placement" : ""}`}
       ref={stage}
+      role="region"
+      tabIndex={0}
       aria-label={
         battle
           ? "Enemy village battlefield"
-          : "Your village. Drag empty ground to move the camera."
+          : "Your village. Drag empty ground or use arrow keys to explore. Plus and minus zoom. Home fits the village."
       }
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        const directions: Record<string, { x: number; y: number }> = {
+          ArrowLeft: { x: 64, y: 0 },
+          ArrowRight: { x: -64, y: 0 },
+          ArrowUp: { x: 0, y: 64 },
+          ArrowDown: { x: 0, y: -64 },
+        };
+        const direction = directions[e.key];
+        if (direction) {
+          e.preventDefault();
+          setCamera((c) => ({
+            ...c,
+            x: Math.max(-panLimit.x, Math.min(panLimit.x, c.x + direction.x)),
+            y: Math.max(-panLimit.y, Math.min(panLimit.y, c.y + direction.y)),
+          }));
+        } else if (e.key === "+" || e.key === "=") {
+          e.preventDefault();
+          zoom(0.2);
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          zoom(-0.2);
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          resetCamera();
+        }
+      }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest("button")) return;
         drag.current = {
@@ -120,12 +220,18 @@ export function Scene({
           setCamera((c) => ({
             ...c,
             x: Math.max(
-              -700,
-              Math.min(700, drag.current!.px + e.clientX - drag.current!.x),
+              -panLimit.x,
+              Math.min(
+                panLimit.x,
+                drag.current!.px + e.clientX - drag.current!.x,
+              ),
             ),
             y: Math.max(
-              -400,
-              Math.min(400, drag.current!.py + e.clientY - drag.current!.y),
+              -panLimit.y,
+              Math.min(
+                panLimit.y,
+                drag.current!.py + e.clientY - drag.current!.y,
+              ),
             ),
           }));
       }}
@@ -139,10 +245,15 @@ export function Scene({
       <div
         className={`game-world ${battle ? "enemy-world" : ""}`}
         style={{
-          transform: `translate(-50%,-50%) translate(${camera.x}px,${camera.y}px) scale(${scale})`,
+          transform: `translate(-50%,-50%) translate(${offset.x}px,${offset.y}px) scale(${scale})`,
         }}
       >
-        <div className="terrain-art" />
+        <div
+          className="terrain-art"
+          style={{
+            transform: `scale(${Math.max(1, (size.w + 2 * Math.abs(offset.x)) / (1536 * scale), (size.h + 2 * Math.abs(offset.y)) / (1024 * scale))})`,
+          }}
+        />
         <svg className="world-paths" viewBox="0 0 1536 1024" aria-hidden="true">
           {pathPairs.map(([a, b], i) => (
             <g key={i}>
@@ -165,23 +276,29 @@ export function Scene({
           (() => {
             const a = crewAgents.find((a) => a.id === selectedResident),
               task = game.crew?.tasks.find((t) => t.id === a?.task),
-              b = game.buildings.find((b) => b.id === task?.buildingId);
-            if (!a || !b) return null;
-            const from = point(a.x, a.y),
-              to = point(b.x, b.y);
+              building = game.buildings.find((b) => b.id === task?.buildingId),
+              target =
+                building ??
+                (task?.x !== undefined && task.y !== undefined
+                  ? { x: task.x, y: task.y }
+                  : null),
+              route = a ? crewRoute(game, a.id) : null;
+            if (!a || !target || route === null) return null;
+            const steps = [a, ...route].map((p) => point(p.x, p.y)),
+              routePath = steps
+                .map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`)
+                .join(" "),
+              to = point(target.x, target.y),
+              arrival = steps[steps.length - 1];
             return (
               <svg
                 className="crew-route"
                 viewBox="0 0 1536 1024"
                 aria-hidden="true"
               >
-                <path
-                  d={`M${from.x} ${from.y}L${to.x} ${to.y}`}
-                  stroke="#fff1a8"
-                  strokeWidth="4"
-                  strokeDasharray="8 9"
-                  opacity=".8"
-                />
+                <path d={routePath} className="world-route-underlay" />
+                <path d={routePath} className="world-route-line" />
+                <circle cx={arrival.x} cy={arrival.y} r="6" fill="#ffe4a0" />
                 <circle
                   cx={to.x}
                   cy={to.y}
@@ -219,7 +336,19 @@ export function Scene({
             enemy = "hp" in b,
             dead = enemy && b.hp <= 0,
             building = !enemy ? b : undefined,
-            buildingReady = building?.readyAt;
+            buildingReady = building?.readyAt,
+            buildDuration = building?.constructing
+              ? def.seconds
+              : def.seconds * ((building?.level ?? 1) + 1),
+            buildProgress = buildingReady
+              ? Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    (1 - (buildingReady - game.clock) / buildDuration) * 100,
+                  ),
+                )
+              : 100;
           return (
             <div
               key={b.id}
@@ -268,9 +397,24 @@ export function Scene({
                     </button>
                   ) : null}
                   {buildingReady ? (
-                    <span className="construction-time">
-                      <Hammer size={13} />
-                      {Math.ceil(buildingReady - game.clock)}s
+                    <span className="construction-time world-construction">
+                      <span className="world-construction-label">
+                        <Hammer size={13} />
+                        {building?.constructing ? "Building" : "Upgrading"}
+                        <b>
+                          {Math.max(0, Math.ceil(buildingReady - game.clock))}s
+                        </b>
+                      </span>
+                      <span
+                        className="world-construction-progress"
+                        role="progressbar"
+                        aria-label={`${def.name} ${building?.constructing ? "construction" : "upgrade"}`}
+                        aria-valuenow={Math.floor(buildProgress)}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <i style={{ width: `${buildProgress}%` }} />
+                      </span>
                     </span>
                   ) : (
                     <span className="building-level">
@@ -397,17 +541,17 @@ export function Scene({
                       : `Inspect ${a.name}, ${a.occupation}, at ${a.location}: ${a.goal}`
                   }
                 >
-                  <Sprite
-                    index={i % 2 ? 6 : 7}
-                    style={
-                      a.role === "chaos"
-                        ? {
-                            filter:
-                              "hue-rotate(90deg) drop-shadow(0 3px 2px #20322855)",
-                          }
-                        : undefined
-                    }
-                  />
+                  {a.role === "chaos" ? (
+                    <Sprite
+                      index={i % 2 ? 6 : 7}
+                      style={{
+                        filter:
+                          "hue-rotate(90deg) drop-shadow(0 3px 2px #20322855)",
+                      }}
+                    />
+                  ) : (
+                    <ResidentAvatar id={a.id} variant="full" size={76} />
+                  )}
                   <b>{a.name}</b>
                   {crewAgent?.task && (
                     <span
@@ -499,32 +643,33 @@ export function Scene({
             })}
           </>
         ) : null}
-        <div className="world-vignette" />
       </div>
-      <div className="camera-controls">
+      <div className="world-vignette" />
+      <div className="camera-controls" aria-label="Map camera controls">
         <button
           aria-label="Zoom out"
-          onClick={() =>
-            setCamera((c) => ({ ...c, z: Math.max(0.65, c.z - 0.15) }))
-          }
+          title="Zoom out (−)"
+          disabled={camera.z <= 0.65}
+          onClick={() => zoom(-0.2)}
         >
           <Minus size={18} />
         </button>
         <button
           aria-label="Center village"
-          onClick={() => setCamera({ x: 0, y: 0, z: 1 })}
+          title="Fit village (Home)"
+          onClick={resetCamera}
         >
           <LocateFixed size={18} />
         </button>
         <button
           aria-label="Zoom in"
-          onClick={() =>
-            setCamera((c) => ({ ...c, z: Math.min(1.75, c.z + 0.15) }))
-          }
+          title="Zoom in (+)"
+          disabled={camera.z >= 2.5}
+          onClick={() => zoom(0.2)}
         >
           <Plus size={18} />
         </button>
-        <span>Drag to explore</span>
+        <span className="camera-hint">Drag to explore · Arrow keys to pan</span>
       </div>
     </div>
   );

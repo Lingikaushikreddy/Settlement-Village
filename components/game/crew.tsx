@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowRight,
+  Hammer,
+  Sprout,
   BookOpen,
   Check,
   ChevronRight,
@@ -26,7 +28,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Game, Resources } from "@/lib/game/model";
+import type { Game } from "@/lib/game/model";
 import type { CrewCommand } from "@/lib/game/crew-types";
 import {
   crewRoster,
@@ -34,28 +36,34 @@ import {
   crewProgress,
   newCrew,
 } from "@/lib/game/crew";
+import { ResidentAvatar } from "./resident-avatar";
+import {
+  DevelopmentBudget,
+  DevelopmentDialog,
+  DevelopmentSteps,
+  ResourceAmounts as Amounts,
+} from "./development-panel";
 import "./crew.css";
 const icons = { gold: Coins, wood: TreePine, food: Wheat };
 const resourceName = { gold: "gold", wood: "timber", food: "food" };
-const title = { raid: "Prepare for a raid", stockpile: "Restock the village" };
-function Amounts({ value }: { value: Resources }) {
-  return (
-    <span className="crew-amounts">
-      {Object.entries(value)
-        .filter(([, n]) => n > 0)
-        .map(([r, n]) => {
-          const key = r as keyof Resources,
-            Icon = icons[key];
-          return (
-            <span key={r}>
-              <Icon size={13} />
-              {Math.ceil(n)} <span>{resourceName[key]}</span>
-            </span>
-          );
-        })}
-    </span>
-  );
+const title = {
+  raid: "Prepare for a raid",
+  stockpile: "Restock the village",
+  develop: "Grow the village",
+};
+const phoneQuery = "(max-width: 700px)";
+function subscribePhone(callback: () => void) {
+  const query = window.matchMedia(phoneQuery);
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
 }
+function phoneSnapshot() {
+  return window.matchMedia(phoneQuery).matches;
+}
+function serverPhoneSnapshot() {
+  return false;
+}
+
 export function CrewBoard({
   game,
   onCommand,
@@ -69,167 +77,265 @@ export function CrewBoard({
   onCouncil: () => void;
   onRaid: () => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const crew = game.crew,
-    objective = crew?.objective,
-    latestEvent = crew?.events.at(-1),
+  const phone = useSyncExternalStore(
+    subscribePhone,
+    phoneSnapshot,
+    serverPhoneSnapshot,
+  );
+  const [requestedExpanded, setExpanded] = useState<boolean | null>(null);
+  const [reviewGrowth, setReviewGrowth] = useState(false);
+  const headingRef = useRef<HTMLButtonElement>(null);
+  const expanded = requestedExpanded ?? !phone;
+  const crew = game.crew ?? newCrew(game),
+    objective = crew.objective,
+    latestEvent = crew.events.at(-1),
     preview = crewPreview(game, "raid"),
     progress = crewProgress(game);
+  const state =
+    crew.status === "complete"
+      ? "Complete"
+      : crew.playing
+        ? "Working"
+        : "Paused";
+  const percent = crew.status === "complete" ? 100 : progress.percent;
+  const development = progress.development;
+  const nextStep =
+    development?.steps.find((step) => step.status === "building") ??
+    development?.steps.find((step) => step.status === "ready") ??
+    development?.steps.find((step) => step.status === "blocked");
   return (
-    <aside className="crew-board" aria-label="Village orders">
-      <button
-        className="crew-board-heading"
-        aria-label={
-          collapsed ? "Expand village orders" : "Collapse village orders"
-        }
-        aria-expanded={!collapsed}
-        onClick={() => setCollapsed(!collapsed)}
+    <>
+      <aside
+        className="crew-board"
+        aria-label="Village orders"
+        data-expanded={expanded}
+        data-mode={requestedExpanded === null ? "auto" : "manual"}
       >
-        <span>
-          <Users size={16} /> Village orders
-        </span>
-        {collapsed ? <ChevronRight size={17} /> : <ChevronDown size={17} />}
-      </button>
-      {collapsed && (
+        <button
+          className="crew-board-heading"
+          ref={headingRef}
+          aria-label={
+            expanded ? "Collapse village orders" : "Expand village orders"
+          }
+          aria-expanded={expanded}
+          aria-controls="village-order-details"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <span>
+            <Flag size={15} aria-hidden="true" /> Village orders
+          </span>
+          <span className="crew-heading-count">
+            6 residents{" "}
+            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </span>
+        </button>
         <button
           className="crew-collapsed-summary"
-          onClick={() => setCollapsed(false)}
+          onClick={() => setExpanded(true)}
+          tabIndex={expanded ? -1 : 0}
         >
-          {objective ? title[objective.kind] : "Choose a village objective"}
-          {objective && (
-            <span>
-              {progress.percent}% ·{" "}
-              {crew.status === "complete"
-                ? "Complete"
-                : crew.playing
-                  ? "Working"
-                  : "Paused"}
-            </span>
-          )}
+          <span className="crew-summary-title">
+            {objective ? title[objective.kind] : "What shall we build next?"}
+          </span>
+          <span>
+            {objective
+              ? `${percent}% · ${state}`
+              : "Give your residents an objective"}
+          </span>
+          <ChevronRight size={18} aria-hidden="true" />
         </button>
-      )}
-      <div className="crew-board-body" hidden={collapsed}>
-        {!objective ? (
-          <>
-            <h2>
-              A purpose for
-              <br />
-              every person.
-            </h2>
-            <p>Set the goal. Your residents organize the work.</p>
-            <button
-              className="crew-start"
-              onClick={() => onCommand({ type: "start", kind: "raid" })}
-            >
-              <Shield size={20} />
-              <span>
-                <b>Prepare for a raid</b>
-                <small>30 ready troops + village reserves</small>
-              </span>
-              <ArrowRight size={17} />
-            </button>
-            <p className="crew-budget">
-              Recruitment budget <Amounts value={preview.budget} />
-              {Object.values(preview.budget).every((n) => n === 0) && (
-                <span>No recruits needed</span>
-              )}
-            </p>
-            <button
-              className="crew-stockpile"
-              onClick={() => onCommand({ type: "start", kind: "stockpile" })}
-            >
-              <Wheat size={15} /> Restock supplies <span>+300 each</span>
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="crew-objective-title">
-              <Flag size={19} />
-              <div>
-                <h2>{title[objective.kind]}</h2>
+        <div className="crew-board-body" id="village-order-details">
+          {!objective ? (
+            <>
+              <h2>
+                A village with
+                <br />a purpose.
+              </h2>
+              <p>Choose the goal. Your residents find the way.</p>
+              <button
+                className="crew-start"
+                onClick={() => setReviewGrowth(true)}
+              >
+                <Sprout size={24} aria-hidden="true" />
+                <span>
+                  <b>Grow the village</b>
+                  <small>Review a new farm and upgrade plan</small>
+                </span>
+                <ArrowRight size={17} aria-hidden="true" />
+              </button>
+              <button
+                className="crew-secondary-objective"
+                onClick={() => onCommand({ type: "start", kind: "raid" })}
+              >
+                <Shield size={18} aria-hidden="true" />
+                <span>
+                  <b>Prepare for a raid</b>
+                  <small>30 ready troops and village reserves</small>
+                </span>
+                <ChevronRight size={15} aria-hidden="true" />
+              </button>
+              <p className="crew-budget">
+                Recruitment ceiling <Amounts value={preview.budget} />
+              </p>
+              <button
+                className="crew-secondary-objective"
+                onClick={() => onCommand({ type: "start", kind: "stockpile" })}
+              >
+                <Wheat size={18} aria-hidden="true" />
+                <span>
+                  <b>Restock the village</b>
+                  <small>Collect 300 more of each resource</small>
+                </span>
+                <ChevronRight size={15} aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="crew-objective-title">
+                {objective.kind === "develop" ? (
+                  <Sprout size={21} />
+                ) : (
+                  <Flag size={20} />
+                )}
+                <div>
+                  <h2>{title[objective.kind]}</h2>
+                  <span>
+                    {crew.status === "complete"
+                      ? "The village is ready for more"
+                      : crew.playing
+                        ? "Your residents are coordinating"
+                        : "Crew paused"}
+                  </span>
+                </div>
+              </div>
+              <div className="crew-progress-label">
                 <span>
                   {crew.status === "complete"
                     ? "Objective complete"
-                    : crew.playing
-                      ? "Agents are coordinating"
-                      : "Crew paused"}
+                    : development
+                      ? `${development.completed} / ${development.total} steps + reserves`
+                      : objective.kind === "raid"
+                        ? `${progress.readyTroops} / ${progress.targetTroops} troops ready`
+                        : "Village reserves"}
                 </span>
+                <b>{percent}%</b>
               </div>
-            </div>
-            <div className="crew-progress-label">
-              <span>
-                {objective.kind === "raid"
-                  ? `${progress.readyTroops} / ${progress.targetTroops} troops ready`
-                  : "Village reserves"}
-              </span>
-              <b>{progress.percent}%</b>
-            </div>
-            <div
-              className="crew-progress"
-              role="progressbar"
-              aria-label="Objective progress"
-              aria-valuenow={progress.percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <i style={{ width: `${progress.percent}%` }} />
-            </div>
-            <div className="crew-mini-roster">
-              {crewRoster.map((r) => {
-                const a = crew.agents.find((a) => a.id === r.id)!;
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => onInspect(r.id)}
-                    aria-label={`Inspect ${r.name}'s work`}
-                    title={`${r.name}: ${a.reason}`}
-                  >
-                    <span style={{ background: r.color }}>{r.name[0]}</span>
-                    <i className={`crew-dot ${a.status}`} />
-                    <small>{r.name}</small>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="crew-live-note">
-              {crew.status === "complete"
-                ? "Your crew finished the objective. You choose what comes next."
-                : latestEvent
-                  ? `${crewRoster.find((r) => r.id === latestEvent.actor)?.name ?? "Village"}: ${latestEvent.text}`
-                  : "Residents are choosing their first jobs."}
-            </p>
-            <div className="crew-board-actions">
-              {crew.status !== "complete" ? (
-                <button
-                  onClick={() =>
-                    onCommand({ type: crew.playing ? "pause" : "resume" })
-                  }
-                >
-                  {crew.playing ? <Pause size={14} /> : <Play size={14} />}{" "}
-                  {crew.playing ? "Pause crew" : "Resume crew"}
-                </button>
-              ) : objective.kind === "raid" ? (
-                <button onClick={onRaid}>
-                  <Shield size={14} /> Scout a raid
-                </button>
-              ) : (
-                <button
-                  onClick={() => onCommand({ type: "start", kind: "raid" })}
-                >
-                  <Shield size={14} /> Prepare a raid
+              <div
+                className="crew-progress"
+                role="progressbar"
+                aria-label="Objective progress"
+                aria-valuenow={percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <i style={{ width: `${percent}%` }} />
+              </div>
+              {nextStep && crew.status !== "complete" && (
+                <button className="crew-next-step" onClick={() => onInspect()}>
+                  <Hammer size={16} aria-hidden="true" />
+                  <span>
+                    <b>{nextStep.label}</b>
+                    <small>
+                      {nextStep.reason ??
+                        (nextStep.status === "building"
+                          ? "Construction in progress"
+                          : "Ready for the crew")}
+                    </small>
+                  </span>
+                  <ChevronRight size={14} aria-hidden="true" />
                 </button>
               )}
-              <button onClick={() => onInspect()}>
-                View plan <ArrowRight size={14} />
-              </button>
-            </div>
-          </>
-        )}
-        <button className="crew-council-link" onClick={onCouncil}>
-          <BookOpen size={13} /> Council stories <ChevronRight size={13} />
-        </button>
-      </div>
-    </aside>
+            </>
+          )}
+          <div className="crew-roster-label">
+            <Users size={13} aria-hidden="true" />
+            <span>
+              {objective ? "Your village crew" : "Six residents, ready to help"}
+            </span>
+          </div>
+          <div className="crew-mini-roster">
+            {crewRoster.map((resident) => {
+              const agent = crew.agents.find((a) => a.id === resident.id)!;
+              return (
+                <button
+                  key={resident.id}
+                  onClick={() => onInspect(resident.id)}
+                  aria-label={`Inspect ${resident.name}'s work`}
+                  title={`${resident.name}: ${agent.reason}`}
+                >
+                  <ResidentAvatar id={resident.id} size={38} />
+                  <i
+                    className={`crew-dot ${agent.status}`}
+                    aria-hidden="true"
+                  />
+                  <small>{resident.name}</small>
+                </button>
+              );
+            })}
+          </div>
+          {objective && (
+            <>
+              <p className="crew-live-note">
+                {crew.status === "complete"
+                  ? "The work is finished. Choose your next village objective."
+                  : latestEvent
+                    ? `${crewRoster.find((r) => r.id === latestEvent.actor)?.name ?? "Village"}: ${latestEvent.text}`
+                    : "Residents are choosing their first jobs."}
+              </p>
+              <div className="crew-board-actions">
+                {crew.status !== "complete" ? (
+                  <button
+                    onClick={() =>
+                      onCommand({ type: crew.playing ? "pause" : "resume" })
+                    }
+                  >
+                    {crew.playing ? <Pause size={14} /> : <Play size={14} />}
+                    {crew.playing ? "Pause crew" : "Resume crew"}
+                  </button>
+                ) : objective.kind === "raid" ? (
+                  <button onClick={onRaid}>
+                    <Shield size={14} />
+                    Scout a raid
+                  </button>
+                ) : (
+                  <button onClick={() => onCommand({ type: "cancel" })}>
+                    <Sprout size={14} />
+                    Next objective
+                  </button>
+                )}
+                <button onClick={() => onInspect()}>
+                  View plan <ArrowRight size={14} />
+                </button>
+              </div>
+              {crew.status === "complete" && objective.kind === "raid" && (
+                <button
+                  className="crew-new-objective"
+                  onClick={() => onCommand({ type: "cancel" })}
+                >
+                  Choose another objective
+                </button>
+              )}
+            </>
+          )}
+          <button className="crew-council-link" onClick={onCouncil}>
+            <BookOpen size={13} />
+            Council stories
+            <ChevronRight size={13} />
+          </button>
+        </div>
+      </aside>
+      {reviewGrowth && (
+        <DevelopmentDialog
+          game={game}
+          onClose={() => setReviewGrowth(false)}
+          onReturnFocus={() => headingRef.current?.focus()}
+          onStart={() => {
+            onCommand({ type: "start", kind: "develop" });
+            setReviewGrowth(false);
+          }}
+        />
+      )}
+    </>
   );
 }
 export function CrewInspector({
@@ -238,9 +344,13 @@ export function CrewInspector({
   onSelected,
   onCommand,
   onClose,
+  initialView = "agent",
+  onReturnFocus,
 }: {
   game: Game;
   selected: string;
+  initialView?: "agent" | "jobs" | "history";
+  onReturnFocus?: () => void;
   onSelected: (id: string) => void;
   onCommand: (c: CrewCommand) => void;
   onClose: () => void;
@@ -248,19 +358,28 @@ export function CrewInspector({
   const c = game.crew ?? newCrew(game),
     person = crewRoster.find((a) => a.id === selected) ?? crewRoster[0],
     agent = c.agents.find((a) => a.id === person.id)!;
-  const [view, setView] = useState<"agent" | "jobs" | "history">("agent");
+  const [view, setView] = useState<"agent" | "jobs" | "history">(initialView);
   const objective = c.objective,
     progress = crewProgress(game),
     task = c.tasks.find((t) => t.id === agent.task);
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="crew-dialog" showCloseButton={false}>
+      <DialogContent
+        className="crew-dialog"
+        showCloseButton={false}
+        onCloseAutoFocus={(event) => {
+          if (onReturnFocus) {
+            event.preventDefault();
+            onReturnFocus();
+          }
+        }}
+      >
         <header className="crew-dialog-heading">
           <div>
             <span>
               <Handshake size={16} /> The village crew
             </span>
-            <DialogTitle>One objective. Six minds at work.</DialogTitle>
+            <DialogTitle>The people of Willowmere</DialogTitle>
             <DialogDescription>
               Your residents claim jobs, coordinate resources, and change plans
               as the village changes.
@@ -280,7 +399,7 @@ export function CrewInspector({
             </strong>
             <span>
               {objective
-                ? `${progress.percent}% complete · ${c.status === "complete" ? "Finished" : c.playing ? "Live coordination" : "Paused"}`
+                ? `${c.status === "complete" ? 100 : progress.percent}% complete · ${c.status === "complete" ? "Finished" : c.playing ? "Live coordination" : "Paused"}`
                 : "Choose an objective from Village orders."}
             </span>
           </div>
@@ -308,9 +427,7 @@ export function CrewInspector({
                     setView("agent");
                   }}
                 >
-                  <span className="crew-avatar" style={{ background: r.color }}>
-                    {r.name[0]}
-                  </span>
+                  <ResidentAvatar id={r.id} size={42} className="crew-avatar" />
                   <span>
                     <b>{r.name}</b>
                     <small>{r.role}</small>
@@ -325,7 +442,7 @@ export function CrewInspector({
               {(
                 [
                   ["agent", "Resident"],
-                  ["jobs", "Shared jobs"],
+                  ["jobs", "Village plan"],
                   ["history", "Village log"],
                 ] as const
               ).map(([id, label]) => (
@@ -341,12 +458,11 @@ export function CrewInspector({
             {view === "agent" ? (
               <>
                 <div className="crew-person-heading">
-                  <span
+                  <ResidentAvatar
+                    id={person.id}
+                    size={76}
                     className="crew-avatar large"
-                    style={{ background: person.color }}
-                  >
-                    {person.name[0]}
-                  </span>
+                  />
                   <div>
                     <h3>{person.name}</h3>
                     <p>
@@ -354,7 +470,11 @@ export function CrewInspector({
                     </p>
                   </div>
                   <span className={`crew-status-pill ${agent.status}`}>
-                    {agent.status}
+                    {c.status === "active" &&
+                    !c.playing &&
+                    agent.status !== "resting"
+                      ? "paused"
+                      : agent.status}
                   </span>
                 </div>
                 <div className="crew-reason">
@@ -435,38 +555,54 @@ export function CrewInspector({
             ) : view === "jobs" ? (
               <>
                 <div className="crew-job-intro">
-                  <h3>A shared plan, exclusive jobs.</h3>
+                  <h3>
+                    {objective?.kind === "develop"
+                      ? "From a plan to a living village."
+                      : "A shared plan. Everyone has a part."}
+                  </h3>
                   <p>
                     Residents choose useful work by role, distance and demand.
                     Each job has one owner.
                   </p>
                 </div>
-                <div className="crew-reserve-grid">
-                  {progress.resources.map((r) => {
-                    const Icon = icons[r.resource];
-                    return (
-                      <div key={r.resource}>
-                        <Icon size={17} />
-                        <b>
-                          {Math.floor(r.current)}{" "}
-                          <small>/ {Math.ceil(r.target)}</small>
-                        </b>
-                        <span>{resourceName[r.resource]}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                {objective?.development && (
+                  <>
+                    <DevelopmentBudget
+                      budget={objective.budget}
+                      spent={objective.spent}
+                      reserves={objective.development.reserveFloor}
+                    />
+                    <DevelopmentSteps
+                      game={game}
+                      plan={objective.development}
+                    />
+                  </>
+                )}
                 {objective && (
+                  <>
+                    <h4 className="crew-reserves-heading">Village reserves</h4>
+                    <div className="crew-reserve-grid">
+                      {progress.resources.map((r) => {
+                        const Icon = icons[r.resource];
+                        return (
+                          <div key={r.resource}>
+                            <Icon size={17} />
+                            <b>
+                              {Math.floor(r.current)}{" "}
+                              <small>/ {Math.ceil(r.target)}</small>
+                            </b>
+                            <span>{resourceName[r.resource]}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {objective && objective.kind !== "develop" && (
                   <p className="crew-spending">
                     Recruitment spent <Amounts value={objective.spent} />
-                    {Object.values(objective.spent).every((n) => n === 0) && (
-                      <span>0</span>
-                    )}
                     <br />
                     Maximum budget <Amounts value={objective.budget} />
-                    {Object.values(objective.budget).every((n) => n === 0) && (
-                      <span>No spending</span>
-                    )}
                   </p>
                 )}
                 <div className="crew-job-list">
@@ -479,8 +615,10 @@ export function CrewInspector({
                         <div>
                           {t.kind === "train" ? (
                             <Shield size={19} />
-                          ) : (
+                          ) : t.kind === "collect" ? (
                             <Footprints size={19} />
+                          ) : (
+                            <Hammer size={19} />
                           )}
                           <h4>{t.label}</h4>
                           <span>
@@ -499,7 +637,7 @@ export function CrewInspector({
                     <p className="crew-empty">
                       {c.status === "complete"
                         ? "All required work is finished."
-                        : "Jobs appear when the objective needs resources or recruits."}
+                        : "Jobs appear when the objective needs resources, construction or recruits."}
                     </p>
                   )}
                 </div>
@@ -546,10 +684,15 @@ export function CrewInspector({
         </div>
         <footer className="crew-dialog-footer">
           <span>
-            <Sparkles size={14} /> Free agent policies · no model calls
+            <Sparkles size={14} /> Free village simulation
           </span>
           {objective && (
-            <button onClick={() => onCommand({ type: "cancel" })}>
+            <button
+              onClick={() => {
+                onCommand({ type: "cancel" });
+                onClose();
+              }}
+            >
               {c.status === "complete"
                 ? "Choose another objective"
                 : "Cancel objective"}

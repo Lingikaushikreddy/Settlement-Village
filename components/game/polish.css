@@ -1,0 +1,657 @@
+/* Willowmere interface: forest enamel, warm brass and readable parchment. */
+.village-game {
+  --navy: #1b3833;
+  --gold: #e8c47b;
+  --blue: #45666a;
+  --cream: #fbefd3;
+  min-height: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+.village-game .game-stage {
+  --world-safe-top: 148;
+  --world-safe-bottom: 170;
+  --world-safe-left: 190;
+  --world-safe-right: 336;
+}
+.village-game.placing-active .game-stage,
+.village-game.raiding-active .game-stage {
+  --world-safe-left: 40;
+  --world-safe-right: 40;
+}
+.village-game.research-active .game-stage {
+  --world-safe-top: 200;
+  --world-safe-bottom: 65;
+  --world-safe-left: 20;
+  --world-safe-right: 20;
+}
+.game-hud {
+  padding: 18px 24px;
+  gap: 25px;
+  background: linear-gradient(#122d2cf5, #19372db0 76%, #19372d00);
+}
+.player-banner strong {
+  font:
+    600 31px/1.1 "Palatino Linotype",
+    Palatino,
+    Georgia,
+    serif;
+  letter-spacing: -0.8px;
+}
+.player-banner small {
+  font-size: 12px;
+  color: #d8ddc7;
+}
+.player-crest svg {
+  fill: #385c52;
+  stroke: #dfc07c;
+}
+.hud-builders {
+  font-size: 17px;
+}
+.hud-builders span {
+  font-size: 11px;
+}
+.resource-hud {
+  gap: 10px;
+}
+.resource-pill {
+  width: 151px;
+  padding: 8px 12px 8px 46px;
+  border: 1px solid #c9b78070;
+  background: #19352eed;
+  box-shadow:
+    0 4px 15px #0b251f40,
+    inset 0 1px #ffffff12;
+  border-radius: 8px;
+  height: 54px;
+}
+.resource-pill strong {
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.resource-pill small {
+  font-size: 11px;
+  color: #c7d2b8;
+}
+.resource-emblem {
+  left: 9px;
+  top: 12px;
+  width: 29px;
+  height: 29px;
+  border-width: 1px;
+  box-shadow: none;
+}
+.resource-emblem svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 2;
+}
+.game-hud .sound-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  background: #1c3a32;
+  border: 1px solid #bdba9270;
+  border-radius: 10px;
+}
+.settlement-navigation {
+  background: #193730f5;
+  border-color: #b9ad7b75;
+  border-radius: 10px;
+  top: 99px;
+}
+.settlement-navigation button {
+  min-height: 40px;
+  font-size: 13px;
+}
+.settlement-navigation button[aria-pressed="true"] {
+  background: #e6c47e;
+  color: #203f31;
+}
+.village-game .village-badge {
+  top: auto;
+  left: auto;
+  right: 29px;
+  bottom: 140px;
+  font-size: 12px;
+  background: #1b3930e8;
+  padding: 9px 12px;
+  border-radius: 8px;
+}
+.army-dock {
+  background: linear-gradient(135deg, #294539f5, #17342ff5);
+  border-color: #bfb28080;
+  box-shadow: 0 8px 24px #112c2450;
+  border-radius: 12px;
+}
+.army-heading {
+  font-size: 12px !important;
+  min-height: 28px;
+}
+.army-heading b {
+  font-size: 12px;
+}
+.army-card {
+  background: linear-gradient(#4c6652, #2c4c3a);
+  border-color: #a7af8070;
+  border-bottom-color: #142f24;
+}
+.army-card small {
+  font-size: 11px;
+  background: linear-gradient(transparent, #1b3a2c);
+  padding-top: 13px;
+}
+.train-more {
+  background: #1a392e;
+  font-size: 12px !important;
+  color: #edd9a8;
+}
+.train-more b {
+  font-size: 10px;
+}
+.game-button {
+  border-width: 1px;
+  box-shadow:
+    inset 0 1px #fff9dd60,
+    0 4px 0 #6c552d,
+    0 7px 15px #153c2f30;
+  font-weight: 700;
+}
+.game-button.gold {
+  background: linear-gradient(#eed396, #d4b36a);
+  color: #35452e;
+  border-color: #f1daa0;
+}
+.game-button.blue {
+  background: linear-gradient(#49716a, #31584f);
+  color: #fff0d1;
+  border-color: #b8b992;
+  box-shadow:
+    inset 0 1px #d5e3b840,
+    0 4px 0 #193e33,
+    0 7px 15px #153c2f30;
+}
+.game-button.green {
+  background: linear-gradient(#617c50, #415f37);
+  color: #fff5d8;
+  border-color: #d0c49a;
+  box-shadow:
+    inset 0 1px #d5e3b840,
+    0 4px 0 #283f25;
+}
+.village-actions .game-button {
+  font-size: 22px;
+  border-radius: 10px;
+  padding: 17px 24px;
+}
+.village-actions .game-button small {
+  font-size: 12px;
+  letter-spacing: 0;
+  margin-top: 4px;
+}
+.save-status {
+  font-size: 11px;
+  color: #e4e8d1;
+  text-shadow: 0 1px 3px #15322b;
+}
+.building-panel {
+  flex-wrap: wrap;
+  background: #19382ff5;
+  border-color: #c7b68199;
+  border-radius: 12px;
+}
+.building-info h2 {
+  font-family: "Palatino Linotype", Palatino, Georgia, serif;
+}
+.action-problem {
+  font-size: 12px;
+  color: #854e34;
+  line-height: 1.45;
+}
+.building-problem {
+  width: 100%;
+  text-align: right;
+  color: #f2d6a0;
+  margin: -7px 0 0;
+}
+.game-dialog {
+  background: #f8f0da;
+  color: #294235;
+  border: 1px solid #c9b37a;
+  border-radius: 17px;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+.game-dialog-title {
+  font:
+    600 34px/1.12 "Palatino Linotype",
+    Palatino,
+    Georgia,
+    serif;
+  color: #254334;
+  letter-spacing: -0.6px;
+}
+.game-dialog [data-slot="dialog-description"] {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #60735f;
+}
+.shop-item {
+  background: #fff9e9;
+  border-color: #d7caaa;
+  border-radius: 11px;
+}
+.shop-item h3,
+.training-card h3,
+.raid-option h3 {
+  font-family: "Palatino Linotype", Palatino, Georgia, serif;
+  color: #2d4d3b;
+}
+.shop-item:disabled {
+  opacity: 0.7;
+  filter: saturate(0.65);
+  cursor: not-allowed;
+}
+.shop-cta {
+  min-height: 38px;
+  font-size: 12px;
+  white-space: normal;
+  text-align: center;
+}
+.training-card {
+  background: #fff9e9;
+  border-color: #d7caaa;
+  border-radius: 11px;
+}
+.training-card .action-problem {
+  min-height: 18px;
+  margin-top: 8px;
+}
+.game-dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: saturate(0.3);
+}
+.game-dialog button:focus-visible,
+.journal-dialog button:focus-visible {
+  outline: 3px solid #3d7059;
+  outline-offset: 3px;
+}
+.raid-option {
+  border-color: #d7caaa;
+  background: #fff9e9;
+}
+.game-guide .guide-vista {
+  display: block;
+  height: 140px;
+  background: url("/game/willowmere-vista.png") center/cover;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.placing-active .army-dock,
+.placing-active .village-actions,
+.placing-active .village-badge {
+  display: none;
+}
+.game-toast {
+  background: #173a30f7;
+  color: #fff4d6;
+  border-color: #c4b477;
+}
+@media (max-width: 1100px) and (min-width: 701px) {
+  .game-hud {
+    gap: 15px;
+    padding: 16px 20px;
+  }
+  .resource-pill {
+    width: 126px;
+  }
+  .hud-builders {
+    display: none;
+  }
+  .village-game .game-stage {
+    --world-safe-left: 65;
+    --world-safe-right: 280;
+  }
+  .journal-launcher {
+    width: 205px;
+  }
+}
+@media (max-width: 700px) {
+  .village-game .crew-board {
+    top: 176px;
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 380px);
+  }
+  .village-game .game-stage {
+    --world-safe-top: 264;
+    --world-safe-bottom: 194;
+    --world-safe-left: 15;
+    --world-safe-right: 15;
+  }
+  .village-game.placing-active .game-stage {
+    --world-safe-top: 175;
+    --world-safe-bottom: 95;
+    --world-safe-left: 15;
+    --world-safe-right: 15;
+  }
+  .village-game.raiding-active .game-stage {
+    --world-safe-top: 255;
+    --world-safe-bottom: 185;
+    --world-safe-left: 15;
+    --world-safe-right: 15;
+  }
+  .village-game.research-active .game-stage {
+    --world-safe-top: 45;
+    --world-safe-bottom: 38;
+    --world-safe-left: 20;
+    --world-safe-right: 20;
+  }
+  .game-hud {
+    padding: 10px 12px 16px;
+    gap: 7px;
+    align-items: center;
+  }
+  .player-banner {
+    flex: 1;
+  }
+  .player-banner strong {
+    font-size: 25px;
+    letter-spacing: -0.4px;
+  }
+  .player-banner small {
+    font-size: 10px;
+  }
+  .player-crest,
+  .player-crest svg {
+    width: 34px;
+    height: 42px;
+  }
+  .game-hud .sound-button {
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+  .resource-hud {
+    padding-left: 0;
+    gap: 7px;
+    margin-top: 3px;
+    width: 100%;
+    order: 3;
+    justify-content: stretch;
+  }
+  .resource-pill {
+    max-width: none;
+    min-width: 0;
+    height: 43px;
+    padding: 5px 5px 5px 34px;
+  }
+  .resource-pill strong {
+    font-size: 17px;
+    line-height: 20px;
+  }
+  .resource-pill small {
+    font-size: 10px;
+    line-height: 12px;
+  }
+  .resource-emblem {
+    width: 23px;
+    height: 23px;
+    left: 5px;
+    top: 10px;
+  }
+  .resource-emblem svg {
+    width: 15px;
+    height: 15px;
+  }
+  .settlement-navigation {
+    top: 117px;
+    left: 12px;
+    right: 12px;
+    gap: 2px;
+    padding: 4px;
+  }
+  .settlement-navigation button {
+    flex: 1;
+    padding: 7px 4px;
+    min-height: 39px;
+    gap: 5px;
+    font-size: 12px;
+  }
+  .settlement-navigation button svg {
+    width: 14px;
+  }
+  .village-game .village-badge {
+    display: none;
+  }
+  .game-bottom {
+    left: 12px;
+    right: 12px;
+    bottom: 28px;
+    gap: 10px;
+  }
+  .army-dock {
+    padding: 8px;
+  }
+  .army-heading {
+    font-size: 11px !important;
+    margin-bottom: 5px;
+    min-height: 23px;
+  }
+  .army-heading b {
+    font-size: 10px;
+    margin-left: 5px;
+  }
+  .army-card {
+    width: 52px;
+    height: 65px;
+  }
+  .army-card small {
+    font-size: 9px;
+  }
+  .troop-count {
+    font-size: 11px;
+  }
+  .village-actions {
+    gap: 8px;
+    padding: 0;
+  }
+  .village-actions .game-button {
+    padding: 10px 12px;
+    min-height: 49px;
+    font-size: 17px;
+    width: 135px;
+    border-radius: 8px;
+  }
+  .village-actions .game-button small {
+    display: none;
+  }
+  .village-actions .game-button > svg {
+    width: 20px;
+    height: 20px;
+  }
+  .journal-launcher {
+    bottom: 156px;
+    border-radius: 9px;
+  }
+  .world-upgrade .camera-controls {
+    left: 66px;
+    bottom: 156px;
+  }
+  .placing-active .world-upgrade .camera-controls {
+    left: 12px;
+    bottom: 22px;
+  }
+  .building-panel {
+    transform: none;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: 211px;
+    padding: 12px;
+    gap: 8px;
+  }
+  .building-info {
+    min-width: 150px;
+  }
+  .building-panel .building-actions {
+    width: 100%;
+  }
+  .building-problem {
+    text-align: left;
+    margin: 0;
+    font-size: 12px;
+  }
+  .save-status {
+    bottom: 5px;
+    font-size: 10px;
+  }
+  .game-dialog {
+    max-height: 91dvh;
+    padding: 23px 18px;
+  }
+  .game-dialog-title {
+    font-size: 27px;
+  }
+  .game-dialog [data-slot="dialog-description"] {
+    font-size: 13px;
+  }
+  .game-guide .guide-vista {
+    height: 105px;
+  }
+  .game-toast {
+    top: auto;
+    bottom: 210px;
+    font-size: 13px;
+  }
+}
+@media (max-height: 650px) and (min-width: 701px) {
+  .village-game .game-stage {
+    --world-safe-top: 136;
+    --world-safe-bottom: 145;
+  }
+  .crew-board {
+    max-height: calc(100dvh - 190px);
+    overflow-y: auto;
+  }
+}
+/* Light parchment dialogs declare their own text palette. */
+.game-dialog > button {
+  color: #294d3c;
+  min-width: 36px;
+  min-height: 36px;
+}
+.shop-item {
+  color: #304b3a;
+}
+.shop-item:hover:not(:disabled) {
+  background: #f1e7c9;
+  border-color: #8c7a45;
+}
+.shop-item > span:not(.game-sprite):not(.game-cost),
+.training-card p,
+.troop-stats,
+.raid-option small,
+.raid-note {
+  color: #526751;
+  font-size: 12px;
+}
+.shop-item > .game-cost,
+.training-card > .game-cost,
+.raid-option .game-cost {
+  color: #735827;
+}
+.shop-cta {
+  color: #365b40;
+  border-color: #c7c3a3;
+}
+.train-five {
+  color: #365a44;
+  font-size: 12px;
+  min-height: 40px;
+}
+.training-queue {
+  background: #e8dfc3;
+  color: #385541;
+}
+.training-queue svg {
+  color: #756135;
+}
+.game-guide p {
+  color: #50644f;
+  font-size: 13px;
+}
+.game-guide b {
+  color: #294d38;
+  font-size: 15px;
+}
+.game-guide > div > svg,
+.guide-links button,
+.guide-links a {
+  color: #527044;
+}
+.guide-links button {
+  min-height: 44px;
+  font-size: 13px;
+}
+.game-dialog .loot-summary {
+  background: #e9dfc0;
+  border-color: #cbb67c;
+}
+.game-dialog .loot-summary > span {
+  color: #53634b;
+}
+.game-dialog .loot-summary .game-cost {
+  color: #705522;
+}
+.training-card .action-problem {
+  color: #854e34;
+}
+.game-dialog > .game-button.gold {
+  color: #35452e;
+}
+@media (max-width: 360px) {
+  .game-bottom {
+    gap: 8px;
+  }
+  .army-card {
+    width: 44px;
+  }
+  .army-cards {
+    gap: 3px;
+  }
+  .village-actions .game-button {
+    width: 125px;
+  }
+  .settlement-navigation button {
+    font-size: 11px;
+    gap: 3px;
+  }
+  .resource-pill strong {
+    font-size: 15px;
+  }
+}
+@media (max-width: 700px) {
+  .placing-active .placement-notice {
+    top: 176px;
+    z-index: 30;
+  }
+  .village-game.placing-active .game-stage {
+    --world-safe-top: 260;
+  }
+  .placement-notice span {
+    font-size: 11px;
+  }
+}
+.research-active .game-world {
+  top: 50%;
+}
+@media (max-width: 760px) {
+  .village-game.research-active .world-upgrade .camera-controls {
+    left: auto;
+    right: 12px;
+    bottom: 24px;
+  }
+}

@@ -9,6 +9,7 @@ import {
   BookOpen,
   ShieldAlert,
 } from "lucide-react";
+import { ResidentAvatar } from "./game/resident-avatar";
 import type { Run } from "@/lib/sim/types";
 export function ResidentInspector({
   run,
@@ -37,9 +38,7 @@ export function ResidentInspector({
         <PanelRight size={16} />
       </div>
       <div className="resident-heading">
-        <span className="avatar" style={{ background: a.color }}>
-          {a.name[0]}
-        </span>
+        <ResidentAvatar id={a.id} size={56} />
         <div>
           <h2>{a.name}</h2>
           <p>

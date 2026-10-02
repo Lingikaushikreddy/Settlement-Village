@@ -3,66 +3,109 @@
   z-index: 20;
   top: 158px;
   right: 24px;
-  width: 304px;
-  padding: 15px 16px 12px;
-  background: #172f40f5;
-  border: 1px solid #a3b3919c;
-  border-radius: 17px;
-  box-shadow: 0 8px 28px #112c334d;
-  color: #eff3de;
+  width: 306px;
+  max-height: calc(100dvh - 280px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 13px 17px 12px;
+  color: #f5edce;
+  background: linear-gradient(150deg, #243e36f7, #162c2bf7 75%);
+  border: 1px solid #a88b51;
+  border-top: 3px solid #d6aa56;
+  border-radius: 5px 5px 15px 15px;
+  box-shadow:
+    0 13px 35px #0a29274d,
+    inset 0 0 0 3px #fff8d406;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+.placing-active .crew-board {
+  display: none;
+}
+.crew-board button {
+  cursor: pointer;
+}
+.crew-board button:focus-visible {
+  outline: 2px solid #f7d988;
+  outline-offset: 3px;
 }
 .crew-board-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #bdd0c5;
   width: 100%;
-  padding: 5px 0;
-  font-size: 13px !important;
+  min-height: 28px;
+  gap: 10px;
+  color: #e4d7b1;
+  font-size: 12px !important;
 }
 .crew-board-heading > span {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+}
+.crew-heading-count {
+  color: #acbda4;
+  font-size: 10px;
 }
 .crew-collapsed-summary {
-  width: 100%;
+  display: none;
+  grid-template-columns: 1fr 20px;
   text-align: left;
-  padding: 9px 0 1px;
-  color: #fff0c8;
-  font-size: 13px !important;
-  line-height: 1.5;
+  width: 100%;
+  padding: 10px 0 3px;
+  gap: 5px 10px;
 }
-.crew-collapsed-summary span {
-  display: block;
-  margin-top: 3px;
-  color: #bdd0c5;
+.crew-summary-title {
+  color: #fff1c7;
+  font:
+    19px/1.2 Georgia,
+    serif;
+}
+.crew-collapsed-summary > span:nth-child(2) {
+  color: #c0cdb2;
+  grid-row: 2;
   font-size: 11px;
 }
+.crew-collapsed-summary > svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #dec381;
+}
+.crew-board[data-expanded="false"] .crew-collapsed-summary {
+  display: grid;
+}
+.crew-board[data-expanded="false"] .crew-board-body {
+  display: none;
+}
 .crew-board h2 {
-  font-family: Georgia, serif;
-  font-size: 27px;
-  line-height: 1.12;
-  color: #fff0c8;
-  margin: 13px 0 9px;
+  color: #fff2cf;
+  font:
+    29px/1.08 Georgia,
+    serif;
+  margin: 17px 0 10px;
 }
 .crew-board-body > p {
-  font-size: 13px;
-  line-height: 1.5;
-  color: #c3d3c6;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c5d2bb;
 }
 .crew-start {
-  margin-top: 17px;
-  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 13px 10px;
-  border-radius: 10px;
-  background: #f2c76c;
-  color: #192f3c;
-  border-bottom: 3px solid #b78940;
-  box-shadow: inset 0 1px #fff0ae;
+  width: 100%;
+  padding: 13px 11px;
+  margin-top: 17px;
+  background: linear-gradient(#efd18a, #dcba69);
+  border: 1px solid #f1d798;
+  border-bottom: 3px solid #a7823c;
+  border-radius: 8px;
+  color: #283b2b;
+  box-shadow: 0 3px 0 #0b211f;
+}
+.crew-start:hover {
+  background: #f3d893;
 }
 .crew-start > span {
   flex: 1;
@@ -74,13 +117,45 @@
 }
 .crew-start small {
   display: block;
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.crew-secondary-objective {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 1px 9px;
+  color: #e7ebd5;
+}
+.crew-secondary-objective > svg {
+  color: #cfbb82;
+  flex-shrink: 0;
+}
+.crew-secondary-objective > span {
+  flex: 1;
+}
+.crew-secondary-objective b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.crew-secondary-objective small {
+  display: block;
+  font-size: 10px;
+  color: #b7c8a9;
   margin-top: 4px;
+  line-height: 1.4;
+}
+.crew-secondary-objective:hover b {
+  color: #f7d891;
 }
 .crew-amounts {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 5px 10px;
   align-items: center;
 }
 .crew-amounts > span {
@@ -90,170 +165,219 @@
   white-space: nowrap;
 }
 .crew-board .crew-budget {
-  margin-top: 10px;
-  font-size: 11px;
+  font-size: 10px;
+  padding-left: 29px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #c8d2a924;
+  color: #b3c2a3;
 }
 .crew-budget > .crew-amounts {
   display: flex;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 .crew-budget .crew-amounts > span > span {
   display: none;
 }
-.crew-stockpile {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  margin-top: 14px;
-  padding: 10px 0;
-  border-top: 1px solid #acc4b130;
-  text-align: left;
-  color: #e2ebd9;
-}
-.crew-stockpile > span {
-  font-size: 11px;
-  margin-left: auto;
-  color: #acbfae;
-}
-.crew-council-link {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  border-top: 1px solid #acc4b130;
-  width: 100%;
-  padding-top: 11px;
-  margin-top: 9px;
-  font-size: 12px !important;
-  color: #acbfae;
-}
-.crew-council-link svg:last-child {
-  margin-left: auto;
-}
 .crew-objective-title {
   display: flex;
-  gap: 9px;
+  gap: 10px;
   align-items: center;
-  margin: 13px 0 15px;
+  margin: 17px 0 18px;
 }
 .crew-objective-title h2 {
-  font-size: 22px;
-  margin: 0 0 5px;
+  font-size: 23px;
+  margin: 0 0 6px;
+  line-height: 1.1;
 }
 .crew-objective-title > svg {
-  color: #f1c86e;
+  color: #e0c383;
   flex-shrink: 0;
 }
 .crew-objective-title span {
-  font-size: 12px;
-  color: #b9cdbb;
+  color: #b8c9aa;
+  font-size: 11px;
 }
 .crew-progress-label {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  font-size: 12px;
+  color: #d7dfc4;
+  font-size: 11px;
 }
 .crew-progress-label b {
-  color: #f3d68a;
+  color: #edd390;
 }
 .crew-progress {
-  height: 5px;
-  background: #0d2130;
+  height: 6px;
+  background: #0e2321;
+  border: 1px solid #8d8e5238;
   border-radius: 6px;
-  margin: 8px 0 14px;
   overflow: hidden;
+  margin: 9px 0 15px;
 }
 .crew-progress i {
   display: block;
   height: 100%;
-  background: #dcbd65;
+  background: linear-gradient(90deg, #a68f4e, #f0d38d);
   transition: width 0.25s;
+}
+.crew-next-step {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+  color: #e3dfbf;
+  border: 1px solid #7895764d;
+  background: #fff6d707;
+  border-radius: 7px;
+  margin-bottom: 13px;
+}
+.crew-next-step > svg {
+  flex-shrink: 0;
+  color: #c3b276;
+}
+.crew-next-step > span {
+  flex: 1;
+}
+.crew-next-step b {
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.crew-next-step small {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #b5c5a6;
+  margin-top: 4px;
+}
+.crew-roster-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-top: 1px solid #c8d2a924;
+  padding: 11px 0 9px;
+  margin-top: 9px;
+  color: #b5c6a7;
+  font-size: 10px;
 }
 .crew-mini-roster {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 3px;
+  gap: 5px;
 }
 .crew-mini-roster button {
-  position: relative;
-  padding: 3px 0;
   display: flex;
+  position: relative;
   align-items: center;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  padding: 2px 0 4px;
+  min-width: 0;
+  border-radius: 5px;
 }
-.crew-mini-roster button > span {
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 29px;
-  border-radius: 50%;
-  font-weight: 700;
-  color: white;
-  border: 1px solid #d8e6c755;
+.crew-mini-roster button:hover {
+  background: #eae4bd0c;
 }
 .crew-mini-roster small {
   font-size: 10px;
-  color: #cfdbc9;
+  color: #d9dfc5;
 }
 .crew-dot {
   display: block;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #839287;
+  background: #94a085;
   flex-shrink: 0;
 }
 .crew-mini-roster .crew-dot {
   position: absolute;
-  top: 25px;
-  right: 5px;
-  border: 1px solid #173044;
+  top: 30px;
+  right: 2px;
+  border: 2px solid #213a30;
+  width: 9px;
+  height: 9px;
 }
 .crew-dot.moving,
 .crew-dot.working {
-  background: #b7df85;
+  background: #bfdc86;
 }
 .crew-dot.resting {
-  background: #dfb75f;
+  background: #e7be6b;
+}
+.crew-dot.waiting {
+  background: #cb9670;
 }
 .crew-board .crew-live-note {
-  font-size: 12px;
-  line-height: 1.5;
-  min-height: 54px;
-  margin-top: 12px;
-  color: #cbdac8;
+  font-size: 11px;
+  line-height: 1.55;
+  margin-top: 11px;
+  color: #bac9ac;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .crew-board-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 7px;
+  margin-top: 13px;
 }
 .crew-board-actions button {
   display: flex;
+  flex: 1;
+  justify-content: center;
   align-items: center;
-  gap: 5px;
-  font-size: 12px !important;
-  padding: 8px 10px;
-  background: #314b51;
-  border-radius: 7px;
+  gap: 6px;
+  min-height: 35px;
+  padding: 8px;
+  font-size: 11px !important;
+  background: #3b5140;
+  border: 1px solid #b2bea32b;
+  border-radius: 6px;
 }
 .crew-board-actions button:last-child {
-  background: #d9cd92;
-  color: #253a3b;
+  background: #d2b76e;
+  color: #293c2b;
+  border-color: #dbc58a;
+}
+.crew-new-objective {
+  width: 100%;
+  color: #d5d8b9;
+  font-size: 11px !important;
+  padding-top: 11px;
+}
+.crew-council-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-top: 1px solid #c8d2a924;
+  padding-top: 11px;
+  margin-top: 11px;
+  width: 100%;
+  color: #bac5a7;
+  font-size: 11px !important;
+}
+.crew-council-link svg:last-child {
+  margin-left: auto;
 }
 .crew-dialog {
   width: min(940px, calc(100vw - 32px));
   max-width: 940px !important;
   padding: 0 !important;
-  border: 1px solid #8ea48f !important;
+  border: 1px solid #b79b5e !important;
   border-radius: 20px !important;
-  background: #f5f6ec !important;
+  background: #f8edcf !important;
   color: #233e3a !important;
   gap: 0 !important;
-  max-height: calc(100dvh - 40px);
+  max-height: calc(100dvh - 36px);
   overflow: hidden;
   display: flex !important;
   flex-direction: column;
@@ -275,8 +399,8 @@
   justify-content: space-between;
   gap: 20px;
   padding: 25px 28px 21px;
-  background: #183442;
-  color: #fff1d6;
+  background: #162c2b;
+  color: #fff4d8;
 }
 .crew-dialog-heading > div > span {
   display: flex;
@@ -290,7 +414,7 @@
   font:
     29px/1.2 Georgia,
     serif;
-  color: #fff1d6;
+  color: #fff4d8;
 }
 .crew-dialog-heading [data-slot="dialog-description"] {
   font-size: 13px;
@@ -310,8 +434,8 @@
   align-items: center;
   gap: 11px;
   padding: 14px 28px;
-  background: #e5ecd8;
-  border-bottom: 1px solid #d4ddc7;
+  background: #ecdfbb;
+  border-bottom: 1px solid #d7c79e;
 }
 .crew-objective-strip > div {
   flex: 1;
@@ -325,7 +449,7 @@
 }
 .crew-objective-strip span {
   font-size: 12px;
-  color: #62755a;
+  color: #536247;
   margin-top: 2px;
 }
 .crew-objective-strip button {
@@ -341,12 +465,13 @@
   display: grid;
   grid-template-columns: 210px 1fr;
   overflow: auto;
-  min-height: 240px;
+  overscroll-behavior: contain;
+  min-height: 0;
 }
 .crew-people {
   padding: 18px 12px;
-  background: #eef0e3;
-  border-right: 1px solid #d7dec9;
+  background: #f0e4c2;
+  border-right: 1px solid #d9c79e;
 }
 .crew-people button {
   display: flex;
@@ -359,19 +484,11 @@
   margin-bottom: 4px;
 }
 .crew-people button[aria-pressed="true"] {
-  background: #dce7d0;
-  box-shadow: inset 3px 0 #52765b;
+  background: #e5d7af;
+  box-shadow: inset 3px 0 #8c743f;
 }
 .crew-avatar {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
   flex-shrink: 0;
-  border-radius: 11px;
-  color: #fff9e9;
-  font-family: Georgia, serif;
-  font-size: 21px;
 }
 .crew-people button > span:nth-child(2) {
   flex: 1;
@@ -383,7 +500,7 @@
 }
 .crew-people small {
   font-size: 11px;
-  color: #708168;
+  color: #536247;
 }
 .crew-detail {
   padding: 18px 25px 26px;
@@ -392,7 +509,7 @@
 .crew-detail > nav {
   display: flex;
   gap: 6px;
-  border-bottom: 1px solid #dce2d2;
+  border-bottom: 1px solid #dbceab;
   padding-bottom: 10px;
   margin-bottom: 20px;
 }
@@ -402,18 +519,13 @@
   border-radius: 6px;
 }
 .crew-detail > nav button[aria-pressed="true"] {
-  background: #24493e;
+  background: #254837;
   color: #faf5dd;
 }
 .crew-person-heading {
   display: flex;
   gap: 12px;
   align-items: center;
-}
-.crew-avatar.large {
-  width: 49px;
-  height: 54px;
-  font-size: 29px;
 }
 .crew-person-heading h3 {
   font:
@@ -422,7 +534,7 @@
 }
 .crew-person-heading p {
   font-size: 12px;
-  color: #667960;
+  color: #536247;
   margin-top: 5px;
 }
 .crew-status-pill {
@@ -438,14 +550,14 @@
 }
 .crew-reason {
   margin-top: 22px;
-  background: #fffefa;
-  border: 1px solid #dce2d1;
+  background: #fff9e8;
+  border: 1px solid #ddcc9f;
   border-radius: 10px;
   padding: 15px;
 }
 .crew-reason > span {
   font-size: 11px;
-  color: #718466;
+  color: #536247;
 }
 .crew-reason h4 {
   font-size: 17px;
@@ -483,13 +595,13 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  border-top: 1px solid #dce2d1;
+  border-top: 1px solid #ddcc9f;
   padding-top: 14px;
   margin-top: 18px;
 }
 .crew-person-stats > span {
   font-size: 11px;
-  color: #6b7e62;
+  color: #536247;
 }
 .crew-person-stats b {
   display: block;
@@ -511,7 +623,7 @@
 .crew-help {
   font-size: 12px;
   line-height: 1.5;
-  color: #748366;
+  color: #536247;
   margin-top: 8px;
 }
 .crew-memories {
@@ -531,7 +643,7 @@
 .crew-memories p > span {
   display: block;
   font-size: 10px;
-  color: #78886f;
+  color: #536247;
   margin-bottom: 4px;
 }
 .crew-job-intro h3,
@@ -545,13 +657,17 @@
 .crew-event-log > p {
   font-size: 13px;
   line-height: 1.6;
-  color: #6b7d61;
+  color: #536247;
+}
+.crew-reserves-heading {
+  font-size: 13px;
+  margin-top: 20px;
 }
 .crew-reserve-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin: 18px 0;
+  margin: 10px 0 18px;
 }
 .crew-reserve-grid > div {
   display: flex;
@@ -567,18 +683,18 @@
 }
 .crew-reserve-grid b small {
   font-size: 11px;
-  color: #76876b;
+  color: #536247;
   font-weight: normal;
 }
 .crew-reserve-grid > div > span {
   width: 100%;
   font-size: 11px;
-  color: #647758;
+  color: #536247;
 }
 .crew-spending {
   font-size: 12px;
   line-height: 2;
-  color: #667b5e;
+  color: #536247;
 }
 .crew-spending .crew-amounts {
   margin-left: 5px;
@@ -591,9 +707,9 @@
 }
 .crew-job-list article {
   padding: 13px;
-  border: 1px solid #d4dfc5;
+  border: 1px solid #dfceaa;
   border-radius: 9px;
-  background: #fffefa;
+  background: #fff9e8;
 }
 .crew-job-list article.blocked {
   background: #f4eddd;
@@ -610,12 +726,12 @@
 }
 .crew-job-list article span {
   font-size: 11px;
-  color: #69805c;
+  color: #536247;
 }
 .crew-job-list article p {
   font-size: 12px;
   line-height: 1.6;
-  color: #6a7e62;
+  color: #536247;
   margin-top: 8px;
 }
 .crew-event-log article {
@@ -638,7 +754,7 @@
 }
 .crew-event-log article small {
   font-size: 11px;
-  color: #829174;
+  color: #536247;
 }
 .crew-event-log article p {
   font-size: 13px;
@@ -648,7 +764,7 @@
 .crew-empty {
   font-size: 13px !important;
   line-height: 1.6;
-  color: #7a8c70;
+  color: #536247;
   padding: 12px 0;
 }
 .crew-dialog-footer {
@@ -657,19 +773,20 @@
   gap: 15px;
   align-items: center;
   padding: 15px 28px;
-  border-top: 1px solid #d4dec7;
-  background: #eaf0de;
+  border-top: 1px solid #d7c79e;
+  background: #ecdfbb;
 }
 .crew-dialog-footer > span {
   display: flex;
   gap: 7px;
   align-items: center;
   font-size: 11px;
-  color: #6c805e;
+  color: #536247;
 }
 .crew-dialog-footer > button {
   font-size: 12px;
-  color: #7d5e43;
+  color: #755437;
+  min-height: 36px;
 }
 .crew-task-badge {
   position: absolute;
@@ -698,237 +815,189 @@
   height: 1024px;
   z-index: 12;
 }
-@media (max-width: 1100px) {
+
+@media (max-width: 1100px) and (min-width: 701px) {
   .crew-board {
     right: 18px;
-    width: 267px;
-    padding: 13px;
-  }
-  .crew-board h2 {
-    font-size: 25px;
-  }
-  .crew-board .crew-objective-title h2 {
-    font-size: 20px;
-  }
-}
-@media (max-width: 760px) {
-  .crew-board {
-    top: 174px;
-    right: 12px;
-    width: 220px;
-    padding: 12px;
-  }
-  .crew-board h2 {
-    font-size: 22px;
-  }
-  .crew-board-body > p {
-    font-size: 12px;
-  }
-  .crew-start {
-    gap: 6px;
-    padding: 10px 8px;
-    margin-top: 10px;
-  }
-  .crew-start > svg:last-child {
-    display: none;
-  }
-  .crew-start b {
-    font-size: 12px;
-  }
-  .crew-start small {
-    font-size: 10px;
-  }
-  .crew-budget {
-    font-size: 10px !important;
+    width: 280px;
+    padding: 12px 14px;
   }
   .crew-mini-roster {
-    gap: 0;
+    gap: 2px;
   }
-  .crew-mini-roster button > span {
-    width: 24px;
-    height: 24px;
-    font-size: 11px;
+  .crew-mini-roster .resident-avatar {
+    --resident-size: 34px !important;
   }
-  .crew-mini-roster small {
-    font-size: 9px;
+}
+@media (max-width: 700px) {
+  .crew-board {
+    width: min(338px, calc(100vw - 24px));
+    right: 12px;
+    top: 152px;
+    padding: 9px 13px 11px;
+    max-height: calc(100dvh - 285px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
-  .crew-mini-roster .crew-dot {
-    top: 22px;
-    right: 1px;
+  .crew-board[data-mode="auto"] .crew-board-body {
+    display: none;
   }
-  .crew-board .crew-live-note {
-    font-size: 11px;
-    min-height: 45px;
+  .crew-board[data-mode="auto"] .crew-collapsed-summary {
+    display: grid;
+  }
+  .crew-board-heading {
+    min-height: 27px;
+  }
+  .crew-collapsed-summary {
+    padding-top: 6px;
+  }
+  .crew-summary-title {
+    font-size: 19px;
+  }
+  .crew-board h2 {
+    font-size: 27px;
+    margin-top: 13px;
+  }
+  .crew-mini-roster {
+    gap: 6px;
+  }
+  .crew-mini-roster button {
+    min-height: 52px;
+  }
+  .crew-start,
+  .crew-secondary-objective {
+    min-height: 48px;
   }
   .crew-board-actions button {
-    font-size: 11px !important;
-    padding: 7px;
-  }
-  .crew-stockpile {
-    font-size: 12px !important;
-  }
-  .crew-stockpile > span {
-    font-size: 10px;
+    min-height: 40px;
   }
   .crew-dialog {
     max-height: calc(100dvh - 20px);
     width: calc(100vw - 20px);
-    border-radius: 15px !important;
+    border-radius: 14px !important;
   }
   .crew-dialog-heading {
     padding: 18px;
+    gap: 10px;
   }
   .crew-dialog-heading [data-slot="dialog-title"] {
-    font-size: 24px;
+    font-size: 25px;
+  }
+  .crew-dialog-heading [data-slot="dialog-description"] {
+    font-size: 12px;
+  }
+  .crew-dialog-heading > button {
+    min-width: 36px;
+    min-height: 36px;
   }
   .crew-objective-strip {
     padding: 12px 16px;
+    gap: 8px;
+  }
+  .crew-objective-strip strong {
+    font-size: 13px;
+  }
+  .crew-objective-strip span {
+    font-size: 10px;
+  }
+  .crew-objective-strip button {
+    padding: 7px 8px;
+    font-size: 11px;
+    min-height: 34px;
   }
   .crew-inspector-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .crew-people {
     display: flex;
     overflow-x: auto;
-    padding: 10px;
+    padding: 9px;
     border-right: 0;
-    border-bottom: 1px solid #d7dec9;
+    border-bottom: 1px solid #d9c79e;
     gap: 3px;
-    min-height: 76px;
+    min-height: 83px;
   }
   .crew-people button {
-    min-width: 77px;
+    min-width: 65px;
     flex-direction: column;
     gap: 4px;
     padding: 5px;
     margin: 0;
     position: relative;
   }
+  .crew-people button > span:nth-child(2) {
+    flex: initial;
+  }
   .crew-people small {
     display: none;
   }
   .crew-people .crew-dot {
     position: absolute;
-    top: 30px;
-    right: 18px;
+    top: 37px;
+    right: 11px;
+    border: 1px solid #f0e4c2;
   }
   .crew-people b {
-    font-size: 12px;
-  }
-  .crew-avatar {
-    width: 29px;
-    height: 29px;
-    font-size: 18px;
-    border-radius: 9px;
+    font-size: 11px;
   }
   .crew-detail {
-    padding: 17px;
+    padding: 16px;
   }
   .crew-detail > nav {
     gap: 3px;
+    margin-bottom: 17px;
   }
   .crew-detail > nav button {
-    padding: 8px 10px;
-    font-size: 12px;
+    flex: 1;
+    padding: 9px 6px;
+    font-size: 11px;
+  }
+  .crew-person-heading {
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+  .crew-person-heading .resident-avatar {
+    --resident-size: 60px !important;
   }
   .crew-person-heading p {
     font-size: 11px;
+    max-width: 18ch;
+    line-height: 1.4;
+  }
+  .crew-person-heading h3 {
+    font-size: 24px;
   }
   .crew-status-pill {
     font-size: 10px;
+    padding: 4px 6px;
   }
-  .crew-person-heading h3 {
-    font-size: 23px;
+  .crew-reserve-grid {
+    gap: 6px;
   }
   .crew-reserve-grid > div {
     padding: 9px;
   }
-  .crew-dialog-footer {
-    padding: 12px 17px;
+  .crew-reserve-grid b {
+    font-size: 13px;
+  }
+  .crew-job-list article > div {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
-}
-@media (max-width: 520px) {
-  .village-game .quest-panel {
-    width: calc(44% - 18px);
+  .crew-job-list h4 {
+    min-width: 140px;
+    font-size: 13px;
   }
-  .crew-board {
-    width: calc(56% - 18px);
+  .crew-dialog-footer {
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    gap: 3px 10px;
   }
-  .crew-board h2 {
-    font-size: 20px;
+  .crew-dialog-footer > span {
+    font-size: 10px;
   }
-  .crew-board-body > p {
+  .crew-dialog-footer > button {
     font-size: 11px;
-  }
-  .crew-start > svg:first-child {
-    display: none;
-  }
-  .crew-stockpile > span {
-    display: none;
-  }
-  .crew-board .crew-objective-title h2 {
-    font-size: 17px;
-  }
-  .crew-objective-title {
-    gap: 7px;
-  }
-  .crew-objective-title > svg {
-    width: 15px;
-  }
-  .crew-objective-title span {
-    font-size: 10px;
-  }
-  .crew-mini-roster {
-    grid-template-columns: repeat(3, 1fr);
-    row-gap: 4px;
-  }
-  .crew-mini-roster button {
-    flex-direction: row;
-    gap: 4px;
-    justify-content: center;
-  }
-  .crew-mini-roster button > span {
-    width: 19px;
-    height: 19px;
-    font-size: 10px;
-  }
-  .crew-mini-roster .crew-dot {
-    display: none;
-  }
-  .crew-progress-label {
-    font-size: 10px;
-  }
-  .crew-board-actions {
-    gap: 4px;
-  }
-  .crew-board-actions button {
-    padding: 6px 4px;
-    font-size: 10px !important;
-  }
-  .crew-board .crew-live-note {
-    font-size: 10px;
-    min-height: 45px;
-    line-height: 1.5;
-  }
-  .crew-council-link {
-    font-size: 10px !important;
-  }
-  .crew-board .crew-budget {
-    line-height: 1.3;
-  }
-  .crew-budget .crew-amounts {
-    gap: 8px;
-  }
-  .crew-board .crew-budget svg {
-    width: 11px;
-  }
-  .crew-start small {
-    font-size: 9px;
-  }
-  .crew-board .crew-stockpile {
-    font-size: 11px !important;
   }
 }
 @media (prefers-reduced-motion: reduce) {

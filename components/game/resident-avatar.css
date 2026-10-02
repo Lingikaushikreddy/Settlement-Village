@@ -1,0 +1,41 @@
+.resident-avatar {
+  position: relative;
+  display: inline-block;
+  width: var(--resident-size, 44px);
+  height: var(--resident-size, 44px);
+  flex: 0 0 auto;
+  vertical-align: middle;
+  pointer-events: none;
+}
+.resident-avatar-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-image: url("/game/residents-v3.png");
+  background-repeat: no-repeat;
+  background-size: 300% 200%;
+  background-position: calc(var(--resident-column) * 1%)
+    calc(var(--resident-row) * 1%);
+}
+.resident-avatar--portrait {
+  overflow: hidden;
+  border-radius: 50%;
+  background: #c4cead;
+  box-shadow: inset 0 0 0 1px #f4e5be8c;
+}
+.resident-avatar--portrait .resident-avatar-art {
+  width: 200%;
+  height: 200%;
+  inset: -12% auto auto -50%;
+}
+.resident-avatar--full {
+  filter: drop-shadow(0 3px 2px #1c30284d);
+}
+.resident-avatar--unknown {
+  display: inline-grid;
+  place-items: center;
+  background: #643c42;
+  color: #fff1d6;
+  font-weight: 700;
+  font-size: calc(var(--resident-size, 44px) * 0.45);
+}

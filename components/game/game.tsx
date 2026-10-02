@@ -66,6 +66,8 @@ import type {
   Command,
 } from "@/lib/game/model";
 import { CrewBoard, CrewInspector } from "./crew";
+import { VillageJournal } from "./village-journal";
+import { actionProblem, buildProblem } from "@/lib/game/action-availability";
 import { crewCommand, crewRoster } from "@/lib/game/crew";
 import type { CrewCommand } from "@/lib/game/crew-types";
 import { CouncilPanel } from "./council";
@@ -80,6 +82,7 @@ import type { ResearchFrame } from "../observatory";
 import "./game.css";
 import "./research.css";
 import "./session.css";
+import "./polish.css";
 const Research = lazy(() =>
   import("../observatory").then((m) => ({ default: m.Observatory })),
 );
@@ -263,6 +266,7 @@ function CampaignGame({
     ),
     [councilOpen, setCouncilOpen] = useState(false),
     [crewOpen, setCrewOpen] = useState(false),
+    [crewView, setCrewView] = useState<"agent" | "jobs" | "history">("agent"),
     [resident, setResident] = useState("mira"),
     [research, setResearch] = useState<{ run: Run; section: string } | null>(
       null,
@@ -273,8 +277,8 @@ function CampaignGame({
     [troop, setTroop] = useState<TroopKind>("knight"),
     [squad, setSquad] = useState(1),
     [saved, setSaved] = useState("Saved on this device"),
-    [sound, setSound] = useState(false),
-    [goalsOpen, setGoalsOpen] = useState(!initialGame.crew?.objective);
+    [sound, setSound] = useState(false);
+  const crewTrigger = useRef<HTMLElement | null>(null);
   const current = useRef(game),
     audio = useRef<AudioContext | null>(null),
     file = useRef<HTMLInputElement>(null);
@@ -377,7 +381,6 @@ function CampaignGame({
   }
   function crewAct(c: CrewCommand) {
     if (update((g) => crewCommand(g, c)) && c.type === "start") {
-      setGoalsOpen(false);
       setCouncilOpen(false);
       setSelected(null);
       setPlacing(null);
@@ -385,7 +388,12 @@ function CampaignGame({
     }
   }
   function openCrew(id?: string) {
+    crewTrigger.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     if (id) setResident(id);
+    setCrewView(id ? "agent" : "jobs");
     setSelected(null);
     setCrewOpen(true);
   }
@@ -466,7 +474,9 @@ function CampaignGame({
     battle = game.battle,
     raiding = !!battle,
     done = battle?.result;
-  const unlockedQuest = quests.find((q) => !game.claimed.includes(q.id));
+  const upgradeProblem = building
+    ? actionProblem(game, { type: "upgrade", id: building.id })
+    : null;
   const stars = battle
     ? Number(battle.buildings.find((b) => b.kind === "hall")!.hp <= 0) +
       Number(
@@ -482,7 +492,6 @@ function CampaignGame({
       return { ...n, battle: undefined };
     });
     setSelected(null);
-    setGoalsOpen(true);
     chime();
   }
   function place(x: number, y: number) {
@@ -505,9 +514,19 @@ function CampaignGame({
   const displayedTick =
     researchFrame?.tick ?? displayedRun.snapshots.length - 1;
   return (
-    <main className={`village-game ${research ? "research-active" : ""}`}>
+    <main
+      className={`village-game ${research ? "research-active" : ""} ${placing ? "placing-active" : ""} ${raiding ? "raiding-active" : ""}`}
+    >
       {crewOpen && !game.battle && !research && (
         <CrewInspector
+          initialView={crewView}
+          onReturnFocus={() => {
+            if (crewTrigger.current?.isConnected) crewTrigger.current.focus();
+            else
+              document
+                .querySelector<HTMLButtonElement>(".crew-board-heading")
+                ?.focus();
+          }}
           game={game}
           selected={resident}
           onSelected={setResident}
@@ -613,10 +632,6 @@ function CampaignGame({
                     {r === "wood" ? "Timber" : r === "food" ? "Food" : "Gold"}
                   </small>
                 </div>
-                <span
-                  className="resource-fill"
-                  style={{ width: `${Math.min(100, game.resources[r] / 30)}%` }}
-                />
               </div>
             );
           })}
@@ -710,86 +725,27 @@ function CampaignGame({
               onCouncil={() => openCouncil()}
               onRaid={() => setPanel("raid")}
             />
-            <aside className={`quest-panel ${goalsOpen ? "" : "collapsed"}`}>
-              <button
-                className="quest-title"
-                onClick={() => setGoalsOpen(!goalsOpen)}
-              >
-                <span>
-                  <Flag size={16} /> Your next chapter
-                </span>
-                <ChevronRight className={goalsOpen ? "rotate" : ""} size={16} />
-              </button>
-              {goalsOpen ? (
-                <>
-                  <h1>
-                    A village worth
-                    <br />
-                    fighting for.
-                  </h1>
-                  <p>
-                    Build your home. Gather your army.
-                    <br />
-                    Meet the people who call it home.
-                  </p>
-                  {quests
-                    .filter((q) => !game.claimed.includes(q.id))
-                    .slice(0, 2)
-                    .map((q) => {
-                      const progress = Math.min(q.goal, game.stats[q.stat]),
-                        complete = progress >= q.goal;
-                      return (
-                        <button
-                          className={`quest-item ${complete ? "complete" : ""}`}
-                          key={q.id}
-                          onClick={() => {
-                            if (complete)
-                              act(
-                                { type: "claim", id: q.id },
-                                `Quest complete! +${q.reward} gold`,
-                              );
-                            else if (q.id === "build") setPanel("build");
-                            else if (q.id === "raid") setPanel("raid");
-                            else if (q.id === "upgrade") setSelected("hall");
-                            else
-                              setNotice(
-                                "Tap the resource bubbles above your mine, mill and farm.",
-                              );
-                          }}
-                        >
-                          <span className="quest-check">
-                            {complete ? (
-                              <Check size={15} />
-                            ) : (
-                              <Flag size={13} />
-                            )}
-                          </span>
-                          <span>
-                            <b>{q.name}</b>
-                            <small>
-                              {complete ? `Claim ${q.reward} gold` : q.detail}
-                            </small>
-                            <i>
-                              <em
-                                style={{
-                                  width: `${(progress / q.goal) * 100}%`,
-                                }}
-                              />
-                            </i>
-                          </span>
-                          <ChevronRight size={14} />
-                        </button>
-                      );
-                    })}
-                  {!unlockedQuest ? (
-                    <div className="all-quests">
-                      <Trophy />
-                      All village goals complete!
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-            </aside>
+            <VillageJournal
+              game={game}
+              onResident={openCrew}
+              onGuide={() => setPanel("guide")}
+              onQuest={(id) => {
+                const quest = quests.find((q) => q.id === id);
+                if (!quest) return;
+                if (game.stats[quest.stat] >= quest.goal)
+                  act(
+                    { type: "claim", id },
+                    `Milestone complete! +${quest.reward} gold`,
+                  );
+                else if (id === "build") setPanel("build");
+                else if (id === "raid") setPanel("raid");
+                else if (id === "upgrade") setSelected("hall");
+                else
+                  setNotice(
+                    "Tap the resource bubbles above your mine, mill and farm.",
+                  );
+              }}
+            />
             <div className="village-badge">
               <Trophy size={17} />
               <strong>{game.trophies}</strong>
@@ -865,7 +821,10 @@ function CampaignGame({
                   ) : null}
                   <button
                     className="game-button green small"
-                    disabled={!!building.readyAt || building.level >= 5}
+                    disabled={!!upgradeProblem}
+                    aria-describedby={
+                      upgradeProblem ? "upgrade-problem" : undefined
+                    }
                     onClick={() =>
                       act(
                         { type: "upgrade", id: building.id },
@@ -888,6 +847,14 @@ function CampaignGame({
                     <Move size={20} />
                   </button>
                 </div>
+                {upgradeProblem && (
+                  <p
+                    id="upgrade-problem"
+                    className="action-problem building-problem"
+                  >
+                    {upgradeProblem}
+                  </p>
+                )}
               </section>
             ) : null}
             <footer className="game-bottom">
@@ -1114,7 +1081,7 @@ function CampaignGame({
                     <button
                       className="shop-item"
                       key={k}
-                      disabled={freeBuilders(game) < 1}
+                      disabled={!!buildProblem(game, k)}
                       onClick={() => {
                         setPlacing(`new:${k}`);
                         setPanel(null);
@@ -1129,7 +1096,11 @@ function CampaignGame({
                       </span>
                       <Cost cost={buildings[k].cost} />
                       <b className="shop-cta">
-                        Place building <ChevronRight size={13} />
+                        {buildProblem(game, k) || (
+                          <>
+                            Place building <ChevronRight size={13} />
+                          </>
+                        )}
                       </b>
                     </button>
                   ))}
@@ -1156,6 +1127,14 @@ function CampaignGame({
                       <Cost cost={troops[k].cost} />
                       <button
                         className="game-button blue small"
+                        disabled={
+                          !!actionProblem(game, {
+                            type: "train",
+                            kind: k,
+                            count: 1,
+                          })
+                        }
+                        aria-describedby={`train-${k}-problem`}
                         onClick={() =>
                           act(
                             { type: "train", kind: k, count: 1 },
@@ -1167,6 +1146,14 @@ function CampaignGame({
                       </button>
                       <button
                         className="train-five"
+                        disabled={
+                          !!actionProblem(game, {
+                            type: "train",
+                            kind: k,
+                            count: 5,
+                          })
+                        }
+                        aria-describedby={`train-${k}-problem`}
                         onClick={() =>
                           act(
                             { type: "train", kind: k, count: 5 },
@@ -1176,6 +1163,20 @@ function CampaignGame({
                       >
                         Queue 5
                       </button>
+                      <p className="action-problem" id={`train-${k}-problem`}>
+                        {actionProblem(game, {
+                          type: "train",
+                          kind: k,
+                          count: 1,
+                        }) ||
+                          (actionProblem(game, {
+                            type: "train",
+                            kind: k,
+                            count: 5,
+                          })
+                            ? `Queue 5: ${actionProblem(game, { type: "train", kind: k, count: 5 })}`
+                            : "")}
+                      </p>
                     </article>
                   ))}
                 </div>
@@ -1224,12 +1225,14 @@ function CampaignGame({
                     </div>
                     <button
                       className="game-button gold small"
-                      disabled={i > game.unlocked}
+                      disabled={
+                        i > game.unlocked ||
+                        Object.values(game.army).every((n) => n === 0)
+                      }
                       onClick={() => {
                         if (update((g) => startBattle(g, i))) {
                           setPanel(null);
                           setSelected(null);
-                          setGoalsOpen(false);
                         }
                       }}
                     >
@@ -1247,6 +1250,9 @@ function CampaignGame({
                   </article>
                 ))}
                 <p className="raid-note">
+                  {Object.values(game.army).every((n) => n === 0)
+                    ? "Train at least one troop before scouting. "
+                    : ""}
                   Deployed troops are spent. Troops left in reserve return home.
                   Earn a star to unlock the next stronghold.
                 </p>
@@ -1254,6 +1260,11 @@ function CampaignGame({
             ) : null}
             {panel === "guide" ? (
               <div className="game-guide">
+                <div
+                  className="guide-vista"
+                  role="img"
+                  aria-label="Illustration of Willowmere in its forest valley"
+                />
                 <div>
                   <Hammer />
                   <p>
@@ -1279,12 +1290,14 @@ function CampaignGame({
                 <div>
                   <BookOpen />
                   <p>
-                    <b>Give your crew an objective</b>Choose Prepare for a raid
-                    or Restock supplies in Village orders. Residents collect
-                    actual resources, organize recruitment, and replan around
-                    shortages. Inspect a resident to see their job and memories.
-                    Crew work pauses during raids, offline, in Council and in
-                    Research.
+                    <b>Give your crew an objective</b>Choose Grow the village,
+                    Prepare for a raid or Restock supplies in Village orders.
+                    Residents collect actual resources, build and upgrade a new
+                    farm, organize recruitment, and replan around shortages.
+                    Review the growth plan’s spending ceiling and protected
+                    reserves before starting. Inspect a resident to see their
+                    job and memories. Crew work pauses during raids, offline, in
+                    Council and in Research.
                   </p>
                 </div>
                 <div>

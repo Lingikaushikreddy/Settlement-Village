@@ -1,6 +1,12 @@
 import { z } from "zod";
+import { developmentPlanSchema, type DevelopmentPlan } from "./development.ts";
+export type {
+  DevelopmentPlan,
+  DevelopmentStep,
+  DevelopmentStepView,
+} from "./development.ts";
 import type { Resources, Resource, TroopKind } from "./model.ts";
-export type ObjectiveKind = "raid" | "stockpile";
+export type ObjectiveKind = "raid" | "stockpile" | "develop";
 export type CrewCommand =
   | { type: "start"; kind: ObjectiveKind }
   | { type: "pause" | "resume" | "cancel" }
@@ -20,7 +26,10 @@ export type CrewAgent = {
 };
 export type CrewTask = {
   id: string;
-  kind: "collect" | "train";
+  kind: "collect" | "train" | "build" | "upgrade";
+  developmentStepId?: string;
+  x?: number;
+  y?: number;
   buildingId: string;
   troop?: TroopKind;
   count: number;
@@ -52,6 +61,7 @@ export type CrewState = {
     reserves: Resources;
     budget: Resources;
     spent: Resources;
+    development?: DevelopmentPlan;
   } | null;
   agents: CrewAgent[];
   tasks: CrewTask[];
@@ -79,12 +89,13 @@ export const crewSchema = z
     status: z.enum(["idle", "active", "complete"]),
     objective: z
       .object({
-        kind: z.enum(["raid", "stockpile"]),
+        kind: z.enum(["raid", "stockpile", "develop"]),
         startedTick: integer,
         targetArmy: integer.max(40),
         reserves: resources,
         budget: resources,
         spent: resources,
+        development: developmentPlanSchema.optional(),
       })
       .nullable(),
     agents: z
@@ -108,7 +119,10 @@ export const crewSchema = z
       .array(
         z.object({
           id,
-          kind: z.enum(["collect", "train"]),
+          kind: z.enum(["collect", "train", "build", "upgrade"]),
+          developmentStepId: id.optional(),
+          x: integer.max(8).optional(),
+          y: integer.max(8).optional(),
           buildingId: id,
           troop: z.enum(["knight", "archer", "catapult"]).optional(),
           count: integer.min(1).max(5),
@@ -161,6 +175,22 @@ export const crewSchema = z
     )
       fail();
     if (
+      c.objective &&
+      (c.objective.kind === "develop") !== !!c.objective.development
+    )
+      fail();
+    if (
+      c.objective?.development &&
+      (["gold", "wood", "food"] as const).some(
+        (r) =>
+          c.objective!.reserves[r] !==
+            c.objective!.development!.reserveFloor[r] ||
+          c.objective!.budget[r] !==
+            c.objective!.development!.steps.reduce((n, s) => n + s.cost[r], 0),
+      )
+    )
+      fail();
+    if (
       c.events.some((e) => e.tick > c.tick) ||
       c.agents.some((a) => a.memories.some((m) => m.tick > c.tick))
     )
@@ -180,11 +210,22 @@ export const crewSchema = z
         fail();
       if (
         (t.kind === "train" && !t.troop) ||
-        (t.kind === "collect" && !t.resource)
+        (t.kind === "collect" && !t.resource) ||
+        ((t.kind === "build" || t.kind === "upgrade") &&
+          (!c.objective?.development?.steps.some(
+            (s) => s.id === t.developmentStepId && s.kind === t.kind,
+          ) ||
+            (t.kind === "build" &&
+              ((!t.blocked && (t.x === undefined || t.y === undefined)) ||
+                (t.x === undefined) !== (t.y === undefined)))))
       )
         fail();
       const key =
-        t.kind === "collect" ? `collect:${t.buildingId}` : `train:${t.troop}`;
+        t.kind === "collect"
+          ? `collect:${t.buildingId}`
+          : t.kind === "train"
+            ? `train:${t.troop}`
+            : `development:${t.developmentStepId}`;
       if (workplaces.has(key)) fail();
       workplaces.add(key);
     }

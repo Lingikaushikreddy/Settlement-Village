@@ -1,10 +1,4 @@
-import type {
-  Building,
-  Game,
-  Resource,
-  Resources,
-  TroopKind,
-} from "./model.ts";
+import type { Game, Resource, Resources, TroopKind } from "./model.ts";
 import type {
   CrewAgent,
   CrewCommand,
@@ -15,6 +9,14 @@ import type {
 } from "./crew-types.ts";
 import { armySize, buildings, troops } from "./catalog.ts";
 import { command } from "./commands.ts";
+import {
+  developmentPreview,
+  developmentSteps,
+  developmentFarm,
+  walkRoute,
+  type Point,
+  type DevelopmentPlan,
+} from "./development.ts";
 export const crewRoster = [
   {
     id: "mira",
@@ -89,7 +91,16 @@ function recruitCost(g: Game): Resources {
     for (const r of resourceKeys) sum[r] += troops[k].cost[r] * counts[k];
   return sum;
 }
-export function crewPreview(g: Game, kind: ObjectiveKind) {
+export function crewPreview(
+  g: Game,
+  kind: ObjectiveKind,
+): {
+  targetArmy: number;
+  reserves: Resources;
+  budget: Resources;
+  development?: DevelopmentPlan;
+} {
+  if (kind === "develop") return developmentPreview(g);
   return {
     targetArmy: kind === "raid" ? 30 : 0,
     reserves:
@@ -184,7 +195,9 @@ export function crewCommand(game: Game, action: CrewCommand): Game {
       "objective",
       action.kind === "raid"
         ? "Prepare 30 ready troops and village reserves."
-        : "Collect 300 more of each resource.",
+        : action.kind === "develop"
+          ? "Grow the village with an additional level-three farm and the required Town hall upgrade."
+          : "Collect 300 more of each resource.",
     );
     refresh(g);
   } else if (action.type === "pause") c.playing = false;
@@ -226,7 +239,17 @@ export function crewProgress(g: Game) {
     r.target ? Math.min(1, r.current / r.target) : 1,
   );
   if (o?.targetArmy) parts.push(Math.min(1, ready(g) / o.targetArmy));
+  const steps = developmentSteps(g);
+  if (o?.development)
+    for (const step of steps) parts.push(step.status === "complete" ? 1 : 0);
   return {
+    development: o?.development
+      ? {
+          completed: steps.filter((s) => s.status === "complete").length,
+          total: steps.length,
+          steps,
+        }
+      : null,
     percent: o
       ? Math.floor((parts.reduce((a, b) => a + b, 0) / parts.length) * 100)
       : 0,
@@ -235,42 +258,28 @@ export function crewProgress(g: Game) {
     resources,
   };
 }
-type Point = { x: number; y: number };
-function route(g: Game, a: Point, b: Building): Point[] | null {
-  const adjacent = (p: Point) =>
-    Math.abs(p.x - b.x) + Math.abs(p.y - b.y) === 1;
-  const occupied = new Set(g.buildings.map((b) => `${b.x},${b.y}`));
-  if (adjacent(a) && !occupied.has(`${a.x},${a.y}`)) return [];
-  const queue: { point: Point; path: Point[] }[] = [{ point: a, path: [] }];
-  const seen = new Set([`${a.x},${a.y}`]);
-  for (let i = 0; i < queue.length; i++) {
-    const { point, path } = queue[i];
-    for (const [dx, dy] of [
-      [0, -1],
-      [-1, 0],
-      [1, 0],
-      [0, 1],
-    ]) {
-      const next = { x: point.x + dx, y: point.y + dy },
-        key = `${next.x},${next.y}`;
-      if (
-        next.x < 0 ||
-        next.x > 8 ||
-        next.y < 0 ||
-        next.y > 8 ||
-        seen.has(key) ||
-        occupied.has(key)
-      )
-        continue;
-      const steps = [...path, next];
-      if (adjacent(next)) return steps;
-      seen.add(key);
-      queue.push({ point: next, path: steps });
-    }
-  }
-  return null;
+function workplace(g: Game, t: CrewTask): Point | undefined {
+  return t.kind === "build" && t.x !== undefined && t.y !== undefined
+    ? { x: t.x, y: t.y }
+    : g.buildings.find((b) => b.id === t.buildingId);
+}
+const route = walkRoute;
+export function crewRoute(g: Game, agentId: string): Point[] | null {
+  const a = g.crew?.agents.find((a) => a.id === agentId);
+  const t = g.crew?.tasks.find((t) => t.id === a?.task);
+  const target = t && workplace(g, t);
+  return a && target ? route(g, a, target) : null;
 }
 function blocked(g: Game, t: CrewTask): string | null {
+  if (t.kind === "build" || t.kind === "upgrade") {
+    const step = developmentSteps(g).find((s) => s.id === t.developmentStepId);
+    if (!step) return "The development step is no longer in the plan.";
+    if (step.status !== "ready")
+      return step.reason ?? "The development step is already complete.";
+    if (t.kind === "build" && (step.x !== t.x || step.y !== t.y))
+      return "Construction site changed; replanning placement.";
+    return null;
+  }
   const b = g.buildings.find((b) => b.id === t.buildingId);
   if (!b) return "Workplace is missing.";
   if (b.readyAt !== undefined || b.constructing)
@@ -293,7 +302,13 @@ function blocked(g: Game, t: CrewTask): string | null {
 function refresh(g: Game) {
   const c = g.crew!,
     o = c.objective!;
+  if (o.development) {
+    const farm = developmentFarm(g, o.development);
+    if (farm && !o.development.farmId) o.development.farmId = farm.id;
+  }
+  const growth = developmentSteps(g);
   if (
+    (!o.development || growth.every((s) => s.status === "complete")) &&
     ready(g) >= o.targetArmy &&
     resourceKeys.every((r) => g.resources[r] >= o.reserves[r])
   ) {
@@ -308,12 +323,19 @@ function refresh(g: Game) {
       "complete",
       o.kind === "raid"
         ? "Raid preparations complete. Your army is ready for your orders."
-        : "Village restocked. All resource targets reached.",
+        : o.kind === "develop"
+          ? "Village development complete. Your new level-three farm is ready."
+          : "Village restocked. All resource targets reached.",
     );
     return;
   }
   const jobs: CrewTask[] = [];
   const needs = o.kind === "raid" ? recruitCost(g) : zero();
+  if (o.development)
+    for (const step of growth.filter(
+      (s) => s.status !== "complete" && s.status !== "building",
+    ))
+      for (const r of resourceKeys) needs[r] += step.cost[r];
   for (const b of g.buildings) {
     const resource = buildings[b.kind].resource;
     if (
@@ -329,7 +351,7 @@ function refresh(g: Game) {
       count: 1,
       priority: 90,
       label: `Collect ${resource}`,
-      reason: `Supply ${resource} for the objective and recruitment.`,
+      reason: `Supply ${resource} for the objective${o.kind === "develop" ? " and construction" : " and recruitment"}.`,
       blocked: null,
       assignee: null,
       work: 0,
@@ -362,13 +384,33 @@ function refresh(g: Game) {
           work: 0,
         });
   }
+  if (o.development)
+    for (const s of growth.filter((s) => s.status !== "complete")) {
+      jobs.push({
+        id: `development:${s.id}`,
+        kind: s.kind,
+        developmentStepId: s.id,
+        buildingId: s.buildingId ?? "planned-farm",
+        ...(s.x !== undefined && s.y !== undefined ? { x: s.x, y: s.y } : {}),
+        count: 1,
+        priority: 100,
+        label: s.label,
+        reason:
+          s.kind === "build"
+            ? "Construct a new farm within the approved budget."
+            : "Complete the next building level in the approved plan.",
+        blocked: s.reason,
+        assignee: null,
+        work: 0,
+      });
+    }
   for (const t of jobs) {
     t.blocked = blocked(g, t);
-    const workplace = g.buildings.find((b) => b.id === t.buildingId);
+    const target = workplace(g, t);
     if (
       !t.blocked &&
-      workplace &&
-      c.agents.every((a) => route(g, a, workplace) === null)
+      target &&
+      c.agents.every((a) => route(g, a, target) === null)
     )
       t.blocked = "No walkable route to the workplace.";
     const old = c.tasks.find((old) => old.id === t.id);
@@ -376,6 +418,8 @@ function refresh(g: Game) {
       old &&
       old.count === t.count &&
       old.buildingId === t.buildingId &&
+      old.x === t.x &&
+      old.y === t.y &&
       !t.blocked
     ) {
       t.assignee = old.assignee;
@@ -402,6 +446,8 @@ function suitability(a: CrewAgent, t: CrewTask) {
     lina: ["wood", "catapult"],
     oscar: ["food", "wood"],
   };
+  if (t.kind === "build" || t.kind === "upgrade")
+    return a.id === "lina" ? 12 : a.id === "oscar" ? 8 : 0;
   return special[a.id].includes(t.resource ?? t.troop ?? "") ? 12 : 0;
 }
 function assign(g: Game) {
@@ -410,7 +456,7 @@ function assign(g: Game) {
     (a, b) => b.priority - a.priority || a.id.localeCompare(b.id),
   )) {
     if (t.assignee || t.blocked) continue;
-    const b = g.buildings.find((b) => b.id === t.buildingId)!;
+    const b = workplace(g, t)!;
     const candidates = c.agents
       .filter((a) => !a.task && a.restUntil <= c.tick)
       .map((a) => ({ a, path: route(g, a, b) }))
@@ -464,7 +510,7 @@ function step(g: Game) {
       release(c, a, reason);
       continue;
     }
-    const b = g.buildings.find((b) => b.id === t.buildingId)!;
+    const b = workplace(g, t)!;
     const path = route(g, a, b);
     if (path === null) {
       t.blocked = "No walkable route to the workplace.";
@@ -500,19 +546,28 @@ function step(g: Game) {
         g,
         t.kind === "collect"
           ? { type: "collect", id: t.buildingId }
-          : { type: "train", kind: t.troop!, count: t.count },
+          : t.kind === "train"
+            ? { type: "train", kind: t.troop!, count: t.count }
+            : t.kind === "build"
+              ? { type: "build", kind: "farm", x: t.x!, y: t.y! }
+              : { type: "upgrade", id: t.buildingId },
       );
+      g.serial = next.serial;
       g.resources = next.resources;
       g.buildings = next.buildings;
       g.training = next.training;
       g.stats = next.stats;
-      if (t.kind === "train")
+      if (t.kind !== "collect")
         for (const r of resourceKeys)
           c.objective!.spent[r] += before[r] - g.resources[r];
       const done =
         t.kind === "collect"
           ? `Collected ${g.resources[t.resource!] - before[t.resource!]} ${t.resource}.`
-          : `Queued ${t.count} ${troops[t.troop!].name.toLowerCase()}${t.count === 1 ? "" : "s"} for training.`;
+          : t.kind === "build"
+            ? "Started construction of the new village farm."
+            : t.kind === "upgrade"
+              ? `Started ${t.label.toLowerCase()}.`
+              : `Queued ${t.count} ${troops[t.troop!].name.toLowerCase()}${t.count === 1 ? "" : "s"} for training.`;
       a.experience = Math.min(100, a.experience + 1);
       a.completed = Math.min(1000000, a.completed + 1);
       remember(c, a, done);
