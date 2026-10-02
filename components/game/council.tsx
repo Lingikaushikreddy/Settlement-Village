@@ -37,7 +37,7 @@ import type {
   CouncilState,
 } from "@/lib/game/council";
 import { policyInfo } from "@/lib/sim/engine";
-import type { Agent, Policy, Run } from "@/lib/sim/types";
+import type { Agent, BuiltInPolicy, Run } from "@/lib/sim/types";
 import type { Game } from "@/lib/game/model";
 import "./council.css";
 import { ResidentAvatar } from "./resident-avatar";
@@ -709,7 +709,10 @@ export function CouncilPanel({
                 id="council-policy"
                 value={live.policy}
                 onChange={(e) =>
-                  command({ type: "policy", policy: e.target.value as Policy })
+                  command({
+                    type: "policy",
+                    policy: e.target.value as BuiltInPolicy,
+                  })
                 }
               >
                 {Object.entries(policyInfo).map(([key, p]) => (

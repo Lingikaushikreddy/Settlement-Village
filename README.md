@@ -11,7 +11,7 @@ A multi-agent village strategy game and an inspectable AI simulation lab.
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 [![No API key required](https://img.shields.io/badge/Play_without_an_API_key-38664a.svg)](#run-locally)
 
-[Quick start](#run-locally) · [How agents work](#how-the-agents-work) · [Player guide](docs/player-guide.md) · [Contribute](CONTRIBUTING.md)
+[Play online](https://settlement-village.vercel.app) · [Quick start](#run-locally) · [How agents work](#how-the-agents-work) · [Player guide](docs/player-guide.md) · [Contribute](CONTRIBUTING.md)
 
 ![Settlement gameplay: the illustrated village, distinct residents, village orders and resource controls](docs/media/village-v3.png)
 
@@ -19,7 +19,7 @@ A multi-agent village strategy game and an inspectable AI simulation lab.
 
 **Give six residents a shared goal: grow the village, prepare for a raid, or restock supplies. Watch them claim jobs, gather resources, build and upgrade a new farm, or coordinate recruitment.** Inspect what each resident is doing, why they took the job, and what they remember. Then command your army in battle, or open the research desk to investigate social decisions and replay their evidence.
 
-The default game runs locally with **no API key, paid AI, account, or database required**. Campaign residents use deterministic game AI. Optional Claude decisions are available for explicit steps in local-worker research experiments.
+The campaign and free research tools run in your browser with **no API key, paid AI, account, or database required**, whether you open the hosted frontend or run it locally. Campaign residents use deterministic game AI. Optional Claude decisions are available for explicit steps in local-worker research experiments.
 
 If you like games where agent decisions are visible, **star the repository** to follow Settlement's development.
 
@@ -42,11 +42,12 @@ For an expedition, choose **Prepare for a raid** to ready 30 troops and the vill
 | **Cooperating residents**        | Six agents bid for exclusive jobs using role suitability, distance and bounded experience. They replan when workplaces or resources change.      |
 | **Village development**          | Authorize a frozen construction plan with prerequisites, spending limits and protected reserves. Agents build and upgrade through real commands. |
 | **Manual building**              | Place, move and upgrade six building types. See affordability, builder and capacity limits before committing an action.                          |
-| **Troops and battles**           | Recruit knights, archers and catapults. Deploy and focus attacks across three enemy strongholds.                                                 |
+| **Troops and battles**           | Recruit Kavyas, Jhansis and catapults. Deploy and focus attacks across three enemy strongholds.                                                  |
 | **Village journal and identity** | Six illustrated civilian identities across the map and inspectors; milestone rewards, production rates and resident shortcuts in one journal.    |
 | **Inspectable decisions**        | Read current jobs, blocked work, spending limits, recent memories and the village action log.                                                    |
 | **Council stories**              | Investigate four authored social chapters, inspect claims and evidence, and intervene with real treasury consequences.                           |
 | **Research and replay**          | Compare matched seeds, inspect historical evidence, export JSON/CSV reports and independently reproduce every recorded result.                   |
+| **External-agent testbed**       | Evaluate an agent over HTTP, compare it with built-in policies, and independently verify, replay or share its recorded answers.                  |
 | **Optional live models**         | Ask Claude to propose a social action in a configured local-worker experiment, with validated actions, usage records and spend reservations.     |
 | **Save continuity**              | One active campaign tab protects browser-local saves; damaged saves remain available for backup and explicit recovery.                           |
 
@@ -82,7 +83,9 @@ npm run build
 npm start -- --port 5173
 ```
 
-This repository contains the full local application. A public repository is not a hosted game server; deployment requires a compatible runtime. The optional research worker is designed for local use.
+The default development and production scripts use **Next.js**; the frontend also supports Vercel deployment. The hosted frontend runs the campaign and free Research comparisons, replay and report verification in each visitor's browser. Saves remain browser-local; there are no accounts or server-side campaign saves. The optional SQLite research worker, configured Claude experiments and agent-endpoint evaluation CLI run locally.
+
+The alternative vinext/Cloudflare runtime remains available through `npm run dev:cloudflare`, `npm run build:cloudflare` and `npm run start:cloudflare`. `npm run smoke -- <url>` checks a running frontend's page, assets, research redirect, response headers and preview image.
 
 ## How the agents work
 
@@ -124,9 +127,20 @@ npm run evaluate
 
 See [Evaluation reports](docs/evaluation-reports.md) for the format, denominators, limits and measured results.
 
+## Test your own agent
+
+Point Settlement at any agent that speaks a small HTTP protocol, in any language, and find out whether the authored attacks can talk it into a bad decision, and whether it refuses honest offers:
+
+```bash
+node examples/agents/node/agent.mjs   # or your own agent
+npm run eval:agent -- --agent http://127.0.0.1:8765/decide --name my-agent
+```
+
+You get rates with raw counts next to the built-in policies, a report anyone can verify, and a replay in **Research → Compare**. Requests do not label claims as attacks or reveal the scenario and seed. Verification reconstructs results from the recorded answers; it does not authenticate which agent produced them. See [Agent testbed](docs/agent-testbed.md) for the protocol, failure rules, CI thresholds and share links.
+
 ## Stack and project map
 
-**TypeScript · React · Next-compatible routing with vinext/Vite · Zod · Tailwind CSS · optional Node.js/SQLite worker**
+**TypeScript · React · Next.js · Zod · Tailwind CSS · optional Node.js/SQLite worker · alternative vinext/Cloudflare build**
 
 ```text
 app/                 Application entry points
@@ -134,6 +148,8 @@ components/game/     Village, combat, crew inspector and research views
 lib/game/            Pure campaign, crew, economy and battle transitions
 lib/sim/             Deterministic social engine and bounded planner
 lib/agent/           Optional Claude proposals and action validation
+lib/testbed/         Agent testbed: protocol, run loop, reports and verification
+examples/agents/     Node and Python example agents for the testbed
 worker/              Local persistence, scheduling and model request ledger
 tests/               Engine, game, crew, replay and worker tests
 public/game/         Original generated terrain and sprite artwork
@@ -146,12 +162,13 @@ docs/                Guides, design notes and verification records
 npm test
 npm run test:integration
 npm run evaluate -- --verify docs/evaluation-results.json
+npm run eval:agent -- --verify public/examples/agent-report.json
 npm run typecheck
 npm run lint
 npm run build
 ```
 
-The suite covers resource conservation, duplicate spending, construction dependencies, manual interference, protected reserves, job claims and handoffs, inaccessible workplaces, save ownership and recovery, report tampering, deterministic replay and worker recovery. CI runs the tests, HTTP integration flow, report reproduction, types, lint and production build on pushes and pull requests. See [release verification](docs/village-v3-verification.md).
+The suite covers resource conservation, duplicate spending, construction dependencies, manual interference, protected reserves, job claims and handoffs, inaccessible workplaces, save ownership and recovery, report tampering, external-agent protocol failures, deterministic replay and worker recovery. CI runs the tests, HTTP integration flow, policy and agent-report reproduction, types, lint and production build on pushes and pull requests. See [release verification](docs/village-v5-verification.md).
 
 Model tests use injected provider responses. A live paid provider was not called during development.
 
@@ -174,6 +191,7 @@ The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points
 - [Player guide](docs/player-guide.md) — building, battles, objectives and Council stories
 - [Objective agents](docs/objective-agents.md) — assignment, pathfinding, budgets and adaptation
 - [Research guide](docs/observatory-guide.md) — experiments, evidence, comparisons and replay
+- [Agent testbed](docs/agent-testbed.md) — test your own agent against deception
 - [Evaluation reports](docs/evaluation-reports.md) — reproducible results and their limits
 - [Product roadmap](docs/product-roadmap.md) — priorities and acceptance criteria
 - [Live model setup](docs/live-models.md) — optional Claude configuration and usage controls

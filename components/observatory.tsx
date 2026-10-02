@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   Sprout,
@@ -51,14 +52,27 @@ import {
   supportedEngine,
   metrics,
   policyInfo,
+  policyName,
   runToEnd,
   scenarioInfo,
   verifyReplay,
 } from "@/lib/sim/engine";
-import type { Run, Scenario, Policy, Intervention } from "@/lib/sim/types";
+import type {
+  BuiltInPolicy,
+  Run,
+  Scenario,
+  Policy,
+  Intervention,
+} from "@/lib/sim/types";
 const STORAGE = "settlement-library-v1";
 const workerOrigin = () =>
   ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
+const noSubscription = () => () => {};
+// Residents are shown by name; "village" and "observer" fall back to their label.
+const nameIn = (agents: { id: string; name: string }[], id: string) =>
+  agents.find((a) => a.id === id)?.name ?? id;
+const RUN_LOCALLY =
+  "https://github.com/Lingikaushikreddy/Settlement-Village#run-locally";
 const defaultRun = () =>
   runToEnd({
     seed: 42,
@@ -114,13 +128,18 @@ export function Observatory({
     [notice, setNotice] = useState(""),
     [library, setLibrary] = useState<Run[]>([]),
     [draftScenario, setDraftScenario] = useState<Scenario>("scarcity"),
-    [draftPolicy, setDraftPolicy] = useState<Policy>("baseline"),
+    [draftPolicy, setDraftPolicy] = useState<BuiltInPolicy>("baseline"),
     [draftSeed, setDraftSeed] = useState("42"),
     [queued, setQueued] = useState<Intervention>(),
     [workerAvailable, setWorkerAvailable] = useState(false),
     [workerRuns, setWorkerRuns] = useState<
       { id: string; name: string; tick: number; running: boolean }[]
     >([]);
+  const hosted = useSyncExternalStore(
+    noSubscription,
+    () => !workerOrigin(),
+    () => false,
+  );
   const selected = selectedResident,
     select = onSelected,
     view = section,
@@ -643,7 +662,7 @@ export function Observatory({
               <span>{scenarioInfo[run.config.scenario].description}</span>
             </div>
             <span className="policy-label">
-              {policyInfo[run.config.policy].name}
+              {policyName(run.config.policy, run.socialDecisions?.[0]?.model)}
             </span>
             <button
               className="text-button"
@@ -841,7 +860,20 @@ export function Observatory({
                 <strong>Live model decisions</strong>
                 <small>
                   {provider?.reason ??
-                    "Free policies are active. Start the optional local worker to configure model decisions."}
+                    (hosted ? (
+                      <>
+                        You&apos;re playing the hosted demo. Free simulations,
+                        comparisons and replays run here in your browser.
+                        Live-model experiments need the optional local worker
+                        — see{" "}
+                        <a href={RUN_LOCALLY} target="_blank" rel="noreferrer">
+                          Run locally
+                        </a>
+                        .
+                      </>
+                    ) : (
+                      "Free policies are active. Start the optional local worker to configure model decisions."
+                    ))}
                 </small>
               </span>
             </div>
@@ -884,15 +916,26 @@ export function Observatory({
               .map((d) => (
                 <details key={`${d.tick}-${d.actor}`}>
                   <summary>
-                    Tick {d.tick} · {d.actor} · {d.action.replaceAll("_", " ")}{" "}
-                    · model proposal
+                    Tick {d.tick} · {nameIn(w.agents, d.actor)} ·{" "}
+                    {d.action === "invalid"
+                      ? `no valid answer (${d.invalidReason?.replaceAll("_", " ") ?? "invalid"})`
+                      : d.action.replaceAll("_", " ")}{" "}
+                    ·{" "}
+                    {run.config.policy === "external"
+                      ? `${d.model} decision`
+                      : "model proposal"}
                   </summary>
-                  <p>{d.summary}</p>
-                  <small>
-                    {d.model} · {d.usage.inputTokens} input /{" "}
-                    {d.usage.outputTokens} output tokens · $
-                    {d.costUSD.toFixed(4)} estimated
-                  </small>
+                  {d.summary && <p>{d.summary}</p>}
+                  {d.evidenceIds.length > 0 && (
+                    <small>Cited evidence: {d.evidenceIds.join(", ")}</small>
+                  )}
+                  {run.config.policy !== "external" && (
+                    <small>
+                      {d.model} · {d.usage.inputTokens} input /{" "}
+                      {d.usage.outputTokens} output tokens · $
+                      {d.costUSD.toFixed(4)} estimated
+                    </small>
+                  )}
                 </details>
               ))}
           </section>
@@ -1025,7 +1068,7 @@ export function Observatory({
                           onClick={() => setEventId(e.id)}
                         >
                           <span>
-                            Tick {e.tick} · {e.actor}
+                            Tick {e.tick} · {nameIn(w.agents, e.actor)}
                           </span>
                           <p>{e.detail}</p>
                         </button>
@@ -1169,7 +1212,7 @@ export function Observatory({
                 <div>
                   <h3>{r.name}</h3>
                   <p>
-                    Seed {r.config.seed} · {policyInfo[r.config.policy].name} ·{" "}
+                    Seed {r.config.seed} · {policyName(r.config.policy)} ·{" "}
                     {r.snapshots.length - 1} ticks
                   </p>
                 </div>
@@ -1226,7 +1269,7 @@ export function Observatory({
             <label>Resident policy</label>
             <Select
               value={draftPolicy}
-              onValueChange={(v) => setDraftPolicy(v as Policy)}
+              onValueChange={(v) => setDraftPolicy(v as BuiltInPolicy)}
             >
               <SelectTrigger aria-label="New run policy">
                 <SelectValue />

@@ -36,6 +36,15 @@ jobs:
       - run: npm test
       - run: npm run test:integration
       - run: npm run evaluate -- --verify docs/evaluation-results.json
+      - run: npm run eval:agent -- --verify public/examples/agent-report.json
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
+      - name: Smoke test the production server
+        run: |
+          npm start > next-start.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:5173/ && break
+            sleep 1
+          done
+          npm run smoke -- http://127.0.0.1:5173 || { cat next-start.log; exit 1; }

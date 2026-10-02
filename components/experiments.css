@@ -218,3 +218,25 @@
   color: #304731;
   font: 12px/1.6 monospace;
 }
+.agent-report {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.agent-report .evaluation-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.agent-row td {
+  font-weight: 650;
+  background: #f4f8ec;
+}
+.agent-report-notes {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #607452;
+  display: grid;
+  gap: 4px;
+}

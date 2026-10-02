@@ -7,7 +7,7 @@ import type {
   CrewTask,
   ObjectiveKind,
 } from "./crew-types.ts";
-import { armySize, buildings, troops } from "./catalog.ts";
+import { armySize, buildings, troopCount, troops } from "./catalog.ts";
 import { command } from "./commands.ts";
 import {
   developmentPreview,
@@ -44,7 +44,7 @@ export const crewRoster = [
     name: "Finn",
     role: "Waterkeeper",
     color: "#b99b56",
-    specialty: "Knight and archer coordination",
+    specialty: "Kavya and Jhansi troop coordination",
   },
   {
     id: "lina",
@@ -155,6 +155,8 @@ function event(
   c.events.push({ id: `${c.tick}-${index}`, tick: c.tick, actor, type, text });
   c.events = c.events.slice(-120);
 }
+// Lowercase only the leading verb so troop names such as "Kavyas" keep their capital.
+const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 function remember(c: CrewState, a: CrewAgent, text: string) {
   a.memories.push({ tick: c.tick, text });
   a.memories = a.memories.slice(-12);
@@ -376,7 +378,7 @@ function refresh(g: Game) {
           troop,
           count: Math.min(5, counts[troop]),
           priority: 100,
-          label: `Train ${Math.min(5, counts[troop])} ${troops[troop].name.toLowerCase()}${Math.min(5, counts[troop]) === 1 ? "" : "s"}`,
+          label: `Train ${troopCount(troop, Math.min(5, counts[troop]))}`,
           reason:
             "Recruit missing troops, counting both ready and queued units.",
           blocked: null,
@@ -479,7 +481,7 @@ function assign(g: Game) {
     t.assignee = a.id;
     a.task = t.id;
     a.status = "moving";
-    a.reason = `Claimed ${t.label.toLowerCase()}: ${suitability(a, t) ? "role match, " : ""}${winner.path!.length} steps away; proficiency ${a.experience}.`;
+    a.reason = `Claimed ${lowerFirst(t.label)}: ${suitability(a, t) ? "role match, " : ""}${winner.path!.length} steps away; proficiency ${a.experience}.`;
     a.plan = [
       `Workplace ${b.x},${b.y}`,
       "Walk to the workplace.",
@@ -533,7 +535,7 @@ function step(g: Game) {
       continue;
     }
     a.status = "working";
-    a.reason = `Working: ${t.label.toLowerCase()}.`;
+    a.reason = `Working: ${lowerFirst(t.label)}.`;
     t.work++;
     if (t.work < 2) continue;
     if (t.kind === "train" && (!t.troop || recruits(g)[t.troop] < t.count)) {
@@ -567,7 +569,7 @@ function step(g: Game) {
             ? "Started construction of the new village farm."
             : t.kind === "upgrade"
               ? `Started ${t.label.toLowerCase()}.`
-              : `Queued ${t.count} ${troops[t.troop!].name.toLowerCase()}${t.count === 1 ? "" : "s"} for training.`;
+              : `Queued ${troopCount(t.troop!, t.count)} for training.`;
       a.experience = Math.min(100, a.experience + 1);
       a.completed = Math.min(1000000, a.completed + 1);
       remember(c, a, done);

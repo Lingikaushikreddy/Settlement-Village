@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   Download,
   CheckCircle2,
+  ShieldCheck,
   Upload,
   X,
 } from "lucide-react";
@@ -17,6 +18,9 @@ import {
 } from "@/lib/sim/evaluation";
 import type { EvaluationReport } from "@/lib/sim/evaluation";
 import type { Run, Scenario } from "@/lib/sim/types";
+import { verifyAgentReport, type AgentReport } from "@/lib/testbed/report";
+import { fetchSharedReport, sharedReportUrl } from "@/lib/testbed/share";
+import { AgentReportView } from "./agent-report";
 import "./experiments.css";
 
 function download(value: string, name: string, type: string) {
@@ -68,6 +72,10 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
     [seedCount, setSeedCount] = useState("10"),
     [ticks, setTicks] = useState("60");
   const [report, setReport] = useState<EvaluationReport | null>(null);
+  const [agentResult, setAgentResult] = useState<{
+    report: AgentReport;
+    runs: Run[];
+  } | null>(null);
   const [busy, setBusy] = useState<"run" | "verify" | null>(null);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [message, setMessage] = useState("");
@@ -91,6 +99,7 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
     controller.current = task;
     setBusy(file ? "verify" : "run");
     setReport(null);
+    setAgentResult(null);
     setProgress({ done: 0, total: 0 });
     setError("");
     setMessage("");
@@ -106,16 +115,30 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
         if (
           (typeof file === "string"
             ? new TextEncoder().encode(file).length
-            : file.size) > 2_000_000
+            : file.size) > 5_000_000
         )
           throw Error(
-            "Choose a compact evaluation report smaller than 2 MB. Full run exports belong to the run inspector.",
+            "Choose a report smaller than 5 MB. Full run exports belong to the run inspector.",
           );
         const raw = JSON.parse(
           typeof file === "string" ? file : await file.text(),
         );
         if (task.signal.aborted)
           throw new DOMException("Cancelled", "AbortError");
+        if (
+          raw &&
+          typeof raw === "object" &&
+          (raw as { kind?: unknown }).kind === "agent"
+        ) {
+          const verified = await verifyAgentReport(raw, options);
+          if (!verified.ok) throw Error(verified.reason);
+          if (controller.current !== task || task.signal.aborted) return;
+          setAgentResult({ report: verified.report, runs: verified.runs });
+          setMessage(
+            "Agent report verified. Every case was rebuilt from its recorded answers.",
+          );
+          return;
+        }
         const verified = await verifyEvaluationReport(raw, options);
         if (!verified.ok || !verified.report) throw Error(verified.reason);
         next = verified.report;
@@ -153,6 +176,36 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
       }
     }
   }
+  async function loadReport(source: string | URL) {
+    try {
+      const text =
+        source instanceof URL
+          ? await fetchSharedReport(source)
+          : await fetch(source).then((r) => {
+              if (!r.ok)
+                throw Error(`The sample report is unavailable (HTTP ${r.status}).`);
+              return r.text();
+            });
+      await evaluate(text);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The report could not be loaded.");
+    }
+  }
+  useEffect(() => {
+    const raw = new URLSearchParams(location.search).get("report");
+    if (!raw) return;
+    const url = sharedReportUrl(raw);
+    const timer = setTimeout(() => {
+      if (url) void loadReport(url);
+      else
+        setError(
+          "Shared reports must be https links on raw.githubusercontent.com or gist.githubusercontent.com.",
+        );
+    }, 0);
+    return () => clearTimeout(timer);
+    // Runs once on mount: the share link is part of the initial URL only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const selectedCases =
     report?.cases.filter(
       (c) =>
@@ -252,6 +305,15 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
             <Upload size={15} />
             Import & verify
           </button>
+          <button
+            className="secondary"
+            type="button"
+            disabled={!!busy}
+            onClick={() => void loadReport("/examples/agent-report.json")}
+          >
+            <ShieldCheck size={15} />
+            Try a sample agent report
+          </button>
         </div>
       </form>
       <input
@@ -329,7 +391,14 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
           {message}
         </p>
       )}
-      {!report && !busy && !error && (
+      {agentResult && (
+        <AgentReportView
+          report={agentResult.report}
+          runs={agentResult.runs}
+          onOpen={onOpen}
+        />
+      )}
+      {!report && !agentResult && !busy && !error && (
         <div className="experiment-empty">
           <div className="comparison-illustration">
             <span>Trust</span>

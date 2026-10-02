@@ -8,6 +8,8 @@
   font-family: "Avenir Next", "Segoe UI", sans-serif;
 }
 .village-game .game-stage {
+  /* The camera owns panning; focus must not scroll this positioned container. */
+  overflow: clip;
   --world-safe-top: 148;
   --world-safe-bottom: 170;
   --world-safe-left: 190;

@@ -54,7 +54,7 @@ export const buildings: Record<
   },
   barracks: {
     name: "Barracks",
-    description: "Train knights, archers and siege machines for your army.",
+    description: "Train Kavyas, Jhansis and siege machines for your army.",
     sprite: 4,
     cost: { gold: 300, wood: 250, food: 0 },
     seconds: 12,
@@ -76,6 +76,9 @@ export const troops: Record<
   TroopKind,
   {
     name: string;
+    /** Singular and plural forms used inside sentences. */
+    noun: string;
+    plural: string;
     role: string;
     sprite: number;
     cost: Resources;
@@ -87,7 +90,9 @@ export const troops: Record<
   }
 > = {
   knight: {
-    name: "Knight",
+    name: "Kavya",
+    noun: "Kavya",
+    plural: "Kavyas",
     role: "Frontline · high health",
     sprite: 6,
     cost: { gold: 15, wood: 0, food: 25 },
@@ -98,7 +103,9 @@ export const troops: Record<
     speed: 1.1,
   },
   archer: {
-    name: "Archer",
+    name: "Jhansi",
+    noun: "Jhansi",
+    plural: "Jhansis",
     role: "Ranged · quick on her feet",
     sprite: 7,
     cost: { gold: 20, wood: 0, food: 30 },
@@ -110,6 +117,8 @@ export const troops: Record<
   },
   catapult: {
     name: "Catapult",
+    noun: "catapult",
+    plural: "catapults",
     role: "Siege · devastating at range",
     sprite: 8,
     cost: { gold: 55, wood: 30, food: 40 },
@@ -120,6 +129,11 @@ export const troops: Record<
     speed: 0.65,
   },
 };
+/** A troop count for use inside a sentence, such as "5 Kavyas" or "1 catapult". */
+export function troopCount(kind: TroopKind, count: number) {
+  const t = troops[kind];
+  return `${count} ${count === 1 ? t.noun : t.plural}`;
+}
 export const opponents = [
   {
     name: "Thornwood outpost",

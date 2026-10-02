@@ -446,11 +446,18 @@ function CampaignGame({
     const q = new URLSearchParams(location.search);
     if (
       q.has("seed") ||
+      q.has("report") ||
       ["research", "archive"].includes(q.get("view") ?? "")
     ) {
       const timer = setTimeout(
         () =>
-          openResearch(q.get("view") === "archive" ? "library" : "observatory"),
+          openResearch(
+            q.get("view") === "archive"
+              ? "library"
+              : q.has("report")
+                ? "experiments"
+                : "observatory",
+          ),
         0,
       );
       return () => clearTimeout(timer);
@@ -1157,7 +1164,7 @@ function CampaignGame({
                         onClick={() =>
                           act(
                             { type: "train", kind: k, count: 5 },
-                            `Five ${troops[k].name.toLowerCase()}s queued.`,
+                            `Five ${troops[k].plural} queued.`,
                           )
                         }
                       >
@@ -1186,8 +1193,7 @@ function CampaignGame({
                     <>
                       <b>{game.training.length} training</b>
                       <span>
-                        Next {troops[game.training[0].kind].name.toLowerCase()}{" "}
-                        in{" "}
+                        Next {troops[game.training[0].kind].noun} in{" "}
                         {Math.max(
                           1,
                           Math.ceil(game.training[0].readyAt - game.clock),
@@ -1275,7 +1281,7 @@ function CampaignGame({
                 <div>
                   <Shield />
                   <p>
-                    <b>Train your army</b>Knights absorb damage. Archers strike
+                    <b>Train your army</b>Kavyas absorb damage. Jhansis strike
                     from range. Catapults break through strong defenses.
                   </p>
                 </div>

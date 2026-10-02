@@ -8,6 +8,7 @@ import type {
   Intervention,
   Inventory,
   Memory,
+  BuiltInPolicy,
   Policy,
   Resource,
   Run,
@@ -30,8 +31,11 @@ export type {
 } from "./types.ts";
 export const ENGINE_VERSION = "1.1.0";
 export const SOCIAL_ENGINE_VERSION = "1.1.0+social-1";
+export const AGENT_ENGINE_VERSION = "1.1.0+agent-1";
 export function supportedEngine(version: string) {
-  return version === ENGINE_VERSION || version === SOCIAL_ENGINE_VERSION;
+  return [ENGINE_VERSION, SOCIAL_ENGINE_VERSION, AGENT_ENGINE_VERSION].includes(
+    version,
+  );
 }
 export const scenarioInfo: Record<
   Scenario,
@@ -66,7 +70,7 @@ export const scenarioInfo: Record<
   },
 };
 export const policyInfo: Record<
-  Policy,
+  BuiltInPolicy,
   {
     name: string;
     description: string;
@@ -86,6 +90,11 @@ export const policyInfo: Record<
     description: "Travel to the source and inspect before deciding.",
   },
 };
+export function policyName(policy: Policy, agentName?: string) {
+  return policy === "external"
+    ? agentName || "Your agent"
+    : policyInfo[policy].name;
+}
 const resources: Resource[] = ["grain", "wood", "water", "coins"];
 const empty = (): Inventory => ({ grain: 0, wood: 0, water: 0, coins: 0 });
 export function random(seed: number, key: number) {
@@ -93,6 +102,10 @@ export function random(seed: number, key: number) {
   x = Math.imul(x ^ (x >>> 16), 0x21f0aaad);
   x = Math.imul(x ^ (x >>> 15), 0x735a2d97);
   return ((x ^ (x >>> 15)) >>> 0) / 4294967296;
+}
+/** Residents are shown by name in event text; ids stay internal. */
+function nameOf(w: World, id: string | undefined) {
+  return w.agents.find((a) => a.id === id)?.name ?? id;
 }
 export function checksum(value: unknown) {
   const s = JSON.stringify(value);
@@ -113,7 +126,10 @@ export function normalizeConfig(c: Partial<Config>): Config {
         ? c.scenario
         : "scarcity",
     policy:
-      c.policy && Object.hasOwn(policyInfo, c.policy) ? c.policy : "baseline",
+      c.policy &&
+      (c.policy === "external" || Object.hasOwn(policyInfo, c.policy))
+        ? c.policy
+        : "baseline",
     maxTicks: Math.max(
       20,
       Math.min(150, Number.isInteger(c.maxTicks) ? c.maxTicks! : 60),
@@ -122,6 +138,8 @@ export function normalizeConfig(c: Partial<Config>): Config {
 }
 export function createRun(config: Partial<Config> = {}): Run {
   const c = normalizeConfig(config);
+  // Ids are stable keys used by scenarios, saves and replays; names are display text.
+  const ids = ["mira", "theo", "ada", "finn", "lina", "oscar", "rook"];
   const names = ["Mira", "Theo", "Ada", "Finn", "Lina", "Oscar", "Rook"];
   const colors = [
     "#bb784f",
@@ -151,7 +169,7 @@ export function createRun(config: Partial<Config> = {}): Run {
     "market",
   ];
   const agents: Agent[] = names.map((name, i) => ({
-    id: name.toLowerCase(),
+    id: ids[i],
     name,
     role: i === 6 ? "chaos" : "resident",
     occupation: jobs[i],
@@ -199,7 +217,8 @@ export function createRun(config: Partial<Config> = {}): Run {
   };
   return {
     schemaVersion: 1,
-    engineVersion: ENGINE_VERSION,
+    engineVersion:
+      c.policy === "external" ? AGENT_ENGINE_VERSION : ENGINE_VERSION,
     id: `run-${c.seed}-${c.scenario}-${c.policy}`,
     name: scenarioInfo[c.scenario].name,
     config: c,
@@ -456,6 +475,19 @@ function socialDecision(
 ): boolean {
   a.goal =
     incident.family === "benign" ? "Consider a fair offer" : "Evaluate a claim";
+  if (model?.action === "invalid") {
+    decide(
+      r,
+      w,
+      a,
+      "No valid answer",
+      `No valid answer: ${model.invalidReason ?? "invalid response"}. The claim was left unanswered.`,
+      [],
+      [],
+      "No action",
+    );
+    return true;
+  }
   const evidence = incident.evidenceIds.filter((id) =>
     r.events.find((e) => e.id === id)?.audience.includes(a.id),
   );
@@ -639,7 +671,7 @@ export function advance(
     interventions: [...input.interventions],
   };
   if (model) {
-    r.engineVersion = SOCIAL_ENGINE_VERSION;
+    if (r.config.policy !== "external") r.engineVersion = SOCIAL_ENGINE_VERSION;
     r.socialDecisions = [...(input.socialDecisions ?? []), model];
     r.modelCalls++;
     r.estimatedCost += model.costUSD;
@@ -741,15 +773,13 @@ export function advance(
         ["pending", "checking"].includes(n.decision),
     );
     if (active) {
-      socialDecision(
-        r,
-        w,
-        a,
-        active,
+      const supplied =
         model?.actor === a.id && model.incidentId === active.id
           ? model
-          : undefined,
-      );
+          : undefined;
+      // External runs act only on supplied decisions; built-in policies decide themselves.
+      if (supplied || r.config.policy !== "external")
+        socialDecision(r, w, a, active, supplied);
       continue;
     }
     const plan = planNeeds(w, a);
@@ -840,9 +870,9 @@ export function advance(
         title: `${a.name}: ${desc.toLowerCase()}`,
         detail:
           action.type === "trade"
-            ? `${a.name} accepts an offered exchange with ${action.target}.`
+            ? `${a.name} accepts an offered exchange with ${nameOf(w, action.target)}.`
             : action.type === "offer"
-              ? `${a.name} offers one grain for two coins to ${action.target}.`
+              ? `${a.name} offers one grain for two coins to ${nameOf(w, action.target)}.`
               : `${a.name} ${desc.toLowerCase()}${action.type === "move" ? "" : ` at ${a.location}`}.`,
         visibility: "private",
         audience: [

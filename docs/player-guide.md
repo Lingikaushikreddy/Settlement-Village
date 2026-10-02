@@ -4,7 +4,11 @@ Set the objective. Watch your residents organize the work. Lead raids beyond the
 
 Settlement is a single-player village strategy game with an original illustrated isometric world and an integrated, inspectable resident simulation. Six residents coordinate collection, construction, upgrades and recruitment toward your objectives, move through the playable village, and adapt when work becomes unavailable. Their actions use the same treasury, buildings and army as manual play. Council stories and the investigation lab remain in the same app and share its map. `/lab` redirects to Research.
 
-## Play locally
+## Play in the browser or locally
+
+The hosted Next.js frontend runs the village and free Research tools in your browser, without an account. Progress stays in that browser; it is not synchronized between devices or the hosted and localhost origins. Report verification and replay also run in the browser. The optional SQLite worker and configured Claude experiments require a local setup.
+
+For a local copy:
 
 Use Node 24+ and npm:
 
@@ -38,9 +42,9 @@ Crew decisions run at one tick per live second and pause offline, during raids, 
 1. Tap the gold, timber and food bubbles above productive buildings.
 2. Open **Build**, choose a building, and tap an empty diamond to place it. Construction consumes resources and occupies one of two builders.
 3. Select a building to collect, upgrade, or move it. Town hall upgrades unlock higher building levels. Build, upgrade and training controls show why an action is unavailable, including resource shortages, busy builders and a full army camp.
-4. Open **Train** to recruit knights, archers and catapults. Your camp holds 40 troops including its training queue.
+4. Open **Train** to recruit Kavyas, Jhansis and catapults. Your camp holds 40 troops including its training queue.
 5. Open **Battle → Scout**. Choose a troop and deploy it from an edge. Switch between deploying one or five at a time.
-6. Tap an enemy building to focus attacks. Knights have high health, archers attack from range, and catapults deal heavy siege damage. Enemy towers shoot back.
+6. Tap an enemy building to focus attacks. Kavyas have high health, Jhansis attack from range, and catapults deal heavy siege damage. Enemy towers shoot back.
 7. Destroy the town hall, half the village, and every building to earn up to three stars. Return home to receive loot and unlock the next stronghold.
 
 Deployed troops are spent; undeployed troops remain in reserve. Raids last up to 90 seconds after the first deployment. You can end a raid early and keep rewards for the structures already destroyed.
@@ -74,6 +78,12 @@ Use the navigation beneath the resource bar:
 
 Research uses the same map. Its caption identifies the viewed run and tick. Entering Research pauses both the campaign's council and objective crew; experiments cannot earn or spend campaign resources. Production and training timers still progress. Return to Village and resume the crew explicitly, or use Council to resume its day. Crew work and Council stories run separately; starting one pauses the other. Save or export a browser experiment before leaving Research. Worker runs keep their durable history; reconnect from Archive. Free policy comparisons never invoke a model.
 
+### Test an external agent
+
+The local agent testbed can evaluate your own HTTP agent against the authored deception cases and honest controls. Run `npm run eval:agent -- --agent <url> --name <label>` from the repository, or follow the included Node/Python examples in [Agent testbed](agent-testbed.md). The hosted frontend does not run this CLI or host your agent endpoint.
+
+Import a resulting report through **Research → Compare → Import & verify** to rebuild its cases and replay the recorded decisions on the map. Reports can also be shared through supported GitHub raw or Gist links. Verification checks the recorded outcomes; it does not establish the identity of the agent that produced them. These fixed scenarios do not certify general agent safety.
+
 ## Progress and controls
 
 Drag empty ground to pan. **Zoom in**, **Zoom out** and **Center village** adjust the camera; centering fits the village into the available map area. With the map focused, use the **arrow keys** to pan, **+ / −** to zoom and **Home** to fit the village. Collapse Village orders or the chapter panel for more map space. Sounds are optional and start muted.
@@ -97,6 +107,7 @@ If a save cannot be loaded, Settlement preserves it and offers **Export original
 - Six autonomous residents, one authored Chaos agent, named map interactions, four social chapters, bounded planning, private evidence inspection, historical playback, chief interventions, a treasury audit trail, and matched policy comparisons.
 - Original generated terrain, building/troop artwork and six distinct civilian identities shared across map and inspectors; movement, attack and construction cues, responsive controls and reduced-motion support.
 - A village journal with milestones, production summaries and resident shortcuts, plus pointer and keyboard camera controls.
+- An external-agent HTTP testbed, Node/Python examples, independently verifiable reports, case replay and supported report-share links.
 
 This is a playable single-player browser release. It does not yet include multiplayer clans, PvP matchmaking, enemy attacks on your home village, a server-authoritative economy, or a full commercial content/live-operations system. The home watchtower is currently a village building; its combat behavior is used by enemy towers during raids. Building upgrades increase production and progression; level and construction markers identify their current state.
 
@@ -111,9 +122,9 @@ npm run lint
 npm run build
 ```
 
-The game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. Crew tests cover real objective completion, empty-treasury recovery, exclusive claims, rest handoffs, blocked workplaces, alternative barracks, spending limits, manual interference, save validation and deterministic continuation. Development tests additionally cover prerequisite readiness, actual construction timers, protected reserves, occupied builders, unreachable or changed construction sites, unique building IDs, manual work adoption and preserved progress during subsequent upgrades. Council tests additionally cover migration, production dividends, ready workplaces, incident pauses, paid interventions, replay-safe reloads, fair reputation trades, actual treasury losses, private historical evidence, read-only comparisons, chapter progression and invalid saves. The original engine and worker tests remain in the suite. See [v0.3.0 verification](village-v3-verification.md) for the release checks.
+The game tests cover atomic placement and spending, duplicate collection, upgrade timing, training payment, offline limits, save validation, deterministic combat, reserve expenditure and reward idempotency. Crew tests cover real objective completion, empty-treasury recovery, exclusive claims, rest handoffs, blocked workplaces, alternative barracks, spending limits, manual interference, save validation and deterministic continuation. Development tests additionally cover prerequisite readiness, actual construction timers, protected reserves, occupied builders, unreachable or changed construction sites, unique building IDs, manual work adoption and preserved progress during subsequent upgrades. Council tests additionally cover migration, production dividends, ready workplaces, incident pauses, paid interventions, replay-safe reloads, fair reputation trades, actual treasury losses, private historical evidence, read-only comparisons, chapter progression and invalid saves. The original engine and worker tests remain in the suite. See [v0.5.0 verification](village-v5-verification.md) for the release checks.
 
-The village council runs locally. The optional SQLite worker powers durable research experiments inside the same interface; campaign saves remain browser-local. Claude decisions are connected to explicit worker experiment steps, disabled by default. Model actions use actor-visible evidence, validated actions, persisted responses and usage, budget reservations, idempotent requests, and replay without additional provider calls. They currently affect experimental worlds, not campaign currency. See [Research guide](observatory-guide.md) and [Live model setup](live-models.md).
+The village and Council run in the browser on both the hosted frontend and local development server. Standard Next.js is the default application runtime; the alternative vinext/Cloudflare scripts remain available. The optional local SQLite worker powers durable research experiments inside the same interface; campaign saves remain browser-local. Claude decisions are connected to explicit worker experiment steps, disabled by default. Model actions use actor-visible evidence, validated actions, persisted responses and usage, budget reservations, idempotent requests, and replay without additional provider calls. They currently affect experimental worlds, not campaign currency. See [Research guide](observatory-guide.md) and [Live model setup](live-models.md).
 
 ## Art provenance
 
@@ -121,4 +132,4 @@ The terrain and sprite atlas were generated with the built-in image-generation t
 
 ## Current simulation limits
 
-The objective crew uses deterministic policies and a bounded experience score, not neural learning. It supports three preset objectives, including bounded autonomous construction and upgrades for an additional level-three farm. Arbitrary natural-language goals, unrestricted construction planning and agent-led combat are not implemented. The council has fixed initial trust tendencies, authored Rook claims and four finite scenarios. Crew memories and Council evidence are separate records, identified by their respective views; this is not an open-ended generative society. Persistent relationships across chapters, automatic model-driven campaign play, public immutable replay links, production multi-user operation, and the complete research-inspired thesis remain outside this release. Optional model-assisted interpretation is available only for explicit steps in configured worker experiments.
+The objective crew uses deterministic policies and a bounded experience score, not neural learning. It supports three preset objectives, including bounded autonomous construction and upgrades for an additional level-three farm. Arbitrary natural-language goals, unrestricted construction planning and agent-led combat are not implemented. The council has fixed initial trust tendencies, authored Rook claims and four finite scenarios. Crew memories and Council evidence are separate records, identified by their respective views; this is not an open-ended generative society. External-agent reports can be shared and verified, but Settlement does not provide an immutable public archive. Persistent relationships across chapters, automatic model-driven campaign play, production multi-user operation, and the complete research-inspired thesis remain outside this release. Optional model-assisted interpretation is available only for explicit steps in configured worker experiments.
