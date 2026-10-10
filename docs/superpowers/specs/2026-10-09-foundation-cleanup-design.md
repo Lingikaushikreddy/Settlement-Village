@@ -1,6 +1,6 @@
 # Foundation cleanup design
 
-**Date:** 2026-10-09 · **Status:** approved in conversation, pending written review · **Owner:** Kaushik Reddy
+**Date:** 2026-10-09 · **Status:** approved 2026-10-09 · **Owner:** Kaushik Reddy
 
 Settlement is being prepared for serious open-source contribution. This is the first of four sub-projects (foundation cleanup, testbed as a product, UI architecture, game and research content). It removes everything in the repository that is not part of the shipped product, closes the open security advisories, adds the governance a contributor expects, and puts a browser-level safety net under the interface before any larger change lands.
 
@@ -125,12 +125,12 @@ Each pull request must pass: `npm test`, `npm run test:integration`, `npm run ev
 | 0 | `chore/foundation-cleanup-docs` | This spec and its implementation plan | — |
 | 1 | `chore/remove-sites-scaffolding` | Section 1 | 0 |
 | 2 | `chore/security-and-node-matrix` | Section 3 | 1 |
-| 3 | `chore/remove-dead-ui` | Section 2 | 1, and the screenshot baseline from 5 captured first |
-| 4 | `chore/governance` | Section 4 files and CONTRIBUTING | 1 |
-| 5 | `test/playwright-smoke` | Section 5 | 1 |
+| 3 | `test/playwright-smoke` | Section 5 | 1 |
+| 4 | `chore/remove-dead-ui` | Section 2 | 3 (its screenshot baseline) |
+| 5 | `chore/governance` | Section 4 files and CONTRIBUTING | 1 |
 | 6 | `chore/release-0.6.0` | Section 6, then apply the ruleset after merge | all |
 
-PRs 3, 4 and 5 are independent of each other once PR 1 has merged. The screenshot baseline for PR 3 is captured from PR 5's suite, so PR 5 merges before PR 3, or PR 3 includes the baseline capture as its first commit.
+PRs 3 and 5 are independent of each other once PR 1 has merged; PR 4 waits for PR 3 because it relies on the committed screenshot baseline.
 
 ## Verification record
 
