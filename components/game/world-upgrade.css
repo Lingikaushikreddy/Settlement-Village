@@ -125,8 +125,7 @@
     height: 44px;
   }
 }
-/* Shade viewport edges,
-never the smaller transformed map rectangle. */
+/* Shade viewport edges, never the smaller transformed map rectangle. */
 .world-upgrade > .world-vignette {
   z-index: 1;
 }

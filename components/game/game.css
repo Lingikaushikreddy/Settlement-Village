@@ -1461,7 +1461,7 @@
     font-size: 24px;
   }
   .player-crest,
-.player-crest svg {
+  .player-crest svg {
     width: 48px;
     height: 58px;
   }
@@ -1523,7 +1523,7 @@
     gap: 7px;
   }
   .player-crest,
-.player-crest svg {
+  .player-crest svg {
     width: 36px;
     height: 43px;
   }
@@ -1653,7 +1653,7 @@
     display: none;
   }
   .battle-button,
-.build-button {
+  .build-button {
     min-width: 125px;
     height: 44px;
   }
@@ -1958,6 +1958,7 @@
 .battle-banner {
   pointer-events: none;
 }
+
 .village-game:has(.placement-notice) .village-badge {
   display: none;
 }

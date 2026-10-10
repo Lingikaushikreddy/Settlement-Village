@@ -343,8 +343,8 @@ h1 {
 }
 @media (prefers-reduced-motion: reduce) {
   *,
-*:before,
-*:after {
+  *:before,
+  *:after {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
@@ -1209,7 +1209,7 @@ td {
     display: none;
   }
   .activity-panel,
-.metrics-panel {
+  .metrics-panel {
     padding: 16px;
   }
   .incident-top {

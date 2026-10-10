@@ -6,7 +6,7 @@ const external = !!process.env.SETTLEMENT_E2E_URL;
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 60_000,
-  expect: { timeout: 15_000, toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
+  expect: { timeout: 15_000, toHaveScreenshot: { maxDiffPixelRatio: 0.001 } },
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {

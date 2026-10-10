@@ -274,7 +274,7 @@
     justify-content: center;
   }
   .journal-launcher > span,
-.journal-launcher > svg:last-child {
+  .journal-launcher > svg:last-child {
     display: none;
   }
   .journal-launcher i {

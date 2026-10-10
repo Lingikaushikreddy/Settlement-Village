@@ -2,11 +2,11 @@
 
 ## 0.6.0 — 2026-10-10
 
-- **One build system.** The unused vinext/Cloudflare Workers build, the ChatGPT auth helper, the Drizzle/D1 stubs and the starter install scripts are removed. Settlement builds, runs and deploys with Next.js only. 25 dependencies nothing imported are gone, along with the 56 unused shadcn components that were their only importers.
+- **One build system.** The unused vinext/Cloudflare Workers build, the ChatGPT auth helper, the Drizzle/D1 stubs and the starter install scripts are removed. Settlement builds, runs and deploys with Next.js only. 24 dependencies nothing imported are gone, along with the 56 unused shadcn components that were their only importers.
 - Next 16.4.0 closes the open security advisories; `npm audit --omit=dev` is clean.
 - CI runs on Node 22, 24 and 26. The worker integration test passes on Node 26.
-- A Playwright smoke suite (`npm run test:e2e`) checks the village, development start, browser report verification, second-tab blocking and a home-screen baseline on every pull request.
-- Dead interface code removed: the SVG village map, VillageLife, three starter icons and about 800 lines of CSS that no component referenced. The home screenshot is unchanged.
+- A Playwright smoke suite (`npm run test:e2e`) checks the village, development start, browser report verification, second-tab blocking and screenshot baselines of the home, Council and Research views on every pull request.
+- Dead interface code removed: the SVG village map, VillageLife, three starter icons and about 750 lines of CSS that no component referenced. A follow-up fix repaired a comment that the first removal left open at the top of the Council stylesheet, and a new test rejects any stylesheet with a comment that swallows another.
 - Contributor governance: code of conduct, CODEOWNERS, Dependabot, labels, Discussions, a first-PR guide, and a protected `main` branch that requires a green pull request.
 - Releases are created by a workflow from `v*` tags using these notes.
 
