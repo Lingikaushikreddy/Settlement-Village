@@ -39,6 +39,9 @@ inputs:
   report-path:
     description: Where to write the report.
     default: settlement-agent-report.json
+  artifact-name:
+    description: Name of the uploaded report artifact. Artifact names must be unique within a workflow run, so set this when the action runs more than once.
+    default: settlement-agent-report
   package-version:
     description: settlement-testbed version to run.
     default: "0.6.0"
@@ -104,7 +107,7 @@ runs:
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if: always()
       with:
-        name: settlement-agent-report
+        name: ${{ inputs.artifact-name }}
         path: ${{ inputs.report-path }}
         if-no-files-found: ignore
         retention-days: 30
