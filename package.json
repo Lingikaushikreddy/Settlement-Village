@@ -17,7 +17,8 @@
     "evaluate": "node --experimental-strip-types scripts/evaluate.mjs",
     "eval:agent": "node --experimental-strip-types scripts/eval-agent.mjs",
     "test:integration": "node --experimental-strip-types --test tests/http.integration.mjs",
-    "smoke": "node scripts/smoke-hosted.mjs"
+    "smoke": "node scripts/smoke-hosted.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
@@ -31,6 +32,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

@@ -49,3 +49,26 @@ jobs:
             sleep 1
           done
           npm run smoke -- http://127.0.0.1:5173 || { cat next-start.log; exit 1; }
+      - name: Cache Playwright browsers
+        if: matrix.node == 24
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Chromium
+        if: matrix.node == 24
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke tests
+        if: matrix.node == 24
+        run: npm run test:e2e
+        env:
+          SETTLEMENT_E2E_URL: http://127.0.0.1:5173
+      - name: Upload Playwright report
+        if: matrix.node == 24 && failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
