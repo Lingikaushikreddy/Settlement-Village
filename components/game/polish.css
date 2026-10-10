@@ -1,4 +1,5 @@
-/* Willowmere interface: forest enamel, warm brass and readable parchment. */
+/* Willowmere interface: forest enamel,
+warm brass and readable parchment. */
 .village-game {
   --navy: #1b3833;
   --gold: #e8c47b;
@@ -366,7 +367,7 @@
     font-size: 10px;
   }
   .player-crest,
-  .player-crest svg {
+.player-crest svg {
     width: 34px;
     height: 42px;
   }
