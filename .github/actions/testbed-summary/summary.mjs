@@ -8,11 +8,10 @@ const pct = (n, d) => (d ? `${((100 * n) / d).toFixed(1)}% (${n}/${d})` : "n/a")
 const lines = ["## Settlement agent testbed", ""];
 const outputs = [`report-path=${reportPath}`];
 
-if (!existsSync(reportPath)) {
-  lines.push(`No report was written (CLI exit code ${exitCode}). Check the step log: the agent may have been unreachable or an option invalid.`);
-} else {
-  const report = JSON.parse(readFileSync(reportPath, "utf8"));
-  const sum = (k) => report.rows.reduce((n, r) => n + r[k], 0);
+function render(report) {
+  if (!report || !Array.isArray(report.rows) || !report.agent?.name || !Array.isArray(report.cases) || !Array.isArray(report.baselines))
+    throw new TypeError("not a settlement-testbed agent report");
+  const sum = (k) => report.rows.reduce((n, r) => n + (r[k] ?? 0), 0);
   const overall = {
     attackSuccess: sum("evaluable") ? (sum("successes") + sum("unresolved")) / sum("evaluable") : null,
     honestRefusal: sum("benignOffers") ? (sum("benignRefused") + sum("honestUnanswered")) / sum("benignOffers") : null,
@@ -23,13 +22,25 @@ if (!existsSync(reportPath)) {
   for (const row of report.rows) {
     lines.push(`| ${row.scenario} (${row.runCount} runs) | ${pct(row.successes + row.unresolved, row.evaluable)} | ${pct(row.benignRefused + row.honestUnanswered, row.benignOffers)} | ${pct(row.invalidDecisions, row.decisions)} |`);
     for (const b of report.baselines.filter((b) => b.scenario === row.scenario))
-      lines.push(`| ↳ ${POLICY[b.policy]} | ${pct(b.successes, b.evaluable)} | ${pct(b.benignRefused, b.benignOffers)} | — |`);
+      lines.push(`| ↳ ${POLICY[b.policy] ?? b.policy} | ${pct(b.successes, b.evaluable)} | ${pct(b.benignRefused, b.benignOffers)} | — |`);
   }
   const fmt = (v) => (v === null ? "n/a" : `${(100 * v).toFixed(1)}%`);
   lines.push("", `**Overall:** attack success ${fmt(overall.attackSuccess)} · honest refusal ${fmt(overall.honestRefusal)} · invalid ${fmt(overall.invalid)}`);
   lines.push("", exitCode === "1" ? "❌ A threshold was exceeded; see the step log for which one." : exitCode === "0" ? "✅ All configured thresholds passed." : `⚠️ CLI exit code ${exitCode}.`);
   lines.push("", "Verify this report anywhere with `npx settlement-testbed --verify <report.json>`. Scores apply to these authored scenarios only; they are not a general safety certification.");
   outputs.push(`attack-success=${overall.attackSuccess ?? ""}`, `honest-refusal=${overall.honestRefusal ?? ""}`, `invalid=${overall.invalid ?? ""}`);
+}
+
+if (!existsSync(reportPath)) {
+  lines.push(`No report was written (CLI exit code ${exitCode}). Check the step log: the agent may have been unreachable or an option invalid.`);
+} else {
+  // Never throw here: the final action step reports the CLI's exit code, and a summary
+  // that crashes would hide it behind a stack trace and drop the report-path output.
+  try {
+    render(JSON.parse(readFileSync(reportPath, "utf8")));
+  } catch (error) {
+    lines.push(`The report at \`${reportPath}\` could not be read as a settlement-testbed report (${error instanceof Error ? error.message : String(error)}). CLI exit code ${exitCode}.`);
+  }
 }
 
 process.stdout.write(lines.join("\n") + "\n");

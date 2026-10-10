@@ -15,7 +15,7 @@ The Release workflow then re-runs the full verification, creates the GitHub Rele
 
 Publishing uses npm Trusted Publishing (OpenID Connect from GitHub Actions). There is no token in the repository.
 
-- **First publish of a new package** must be manual: from the tagged commit, `cd packages/settlement-testbed && npm login && npm publish`. Then open the package's Settings → Publishing access on npmjs.com and add a trusted publisher: repository `Lingikaushikreddy/Settlement-Village`, workflow `release.yml`, environment left empty.
+- **First publish of a new package** must be manual: from the tagged commit, `cd packages/settlement-testbed && npm login && npm publish --provenance=false --access public`. The `--provenance=false` flag is required: `package.json` asks for provenance, and npm refuses to generate it outside GitHub Actions, so the first version carries no attestation while every later one does. Then open the package's Settings → Publishing access on npmjs.com and add a trusted publisher: repository `Lingikaushikreddy/Settlement-Village`, workflow `release.yml`, environment left empty. Trusted Publishing needs npm 11.5.1 or newer; Node 24's bundled npm qualifies.
 - **Every later tag** publishes automatically. The `publish` job is skipped with a notice while the package does not yet exist on npm.
 
 ## Verify a published version
