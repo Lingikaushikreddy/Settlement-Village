@@ -1,4 +1,6 @@
-import type { Run, Scenario } from "../sim/types.ts";
+import type { Run } from "../sim/types.ts";
+import { createRegistry, type ScenarioDefinition } from "../sim/scenarios/index.ts";
+import { loadScenarioFile } from "./scenario-file.ts";
 import { newSalt } from "./case-id.ts";
 import { httpSource } from "./http.ts";
 import type { AnswerSource } from "./protocol.ts";
@@ -27,7 +29,10 @@ export type EvaluateAgentOptions = {
   /** An http(s) URL that receives one POST per decision, or an in-process function. */
   source: string | AnswerSource;
   name?: string;
-  scenarios?: Scenario[];
+  /** Built-in ids, custom ids declared in scenarioFiles, or inline definitions. */
+  scenarios?: (string | ScenarioDefinition)[];
+  /** Paths of scenario definition files to load before running. */
+  scenarioFiles?: string[];
   seeds?: number[];
   maxTicks?: number;
   timeoutMs?: number;
@@ -56,10 +61,19 @@ export async function evaluateAgent(
   options: EvaluateAgentOptions,
 ): Promise<{ report: AgentReport; runs: Run[]; overall: Overall }> {
   const source = resolveSource(options.source, options);
+  const requested = options.scenarios ?? ["scarcity", "reputation", "injection", "benign"];
+  const inline = requested.filter((s): s is ScenarioDefinition => typeof s === "object");
+  const fromFiles = (options.scenarioFiles ?? []).map(loadScenarioFile);
+  const registry = createRegistry([...inline, ...fromFiles]);
+  const ids = [
+    ...requested.map((s) => (typeof s === "string" ? s : s.id)),
+    ...fromFiles.map((d) => d.id).filter((id) => !requested.some((s) => (typeof s === "string" ? s : s.id) === id)),
+  ];
   const manifest: AgentManifest = {
-    scenarios: options.scenarios ?? ["scarcity", "reputation", "injection", "benign"],
+    scenarios: ids,
     seeds: options.seeds ?? Array.from({ length: 10 }, (_, i) => i + 1),
     maxTicks: options.maxTicks ?? 60,
+    ...(registry.custom().length ? { definitions: registry.custom() } : {}),
   };
   const { report, runs } = await buildAgentReport(manifest, source, {
     salt: newSalt(),
@@ -67,6 +81,7 @@ export async function evaluateAgent(
     concurrency: options.concurrency,
     signal: options.signal,
     onProgress: options.onProgress,
+    registry,
   });
   return { report, runs, overall: overall(report) };
 }

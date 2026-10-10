@@ -42,10 +42,15 @@ export type {
 export const ENGINE_VERSION = "1.1.0";
 export const SOCIAL_ENGINE_VERSION = "1.1.0+social-1";
 export const AGENT_ENGINE_VERSION = "1.1.0+agent-1";
+/** Agent runs that play a custom scenario definition; the report carries the definition. */
+export const CUSTOM_AGENT_ENGINE_VERSION = "1.1.0+agent-1+custom";
 export function supportedEngine(version: string) {
-  return [ENGINE_VERSION, SOCIAL_ENGINE_VERSION, AGENT_ENGINE_VERSION].includes(
-    version,
-  );
+  return [
+    ENGINE_VERSION,
+    SOCIAL_ENGINE_VERSION,
+    AGENT_ENGINE_VERSION,
+    CUSTOM_AGENT_ENGINE_VERSION,
+  ].includes(version);
 }
 export const scenarioInfo: Record<
   Scenario,
@@ -235,7 +240,11 @@ export function createRun(
   const run: Run = {
     schemaVersion: 1,
     engineVersion:
-      c.policy === "external" ? AGENT_ENGINE_VERSION : ENGINE_VERSION,
+      c.policy === "external"
+        ? definition
+          ? CUSTOM_AGENT_ENGINE_VERSION
+          : AGENT_ENGINE_VERSION
+        : ENGINE_VERSION,
     id: `run-${c.seed}-${c.scenario}-${c.policy}`,
     name: definitionFor({ config: c, definition }).name,
     config: c,

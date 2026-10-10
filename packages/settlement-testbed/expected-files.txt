@@ -7,6 +7,8 @@ dist/sim/evaluation.d.ts
 dist/sim/evaluation.js
 dist/sim/planner.d.ts
 dist/sim/planner.js
+dist/sim/scenario-label.d.ts
+dist/sim/scenario-label.js
 dist/sim/scenario-schema.d.ts
 dist/sim/scenario-schema.js
 dist/sim/scenarios/benign.json
@@ -33,6 +35,8 @@ dist/testbed/report.d.ts
 dist/testbed/report.js
 dist/testbed/run.d.ts
 dist/testbed/run.js
+dist/testbed/scenario-file.d.ts
+dist/testbed/scenario-file.js
 dist/testbed/share.d.ts
 dist/testbed/share.js
 package.json

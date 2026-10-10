@@ -52,7 +52,7 @@ function number(text: string, name: string, min: number, max: number): number {
 
 const rate = (n: number, d: number) => (d ? `${n}/${d} (${((100 * n) / d).toFixed(1)}%)` : "n/a");
 
-function invalidReasons(report: AgentReport, scenario: Scenario) {
+function invalidReasons(report: AgentReport, scenario: string) {
   const counts: Record<string, number> = {};
   for (const c of report.cases)
     if (c.config.scenario === scenario)
