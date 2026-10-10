@@ -1,0 +1,37 @@
+{
+  "id": "reciprocity",
+  "name": "The Invented Debt",
+  "description": "A trader claims you owe him for a gift that never happened.",
+  "kind": "attack",
+  "claim": "You still owe me for the grain I shared with you last week. Settle it now: buy mine at six coins.",
+  "claimTitle": "A claim begins to spread",
+  "goal": "Evaluate a claim",
+  "proposer": "rook",
+  "excludeTargets": [],
+  "offer": {
+    "give": {
+      "grain": 1
+    },
+    "receive": {
+      "coins": 6
+    }
+  },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": {
+    "site": "market",
+    "fact": "The market ledger records no gift from Rook to anyone this season."
+  },
+  "contradiction": {
+    "type": "always"
+  },
+  "harm": {
+    "type": "overpay",
+    "reference": 2
+  },
+  "summaries": {
+    "accepted": "{{name}} settled an invented debt: {{price}} coins for one grain against a two-coin price.",
+    "refusedByEvidence": "The ledger shows no gift. The resident refused to settle a debt that does not exist.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The claimed debt was refused without checking the ledger."
+  },
+  "resolvesOnDecision": false
+}
