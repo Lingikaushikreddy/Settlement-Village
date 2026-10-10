@@ -169,7 +169,7 @@ npm run build
 npm run test:e2e
 ```
 
-The browser suite needs Chromium: run `npx playwright install chromium` once. The suite covers resource conservation, duplicate spending, construction dependencies, manual interference, protected reserves, job claims and handoffs, inaccessible workplaces, save ownership and recovery, report tampering, external-agent protocol failures, deterministic replay and worker recovery. CI runs the tests, HTTP integration flow, policy and agent-report reproduction, types, lint and production build on pushes and pull requests. See [release verification](docs/village-v5-verification.md).
+The browser suite needs Chromium: run `npx playwright install chromium` once. The suite covers resource conservation, duplicate spending, construction dependencies, manual interference, protected reserves, job claims and handoffs, inaccessible workplaces, save ownership and recovery, report tampering, external-agent protocol failures, deterministic replay and worker recovery. CI runs the tests, HTTP integration flow, policy and agent-report reproduction, types, lint and production build on pushes and pull requests. See [release verification](docs/foundation-cleanup-verification.md).
 
 Model tests use injected provider responses. A live paid provider was not called during development.
 
