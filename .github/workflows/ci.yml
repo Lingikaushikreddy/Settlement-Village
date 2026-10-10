@@ -16,9 +16,12 @@ concurrency:
 
 jobs:
   verify:
-    name: Tests, types, lint and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24, 26]
     env:
       SETTLEMENT_LIVE_AI: "false"
     steps:
@@ -27,7 +30,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: .nvmrc
+          node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
       - run: npm test
@@ -38,6 +41,7 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - name: Smoke test the production server
+        if: matrix.node == 24
         run: |
           npm start > next-start.log 2>&1 &
           for i in $(seq 1 30); do
