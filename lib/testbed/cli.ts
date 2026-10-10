@@ -125,12 +125,13 @@ export async function main(argv: string[]): Promise<number> {
     throw new UsageError(`--agent must be an http(s) URL (got "${values.agent}")`);
 
   let definitions: ScenarioDefinition[] = [];
+  let registry: ReturnType<typeof createRegistry>;
   try {
     definitions = (values["scenario-file"] ?? []).map(loadScenarioFile);
+    registry = createRegistry(definitions);
   } catch (error) {
     throw new UsageError(`Invalid scenario file: ${(error as Error).message}`);
   }
-  const registry = createRegistry(definitions);
   const manifest: AgentManifest = {
     scenarios: values.scenarios
       ? values.scenarios.split(",").map((s) => s.trim())

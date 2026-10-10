@@ -116,6 +116,8 @@ const check = await verifyReport(JSON.parse(JSON.stringify(report)));
 
 `source` is either an `http(s)` URL (one POST per decision, as above) or a function that receives the same request object and returns an answer. A function source lets you test an agent in-process in your own test runner.
 
+An explicit `scenarios` list runs exactly those IDs, resolved against the built-ins and loaded `scenarioFiles`; omitting it runs all four built-ins plus every loaded file.
+
 ## Author your own scenario
 
 Write a JSON definition (claim, proposer, offer, evidence, contradiction rule, harm) and run it with `--scenario-file`:

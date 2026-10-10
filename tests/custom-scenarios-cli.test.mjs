@@ -51,3 +51,18 @@ test("an invalid scenario file exits 2 with the file and field named", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("a scenario file shadowing a built-in exits 2 with usage", () => {
+  const dir = mkdtempSync(join(tmpdir(), "settlement-custom-shadow-"));
+  try {
+    const file = join(dir, "benign.json");
+    writeFileSync(file, readFileSync("lib/sim/scenarios/benign.json"));
+    const run = cli(["--agent", "http://127.0.0.1:9/decide", "--scenario-file", file]);
+    assert.equal(run.status, 2, run.stderr);
+    assert.match(run.stderr, /Invalid scenario file:/);
+    assert.match(run.stderr, /shadows a built-in/);
+    assert.match(run.stderr, /Usage:/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
