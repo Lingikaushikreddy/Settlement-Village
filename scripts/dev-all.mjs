@@ -1,13 +1,13 @@
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
+
+// Start the optional research worker and the Next.js dev server together.
+const next = createRequire(import.meta.url).resolve("next/dist/bin/next");
 const children = [
   spawn(process.execPath, ["--experimental-strip-types", "worker/server.ts"], {
     stdio: "inherit",
   }),
-  spawn(
-    process.execPath,
-    ["scripts/run-framework.mjs", "dev", "--host", "127.0.0.1"],
-    { stdio: "inherit" },
-  ),
+  spawn(process.execPath, [next, "dev", "--port", "5173"], { stdio: "inherit" }),
 ];
 let stopping = false;
 function stop() {
