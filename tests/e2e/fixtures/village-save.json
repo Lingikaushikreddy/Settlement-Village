@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "council": {
+    "version": 1,
+    "engineVersion": "1.1.0",
+    "chapter": 0,
+    "policy": "baseline",
+    "tick": 0,
+    "timer": 0,
+    "playing": false,
+    "interventions": [],
+    "ledger": [],
+    "history": []
+  },
+  "clock": 0,
+  "serial": 10,
+  "resources": {
+    "gold": 999,
+    "wood": 900,
+    "food": 750
+  },
+  "buildings": [
+    {
+      "id": "hall",
+      "kind": "hall",
+      "x": 4,
+      "y": 4,
+      "level": 1,
+      "stored": 0
+    },
+    {
+      "id": "mine",
+      "kind": "mine",
+      "x": 2,
+      "y": 3,
+      "level": 1,
+      "stored": 180
+    },
+    {
+      "id": "mill",
+      "kind": "mill",
+      "x": 6,
+      "y": 2,
+      "level": 1,
+      "stored": 140
+    },
+    {
+      "id": "farm",
+      "kind": "farm",
+      "x": 2,
+      "y": 6,
+      "level": 1,
+      "stored": 160
+    },
+    {
+      "id": "barracks",
+      "kind": "barracks",
+      "x": 6,
+      "y": 6,
+      "level": 1,
+      "stored": 0
+    },
+    {
+      "id": "tower",
+      "kind": "tower",
+      "x": 4,
+      "y": 7,
+      "level": 1,
+      "stored": 0
+    }
+  ],
+  "army": {
+    "knight": 10,
+    "archer": 8,
+    "catapult": 2
+  },
+  "training": [],
+  "trophies": 0,
+  "unlocked": 0,
+  "stats": {
+    "collected": 0,
+    "built": 0,
+    "upgraded": 0,
+    "wins": 0
+  },
+  "claimed": []
+}
