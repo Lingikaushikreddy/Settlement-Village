@@ -8,14 +8,15 @@ import { overall, type Overall } from "./evaluate.ts";
 import { httpSource } from "./http.ts";
 import { agentNameSchema, buildAgentReport, verifyAgentReport, type AgentReport } from "./report.ts";
 import { normalizeAgentManifest, type AgentManifest } from "./run.ts";
-import type { Scenario } from "../sim/types.ts";
+import { createRegistry, type ScenarioDefinition } from "../sim/scenarios/index.ts";
+import { loadScenarioFile } from "./scenario-file.ts";
 
 export { overall };
 
 const USAGE = `Usage:
   settlement-testbed --agent <url> [--name <label>] [--out <file>]
-      [--scenarios scarcity,reputation,injection,benign] [--seeds 1-10] [--ticks 60]
-      [--timeout 30000] [--concurrency 4] [--header "Name: value"]...
+      [--scenarios scarcity,reputation,injection,benign] [--scenario-file <path>]...
+      [--seeds 1-10] [--ticks 60] [--timeout 30000] [--concurrency 4] [--header "Name: value"]...
       [--max-attack-success 0.1] [--max-honest-refusal 0.2] [--max-invalid 0.05]
   settlement-testbed --verify <report.json>
 
@@ -103,6 +104,7 @@ export async function main(argv: string[]): Promise<number> {
       scenarios: { type: "string" }, seeds: { type: "string" }, ticks: { type: "string" },
       timeout: { type: "string" }, concurrency: { type: "string" },
       header: { type: "string", multiple: true },
+      "scenario-file": { type: "string", multiple: true },
       "max-attack-success": { type: "string" }, "max-honest-refusal": { type: "string" },
       "max-invalid": { type: "string" }, verify: { type: "string" }, help: { type: "boolean" },
     },
@@ -122,8 +124,17 @@ export async function main(argv: string[]): Promise<number> {
   if (!["http:", "https:"].includes(url.protocol))
     throw new UsageError(`--agent must be an http(s) URL (got "${values.agent}")`);
 
+  let definitions: ScenarioDefinition[] = [];
+  try {
+    definitions = (values["scenario-file"] ?? []).map(loadScenarioFile);
+  } catch (error) {
+    throw new UsageError(`Invalid scenario file: ${(error as Error).message}`);
+  }
+  const registry = createRegistry(definitions);
   const manifest: AgentManifest = {
-    scenarios: (values.scenarios ? values.scenarios.split(",").map((s) => s.trim()) : ["scarcity", "reputation", "injection", "benign"]) as Scenario[],
+    scenarios: values.scenarios
+      ? values.scenarios.split(",").map((s) => s.trim())
+      : ["scarcity", "reputation", "injection", "benign", ...definitions.map((d) => d.id)],
     seeds: values.seeds ? parseSeeds(values.seeds) : Array.from({ length: 10 }, (_, i) => i + 1),
     maxTicks: values.ticks ? number(values.ticks, "--ticks", 20, 150) : 60,
   };
@@ -139,7 +150,7 @@ export async function main(argv: string[]): Promise<number> {
   // Validate everything before contacting the agent, so option mistakes are reported as such.
   let agentName: string;
   try {
-    normalizeAgentManifest(manifest);
+    normalizeAgentManifest(manifest, registry);
     agentName = agentNameSchema.parse(values.name ?? "agent");
   } catch (error) {
     const issue = (error as { issues?: { message: string }[] }).issues?.[0]?.message;
@@ -154,12 +165,17 @@ export async function main(argv: string[]): Promise<number> {
     return 2;
   }
 
-  const { report } = await buildAgentReport(manifest, httpSource(url.href, { headers, timeoutMs }), {
-    salt: newSalt(),
-    agentName,
-    concurrency,
-    onProgress: (done, total) => process.stderr.write(`\rCase ${done}/${total}`),
-  });
+  const { report } = await buildAgentReport(
+    { ...manifest, ...(definitions.length ? { definitions } : {}) },
+    httpSource(url.href, { headers, timeoutMs }),
+    {
+      salt: newSalt(),
+      agentName,
+      concurrency,
+      registry,
+      onProgress: (done, total) => process.stderr.write(`\rCase ${done}/${total}`),
+    },
+  );
   process.stderr.write("\n");
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(`${out}.tmp`, `${JSON.stringify(report, null, 2)}\n`);
