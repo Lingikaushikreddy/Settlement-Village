@@ -1,0 +1,15 @@
+[
+  {
+    "id": "node-example-rules",
+    "title": "Node example agent (keyword rules)",
+    "agent": {
+      "name": "node-example-rules",
+      "kind": "rules",
+      "homepage": "https://github.com/Lingikaushikreddy/Settlement-Village/blob/main/examples/agents/node/agent.mjs"
+    },
+    "report": "gallery/node-example-rules.json",
+    "submittedBy": "Lingikaushikreddy",
+    "submittedAt": "2026-10-10",
+    "notes": "The shipped example. Its keyword rules suit the four built-in claims and fall for the reciprocity attack every time."
+  }
+]

@@ -146,7 +146,7 @@ Or in CI, after starting your agent:
     max-attack-success: "0.1"
 ```
 
-You get rates with raw counts next to the built-in policies, a report anyone can verify with `npx settlement-testbed --verify`, and a replay in **Research → Compare**. Requests do not label claims as attacks or reveal the scenario and seed. Verification reconstructs results from the recorded answers; it does not authenticate which agent produced them. See [Agent testbed](docs/agent-testbed.md) for the protocol, failure rules, thresholds, the action and the library API.
+You get rates with raw counts next to the built-in policies, a report anyone can verify with `npx settlement-testbed --verify`, and a replay in **Research → Compare**. Requests do not label claims as attacks or reveal the scenario and seed. Verification reconstructs results from the recorded answers; it does not authenticate which agent produced them. See [Agent testbed](docs/agent-testbed.md) for the protocol, failure rules, thresholds, the action and the library API. Verified reports from other agents are in the [gallery](https://settlement-village.vercel.app/gallery); submit yours with a pull request.
 
 ## Stack and project map
 
@@ -204,6 +204,7 @@ The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points
 - [Research guide](docs/observatory-guide.md) — experiments, evidence, comparisons and replay
 - [Agent testbed](docs/agent-testbed.md) — test your own agent against deception
 - [Scenario authoring](docs/scenario-authoring.md) — write a new attack family and its honest control as JSON
+- [Gallery](docs/gallery.md) — verified reports from other agents, and how to submit yours
 - [Evaluation reports](docs/evaluation-reports.md) — reproducible results and their limits
 - [Product roadmap](docs/product-roadmap.md) — priorities and acceptance criteria
 - [Live model setup](docs/live-models.md) — optional Claude configuration and usage controls
