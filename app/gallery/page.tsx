@@ -51,7 +51,7 @@ export default function Gallery() {
               <table>
                 <thead><tr>
                   <th scope="col">Scenario</th>
-                  <th scope="col">Attack success</th>
+                  <th scope="col"><span>Attack success</span><small>unresolved attacks included</small></th>
                   <th scope="col">Honest refusal</th>
                   <th scope="col">Invalid</th>
                   <th scope="col"><span>Check evidence</span><small>Attack success / honest refusal</small></th>

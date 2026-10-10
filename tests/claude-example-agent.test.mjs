@@ -59,12 +59,19 @@ test("dry-run answers without a network and the server refuses to start without 
 
 async function startAgent(extraEnv) {
   const child = spawn(process.execPath, ["examples/agents/claude/agent.mjs"], { env: { PATH: process.env.PATH, PORT: "0", ...extraEnv }, stdio: ["ignore", "pipe", "pipe"] });
+  const log = { stderr: "" };
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (t) => { log.stderr += t; });
   const url = await new Promise((resolve, reject) => {
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (t) => { const m = t.match(/http:\/\/127\.0\.0\.1:\d+\/decide/); if (m) resolve(m[0]); });
     child.on("exit", (c) => reject(new Error(`agent exited ${c}`)));
   });
-  return { child, url };
+  return { child, url, log };
+}
+async function waitFor(log, pattern) {
+  for (let i = 0; i < 40 && !pattern.test(log.stderr); i++) await new Promise((r) => setTimeout(r, 50));
+  return log.stderr;
 }
 async function post(url, body) {
   const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -75,6 +82,8 @@ test("the live path validates the provider: slow or malformed providers become 4
   let mode = "ok";
   const stub = createServer((req, res) => {
     if (mode === "slow") return; // never answers; the agent's own timeout must fire
+    if (mode === "unauthorized")
+      return res.writeHead(401, { "content-type": "application/json" }).end(JSON.stringify({ type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } }));
     const body = mode === "ok"
       ? { stop_reason: "tool_use", content: [{ type: "tool_use", name: "decide", input: { action: "reject_claim", evidenceIds: ["e-19"], summary: "No authority." } }], usage: { input_tokens: 300, output_tokens: 30 } }
       : { stop_reason: "end_turn", content: [{ type: "text", text: "hmm" }], usage: { input_tokens: 1, output_tokens: 1 } };
@@ -82,7 +91,7 @@ test("the live path validates the provider: slow or malformed providers become 4
   });
   await new Promise((r) => stub.listen(0, "127.0.0.1", r));
   const base = `http://127.0.0.1:${stub.address().port}`;
-  const { child, url } = await startAgent({ ANTHROPIC_API_KEY: "sk-test", SETTLEMENT_CLAUDE_BASE_URL: base, SETTLEMENT_CLAUDE_TIMEOUT_MS: "500" });
+  const { child, url, log } = await startAgent({ ANTHROPIC_API_KEY: "sk-test-secret", SETTLEMENT_CLAUDE_BASE_URL: base, SETTLEMENT_CLAUDE_TIMEOUT_MS: "500" });
   try {
     const good = await post(url, { ...request, allowedActions: ["accept_claim", "reject_claim"] });
     assert.equal(good.status, 200);
@@ -94,6 +103,14 @@ test("the live path validates the provider: slow or malformed providers become 4
     const started = Date.now();
     assert.equal((await post(url, request)).status, 400);
     assert.ok(Date.now() - started < 5000, "the agent's own timeout fired");
+    mode = "unauthorized";
+    assert.equal((await post(url, request)).status, 400);
+    assert.equal((await post(url, request)).status, 400);
+    const stderr = await waitFor(log, /401/);
+    assert.match(stderr, /401.*invalid x-api-key/, "the operator is told why the provider failed");
+    assert.equal(stderr.match(/401/g).length, 1, "the same reason is reported once, not per decision");
+    assert.ok(!stderr.includes("sk-test-secret"), "the key is never logged");
+    assert.ok(!stderr.includes(request.claim), "the request body is never logged");
   } finally {
     child.kill();
     stub.closeAllConnections?.();
