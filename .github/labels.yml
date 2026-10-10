@@ -1,0 +1,12 @@
+- { name: "good first issue", color: "7057ff", description: "Small, well-scoped and documented. A good first pull request." }
+- { name: "help wanted", color: "008672", description: "The maintainer would welcome a contribution here." }
+- { name: "bug", color: "d73a4a", description: "Something behaves differently from the docs or the game rules." }
+- { name: "enhancement", color: "a2eeef", description: "A focused improvement to gameplay, research or tooling." }
+- { name: "documentation", color: "0075ca", description: "Guides, README, changelog or code comments." }
+- { name: "dependencies", color: "0366d6", description: "Dependency updates, mostly from Dependabot." }
+- { name: "area: engine", color: "c2e0c6", description: "lib/sim: the deterministic social engine and evaluator." }
+- { name: "area: game", color: "c2e0c6", description: "lib/game: economy, crew, development, battle, council." }
+- { name: "area: testbed", color: "c2e0c6", description: "lib/testbed and the eval:agent CLI." }
+- { name: "area: ui", color: "c2e0c6", description: "components/ and app/: the playable interface." }
+- { name: "area: docs", color: "c2e0c6", description: "docs/ and guides." }
+- { name: "area: infra", color: "c2e0c6", description: "CI, release, hosting, repository settings." }

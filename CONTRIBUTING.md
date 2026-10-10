@@ -23,6 +23,15 @@ The game runs at `http://localhost:5173`. `npm run dev:all` also starts the opti
 
 For a large feature, open an issue describing the player experience and scope before investing in an implementation. For a small fix, a focused pull request is welcome.
 
+## Your first pull request
+
+1. Pick an issue labelled [good first issue](https://github.com/Lingikaushikreddy/Settlement-Village/labels/good%20first%20issue) or [help wanted](https://github.com/Lingikaushikreddy/Settlement-Village/labels/help%20wanted). If none fits, ask in [Discussions](https://github.com/Lingikaushikreddy/Settlement-Village/discussions) before writing code.
+2. Comment on the issue so it is not picked up twice.
+3. Follow "Make and verify a change" below. The whole verification block must pass locally; CI runs the same commands on Node 22, 24 and 26.
+4. Open the pull request with the template filled in. The maintainer reviews within a few days.
+
+Settlement follows the [Contributor Covenant](CODE_OF_CONDUCT.md).
+
 ## Make and verify a change
 
 1. Create a branch from `main`.

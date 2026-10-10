@@ -11,7 +11,7 @@ A multi-agent village strategy game and an inspectable AI simulation lab.
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 [![No API key required](https://img.shields.io/badge/Play_without_an_API_key-38664a.svg)](#run-locally)
 
-[Play online](https://settlement-village.vercel.app) · [Quick start](#run-locally) · [How agents work](#how-the-agents-work) · [Player guide](docs/player-guide.md) · [Contribute](CONTRIBUTING.md)
+[Play online](https://settlement-village.vercel.app) · [Quick start](#run-locally) · [How agents work](#how-the-agents-work) · [Player guide](docs/player-guide.md) · [Contribute](CONTRIBUTING.md) · [Discuss](https://github.com/Lingikaushikreddy/Settlement-Village/discussions)
 
 ![Settlement gameplay: the illustrated village, distinct residents, village orders and resource controls](docs/media/village-v3.png)
 
