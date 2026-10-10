@@ -6,7 +6,7 @@
 - **GitHub Action.** `uses: Lingikaushikreddy/Settlement-Village@v0.7.0` runs the evaluation in CI with pass/fail thresholds, uploads the report and writes a job summary next to the built-in policies.
 - **Library API.** `evaluateAgent` accepts a URL or an in-process function; `verifyReport` and the protocol helpers are exported.
 - The CLI source moved to `lib/testbed/cli.ts`; `npm run eval:agent` is unchanged.
-- Releases publish the package with npm provenance; the package, action and repository share one version.
+- Releases publish the package from the tag workflow with npm provenance from 0.7.1 on (the first version is published by hand, without an attestation); the package, action and repository share one version.
 
 Gameplay, scenarios, the protocol and existing reports are unchanged.
 
