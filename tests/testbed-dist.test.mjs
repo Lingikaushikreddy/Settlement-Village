@@ -35,7 +35,8 @@ test("the package builds and its output is only the engine, social adapter and t
 
 test("npm pack publishes exactly dist, README and package.json", () => {
   assert.ok(existsSync(join(pkg, "README.md")), "README exists (generated in Task 6; a placeholder is fine here)");
-  const pack = spawnSync("npm", ["pack", "--dry-run", "--json"], { cwd: pkg, encoding: "utf8" });
+  // --ignore-scripts keeps prepack's build output out of the JSON; the first test already built and checked dist.
+  const pack = spawnSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], { cwd: pkg, encoding: "utf8" });
   assert.equal(pack.status, 0, pack.stderr);
   const paths = JSON.parse(pack.stdout)[0].files.map((f) => f.path).sort();
   assert.ok(paths.every((p) => p === "package.json" || p === "README.md" || p.startsWith("dist/")), paths.join("\n"));
