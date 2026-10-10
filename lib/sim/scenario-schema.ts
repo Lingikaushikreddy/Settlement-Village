@@ -62,6 +62,9 @@ export const scenarioDefinitionSchema = z
   })
   .strict()
   .superRefine((d, ctx) => {
+    if ((d.acceptMeans === "refuse_proposer" && d.harm.type === "overpay") ||
+        (d.acceptMeans === "trade_with_proposer" && d.harm.type === "lost_trade"))
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["harm"], message: `harm.type ${d.harm.type} is incompatible with acceptMeans ${d.acceptMeans}` });
     for (const m of d.evidence.fact.matchAll(TOKEN)) {
       if (!(LOCATIONS as readonly string[]).includes(m[1]))
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["evidence", "fact"], message: `unknown location ${m[1]} in fact template` });

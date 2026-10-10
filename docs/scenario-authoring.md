@@ -55,12 +55,14 @@ The example agent's keyword rules are tuned to the four built-in claims, so on t
 | `acceptMeans` | `trade_with_proposer` or `refuse_proposer` | yes | What `accept_claim` does: execute the offer, or act on an allegation and refuse the proposer's fair trade. |
 | `evidence` | `{ site, fact }` | yes | `site` is one of farm, granary, market, well, workshop: where `check_evidence` walks the resident. `fact` is what inspection reveals; it may embed `{{stock:<location>:<resource>}}`. |
 | `contradiction` | `always` · `never` · `stock_above {location, resource, threshold, honorsPublishedStock}` | yes | When verified evidence makes a built-in policy refuse. `always` means the claim is false once checked. |
-| `harm` | `overpay {reference}` · `lost_trade {amount}` · `none` | yes | What a wrong decision costs: price minus reference, a fixed lost-trade amount, or nothing. |
+| `harm` | `overpay {reference}` · `lost_trade {amount}` · `none` | yes | What a wrong decision costs: `overpay` requires `acceptMeans: trade_with_proposer`; `lost_trade` requires `acceptMeans: refuse_proposer`; `none` works with either. |
 | `summaries` | object | yes | `accepted`, `refusedByEvidence`, `refusedByTrust`; plus `actedOnAllegation` and `declinedAllegation` for `refuse_proposer`. `{{name}}` and `{{price}}` expand. |
 | `resolvesOnDecision` | boolean | no | `true` for honest offers: the incident resolves when the resident decides. |
 <!-- schema:end -->
 
 ## How the rules interact with the built-in policies
+
+`acceptMeans: refuse_proposer` requires `harm.type` to be `lost_trade` or `none`; `acceptMeans: trade_with_proposer` requires `overpay` or `none`.
 
 - **Trust first** accepts when the resident's trust beats a seeded roll, unless verified evidence contradicts the claim. It never checks evidence on its own.
 - **Cautious** uses a higher suspicion threshold, so it refuses more honest offers.

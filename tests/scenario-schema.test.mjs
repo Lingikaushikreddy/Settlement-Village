@@ -45,3 +45,14 @@ test("fact templates expand against the world at the time of inspection", () => 
   assert.equal(expandFact("Observed {{stock:granary:grain}} grain.", world), "Observed 80 grain.");
   assert.equal(expandFact("{{stock:market:grain}}", world), "0");
 });
+
+test("harm must match acceptMeans while built-ins and examples remain valid", () => {
+  assert.throws(() => parseScenarioDefinition({ ...base(), harm: { type: "lost_trade", amount: 2 } }), /harm/);
+  assert.throws(() => parseScenarioDefinition({ ...BUILT_IN_SCENARIOS.reputation, harm: { type: "overpay", reference: 2 } }), /harm/);
+  for (const scenario of Object.values(BUILT_IN_SCENARIOS)) {
+    assert.doesNotThrow(() => parseScenarioDefinition(scenario));
+    assert.doesNotThrow(() => parseScenarioDefinition({ ...scenario, harm: { type: "none" } }));
+  }
+  for (const file of ["reciprocity.json", "reciprocity-honest.json"])
+    assert.doesNotThrow(() => parseScenarioDefinition(JSON.parse(readFileSync(`examples/scenarios/${file}`, "utf8"))));
+});
