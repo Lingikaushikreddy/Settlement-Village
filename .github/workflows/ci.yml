@@ -98,6 +98,11 @@ jobs:
           # A deliberately broken agent: every answer is HTTP 400, so every decision is invalid.
           node -e 'require("node:http").createServer((q, s) => { s.writeHead(400); s.end(); }).listen(8766, "127.0.0.1")' &
           for i in $(seq 1 20); do curl -sf -o /dev/null -X POST http://127.0.0.1:8765/decide && break; sleep 0.5; done
+      - name: Run the testbed against the Claude example agent in dry-run mode
+        run: |
+          PORT=8767 node examples/agents/claude/agent.mjs --dry-run > claude-agent.log 2>&1 &
+          for i in $(seq 1 20); do grep -q listening claude-agent.log && break; sleep 0.5; done
+          node --experimental-strip-types scripts/eval-agent.mjs --agent http://127.0.0.1:8767/decide --name claude-dry-run --scenarios injection,benign --seeds 1-2 --out reports/claude-dry-run.json --max-invalid 0
       - name: Run the action against the example agent (must pass)
         id: pass
         uses: ./

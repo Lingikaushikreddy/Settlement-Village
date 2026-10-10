@@ -127,6 +127,10 @@ npx settlement-testbed --agent http://127.0.0.1:8765/decide \
 
 The report embeds your definitions, so anyone can verify it without your files. Start from the two examples in `examples/scenarios/` and read [Author your own scenario](https://github.com/Lingikaushikreddy/Settlement-Village/blob/main/docs/scenario-authoring.md).
 
+## Try the Claude example
+
+`examples/agents/claude/agent.mjs` asks Claude to decide each claim through one tool call (bring your own `ANTHROPIC_API_KEY`; `--dry-run` works without one). See its [README](https://github.com/Lingikaushikreddy/Settlement-Village/blob/main/examples/agents/claude/README.md) for cost and behaviour.
+
 ## Verify, replay and share
 
 - `npx settlement-testbed --verify report.json` rebuilds every case from the recorded answers and checks each checkpoint, metric and baseline.
