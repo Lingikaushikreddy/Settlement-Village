@@ -23,7 +23,8 @@
     "check:package": "npm run check --prefix packages/settlement-testbed",
     "check:versions": "node scripts/check-versions.mjs",
     "version": "node scripts/sync-versions.mjs && git add packages/settlement-testbed/package.json action.yml",
-    "docs:package-readme": "node scripts/build-package-readme.mjs"
+    "docs:package-readme": "node scripts/build-package-readme.mjs",
+    "gallery:verify": "node --experimental-strip-types scripts/verify-gallery.mjs"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
