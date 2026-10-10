@@ -41,3 +41,7 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# workspace packages
+/packages/*/dist/
+/packages/*/*.tgz

@@ -18,7 +18,9 @@
     "eval:agent": "node --experimental-strip-types scripts/eval-agent.mjs",
     "test:integration": "node --experimental-strip-types --test tests/http.integration.mjs",
     "smoke": "node scripts/smoke-hosted.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:package": "npm run build --prefix packages/settlement-testbed",
+    "check:package": "npm run check --prefix packages/settlement-testbed"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",

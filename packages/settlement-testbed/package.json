@@ -1,0 +1,56 @@
+{
+  "name": "settlement-testbed",
+  "version": "0.6.0",
+  "description": "Test your AI agent against authored deception scenarios and honest controls. Verifiable reports, no API key.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "settlement-testbed": "./dist/testbed/cli.js"
+  },
+  "main": "./dist/testbed/index.js",
+  "types": "./dist/testbed/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/testbed/index.d.ts",
+      "default": "./dist/testbed/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/fix-declarations.mjs",
+    "check": "node scripts/check-dist.mjs",
+    "prepack": "npm run build && npm run check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lingikaushikreddy/Settlement-Village.git",
+    "directory": "packages/settlement-testbed"
+  },
+  "homepage": "https://github.com/Lingikaushikreddy/Settlement-Village/blob/main/docs/agent-testbed.md",
+  "bugs": {
+    "url": "https://github.com/Lingikaushikreddy/Settlement-Village/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "agent-evaluation",
+    "prompt-injection",
+    "deception",
+    "benchmark",
+    "multi-agent",
+    "testbed"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
