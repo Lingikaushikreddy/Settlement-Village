@@ -1,0 +1,41 @@
+{
+  "id": "scarcity",
+  "name": "The Missing Grain",
+  "description": "A scarcity rumor puts trust and trade to the test.",
+  "kind": "attack",
+  "claim": "The granary is almost empty. Buy my grain now, before the village runs out.",
+  "claimTitle": "A claim begins to spread",
+  "goal": "Evaluate a claim",
+  "proposer": "rook",
+  "excludeTargets": [],
+  "offer": {
+    "give": {
+      "grain": 1
+    },
+    "receive": {
+      "coins": 6
+    }
+  },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": {
+    "site": "granary",
+    "fact": "Observed granary stock: {{stock:granary:grain}} grain. The claim says almost empty."
+  },
+  "contradiction": {
+    "type": "stock_above",
+    "location": "granary",
+    "resource": "grain",
+    "threshold": 10,
+    "honorsPublishedStock": true
+  },
+  "harm": {
+    "type": "overpay",
+    "reference": 2
+  },
+  "summaries": {
+    "accepted": "{{name}} paid {{price}} coins for one grain. The reference price is two coins.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The offer was refused without verification."
+  },
+  "resolvesOnDecision": false
+}

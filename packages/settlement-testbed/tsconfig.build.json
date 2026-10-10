@@ -5,8 +5,14 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "es2022",
-    "lib": ["es2022", "dom", "dom.iterable"],
-    "types": ["node"],
+    "lib": [
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "declaration": true,
     "sourceMap": false,
@@ -14,7 +20,12 @@
     "rewriteRelativeImportExtensions": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "resolveJsonModule": true
   },
-  "include": ["../../lib/sim/**/*.ts", "../../lib/agent/social.ts", "../../lib/testbed/**/*.ts"]
+  "include": [
+    "../../lib/sim/**/*.ts",
+    "../../lib/agent/social.ts",
+    "../../lib/testbed/**/*.ts"
+  ]
 }
