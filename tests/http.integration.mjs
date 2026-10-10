@@ -101,9 +101,17 @@ test("worker HTTP controls, origin protection and event stream form one working 
       signal: AbortSignal.timeout(4000),
     });
     assert.equal(response.headers.get("content-type"), "text/event-stream");
+    // Node 26 delivers the "retry:" preamble as its own chunk, so read until
+    // the first event arrives. Eight chunks is far more than one event needs.
     const reader = response.body.getReader();
-    const chunk = await reader.read();
-    assert.match(new TextDecoder().decode(chunk.value), /data:/);
+    const decoder = new TextDecoder();
+    let received = "";
+    for (let i = 0; i < 8 && !/data:/.test(received); i++) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      received += decoder.decode(chunk.value, { stream: true });
+    }
+    assert.match(received, /data:/);
     await reader.cancel();
   } finally {
     if (child.exitCode === null && child.signalCode === null) {
