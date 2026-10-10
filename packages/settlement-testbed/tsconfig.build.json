@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "rootDir": "../../lib",
+    "outDir": "dist",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2022",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["node"],
+    "strict": true,
+    "declaration": true,
+    "sourceMap": false,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false
+  },
+  "include": ["../../lib/sim/**/*.ts", "../../lib/agent/social.ts", "../../lib/testbed/**/*.ts"]
+}
