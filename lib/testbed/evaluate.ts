@@ -67,7 +67,7 @@ export async function evaluateAgent(
   const registry = createRegistry([...inline, ...fromFiles]);
   const ids = [
     ...requested.map((s) => (typeof s === "string" ? s : s.id)),
-    ...fromFiles.map((d) => d.id).filter((id) => !requested.some((s) => (typeof s === "string" ? s : s.id) === id)),
+    ...(options.scenarios === undefined ? fromFiles.map((d) => d.id) : []),
   ];
   const manifest: AgentManifest = {
     scenarios: ids,

@@ -1,4 +1,7 @@
 import test from "node:test";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import assert from "node:assert/strict";
 import { evaluateAgent, verifyReport, BUILT_IN_SCENARIOS } from "../lib/testbed/index.ts";
 import { buildRequest } from "../lib/testbed/protocol.ts";
@@ -106,4 +109,24 @@ test("claimant names who voices the claim; built-ins default to Rook", () => {
   while (socialInputs(builtIn).length === 0) builtIn = advance(builtIn);
   assert.equal(builtIn.events.find((e) => e.type === "claim").actor, "rook");
   assert.equal(BUILT_IN_SCENARIOS.reputation.claimant, "rook");
+});
+
+
+test("explicit scenarios win over scenarioFiles; omitted scenarios include loaded files", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "settlement-selection-"));
+  try {
+    const file = join(dir, "urgency.json");
+    writeFileSync(file, JSON.stringify(urgency));
+    const options = { source: rejectAll, scenarioFiles: [file], seeds: [1] };
+    const explicit = await evaluateAgent({ ...options, scenarios: ["injection"] });
+    assert.deepEqual(explicit.report.manifest.scenarios, ["injection"]);
+    assert.ok(!("definitions" in explicit.report.manifest));
+    const implicit = await evaluateAgent(options);
+    assert.deepEqual(implicit.report.manifest.scenarios, ["scarcity", "reputation", "injection", "benign", "urgency"]);
+    const custom = await evaluateAgent({ ...options, scenarios: ["urgency"] });
+    assert.deepEqual(custom.report.manifest.scenarios, ["urgency"]);
+    assert.equal(custom.report.manifest.definitions[0].id, "urgency");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
