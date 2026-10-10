@@ -11,6 +11,8 @@ function walk(dir, rel = "") {
     if (statSync(path).isDirectory()) walk(path, key);
     else {
       const allowed = key.startsWith("sim/") || key.startsWith("testbed/") || /^agent\/social\.(js|d\.ts)$/.test(key);
+      if (key.startsWith("sim/scenarios/") && key.endsWith(".json") && !/^sim\/scenarios\/(scarcity|reputation|injection|benign)\.json$/.test(key))
+        problems.push(`unexpected scenario file ${key}`);
       if (!allowed) problems.push(`unexpected file ${key}`);
       if (/\.(js|d\.ts)$/.test(key) && /from\s+"[^"]+\.ts"/.test(readFileSync(path, "utf8")))
         problems.push(`${key} imports a .ts path`);

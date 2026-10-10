@@ -7,6 +7,14 @@ dist/sim/evaluation.d.ts
 dist/sim/evaluation.js
 dist/sim/planner.d.ts
 dist/sim/planner.js
+dist/sim/scenario-schema.d.ts
+dist/sim/scenario-schema.js
+dist/sim/scenarios/benign.json
+dist/sim/scenarios/index.d.ts
+dist/sim/scenarios/index.js
+dist/sim/scenarios/injection.json
+dist/sim/scenarios/reputation.json
+dist/sim/scenarios/scarcity.json
 dist/sim/types.d.ts
 dist/sim/types.js
 dist/testbed/case-id.d.ts

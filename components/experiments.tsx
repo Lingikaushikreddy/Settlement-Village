@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { policyInfo, runToEnd, scenarioInfo } from "@/lib/sim/engine";
+import { scenarioLabel } from "@/lib/sim/scenario-label";
 import {
   createEvaluationManifest,
   evaluateSuite,
@@ -466,7 +467,7 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
                 {report.rows.map((row) => (
                   <tr key={`${row.scenario}-${row.policy}`}>
                     <td>
-                      <strong>{scenarioInfo[row.scenario].name}</strong>
+                      <strong>{scenarioLabel(row.scenario)}</strong>
                       <span>
                         {policyInfo[row.policy].name} · {row.runCount} runs
                       </span>
@@ -527,7 +528,7 @@ export function Experiments({ onOpen }: { onOpen: (r: Run) => void }) {
                 >
                   {report.manifest.scenarios.map((s) => (
                     <option key={s} value={s}>
-                      {scenarioInfo[s].name}
+                      {scenarioLabel(s)}
                     </option>
                   ))}
                 </select>

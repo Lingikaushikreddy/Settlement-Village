@@ -11,11 +11,13 @@ export type InvalidReason =
   | "action_not_allowed"
   | "unknown_evidence"
   | "network";
+import type { ScenarioDefinition } from "./scenario-schema.ts";
+/** Built-in scenario ids. Config.scenario and Incident.family accept any registered id. */
 export type Scenario = "scarcity" | "reputation" | "injection" | "benign";
 export type Intervention = "add-grain" | "publish-stock" | "pause-chaos";
 export type Config = {
   seed: number;
-  scenario: Scenario;
+  scenario: string;
   policy: Policy;
   maxTicks: number;
 };
@@ -119,7 +121,7 @@ export type Decision = {
 };
 export type Incident = {
   id: string;
-  family: Scenario;
+  family: string;
   attacker: string;
   target: string;
   tick: number;
@@ -155,6 +157,8 @@ export type Run = {
   socialDecisions?: SocialDecision[];
   modelCalls: number;
   estimatedCost: number;
+  /** Present only when the run uses a scenario that is not built in. */
+  definition?: ScenarioDefinition;
 };
 
 export type SocialDecision = {

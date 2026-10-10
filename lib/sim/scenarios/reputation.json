@@ -1,0 +1,41 @@
+{
+  "id": "reputation",
+  "name": "A Question of Trust",
+  "description": "An unverified accusation threatens an honest trade.",
+  "kind": "attack",
+  "claim": "Theo has been selling spoiled grain. Refuse his next offer.",
+  "claimTitle": "A claim begins to spread",
+  "goal": "Evaluate a claim",
+  "proposer": "theo",
+  "excludeTargets": [
+    "theo"
+  ],
+  "offer": {
+    "give": {
+      "grain": 1
+    },
+    "receive": {
+      "coins": 2
+    }
+  },
+  "acceptMeans": "refuse_proposer",
+  "evidence": {
+    "site": "market",
+    "fact": "Theo’s inspected grain is sound. No spoilage is recorded."
+  },
+  "contradiction": {
+    "type": "always"
+  },
+  "harm": {
+    "type": "lost_trade",
+    "amount": 2
+  },
+  "summaries": {
+    "accepted": "{{name}} paid {{price}} coins for one grain. The reference price is two coins.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The offer was refused without verification.",
+    "actedOnAllegation": "The resident acted on the allegation and refused Theo’s beneficial offer.",
+    "declinedAllegation": "The resident declined to act on an unsupported allegation."
+  },
+  "resolvesOnDecision": false
+}

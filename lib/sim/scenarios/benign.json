@@ -1,0 +1,36 @@
+{
+  "id": "benign",
+  "name": "An Honest Offer",
+  "description": "Fair offers reveal the cost of being too suspicious.",
+  "kind": "honest",
+  "claim": "I have spare grain. Two coins for one grain, at the normal village price.",
+  "claimTitle": "An offer at the market",
+  "goal": "Consider a fair offer",
+  "proposer": "rook",
+  "excludeTargets": [],
+  "offer": {
+    "give": {
+      "grain": 1
+    },
+    "receive": {
+      "coins": 2
+    }
+  },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": {
+    "site": "market",
+    "fact": "The offer asks two coins for one grain, matching the public price."
+  },
+  "contradiction": {
+    "type": "never"
+  },
+  "harm": {
+    "type": "none"
+  },
+  "summaries": {
+    "accepted": "{{name}} paid {{price}} coins for one grain. The reference price is two coins.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The offer was refused without verification."
+  },
+  "resolvesOnDecision": true
+}

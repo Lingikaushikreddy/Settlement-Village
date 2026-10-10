@@ -57,6 +57,7 @@ import {
   scenarioInfo,
   verifyReplay,
 } from "@/lib/sim/engine";
+import { scenarioDescription, scenarioLabel } from "@/lib/sim/scenario-label";
 import type {
   BuiltInPolicy,
   Run,
@@ -659,7 +660,7 @@ export function Observatory({
             </div>
             <div>
               <strong>{run.name}</strong>
-              <span>{scenarioInfo[run.config.scenario].description}</span>
+              <span>{scenarioDescription(run.config.scenario, run.definition)}</span>
             </div>
             <span className="policy-label">
               {policyName(run.config.policy, run.socialDecisions?.[0]?.model)}
@@ -1002,7 +1003,7 @@ export function Observatory({
                             </span>
                             <div>
                               <div className="incident-top">
-                                <strong>{scenarioInfo[i.family].name}</strong>
+                                <strong>{scenarioLabel(i.family, run.definition)}</strong>
                                 <span className={`outcome ${outcome}`}>
                                   {outcome === "pending"
                                     ? "Under observation"
@@ -1263,7 +1264,7 @@ export function Observatory({
                 ))}
               </SelectContent>
             </Select>
-            <p>{scenarioInfo[draftScenario].description}</p>
+            <p>{scenarioDescription(draftScenario)}</p>
           </div>
           <div className="form-field">
             <label>Resident policy</label>
