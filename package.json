@@ -1,6 +1,6 @@
 {
   "name": "settlement",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -20,7 +20,10 @@
     "smoke": "node scripts/smoke-hosted.mjs",
     "test:e2e": "playwright test",
     "build:package": "npm run build --prefix packages/settlement-testbed",
-    "check:package": "npm run check --prefix packages/settlement-testbed"
+    "check:package": "npm run check --prefix packages/settlement-testbed",
+    "check:versions": "node scripts/check-versions.mjs",
+    "version": "node scripts/sync-versions.mjs && git add packages/settlement-testbed/package.json action.yml",
+    "docs:package-readme": "node scripts/build-package-readme.mjs"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",

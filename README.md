@@ -9,6 +9,7 @@ A multi-agent village strategy game and an inspectable AI simulation lab.
 [![CI](https://github.com/Lingikaushikreddy/Settlement-Village/actions/workflows/ci.yml/badge.svg)](https://github.com/Lingikaushikreddy/Settlement-Village/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-d9bd75.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
+[![npm](https://img.shields.io/npm/v/settlement-testbed.svg)](https://www.npmjs.com/package/settlement-testbed)
 [![No API key required](https://img.shields.io/badge/Play_without_an_API_key-38664a.svg)](#run-locally)
 
 [Play online](https://settlement-village.vercel.app) · [Quick start](#run-locally) · [How agents work](#how-the-agents-work) · [Player guide](docs/player-guide.md) · [Contribute](CONTRIBUTING.md) · [Discuss](https://github.com/Lingikaushikreddy/Settlement-Village/discussions)
@@ -132,11 +133,20 @@ See [Evaluation reports](docs/evaluation-reports.md) for the format, denominator
 Point Settlement at any agent that speaks a small HTTP protocol, in any language, and find out whether the authored attacks can talk it into a bad decision, and whether it refuses honest offers:
 
 ```bash
-node examples/agents/node/agent.mjs   # or your own agent
-npm run eval:agent -- --agent http://127.0.0.1:8765/decide --name my-agent
+node examples/agents/node/agent.mjs &     # or your own agent
+npx settlement-testbed --agent http://127.0.0.1:8765/decide --name my-agent
 ```
 
-You get rates with raw counts next to the built-in policies, a report anyone can verify, and a replay in **Research → Compare**. Requests do not label claims as attacks or reveal the scenario and seed. Verification reconstructs results from the recorded answers; it does not authenticate which agent produced them. See [Agent testbed](docs/agent-testbed.md) for the protocol, failure rules, CI thresholds and share links.
+Or in CI, after starting your agent:
+
+```yaml
+- uses: Lingikaushikreddy/Settlement-Village@v0.7.0
+  with:
+    agent-url: http://127.0.0.1:8765/decide
+    max-attack-success: "0.1"
+```
+
+You get rates with raw counts next to the built-in policies, a report anyone can verify with `npx settlement-testbed --verify`, and a replay in **Research → Compare**. Requests do not label claims as attacks or reveal the scenario and seed. Verification reconstructs results from the recorded answers; it does not authenticate which agent produced them. See [Agent testbed](docs/agent-testbed.md) for the protocol, failure rules, thresholds, the action and the library API.
 
 ## Stack and project map
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 — 2026-10-10
+
+- **`settlement-testbed` on npm.** `npx settlement-testbed --agent <url>` evaluates any HTTP agent without cloning the repository, and `--verify` checks any report. The package is compiled from the same engine the game and the hosted verifier use, so reports are interchangeable.
+- **GitHub Action.** `uses: Lingikaushikreddy/Settlement-Village@v0.7.0` runs the evaluation in CI with pass/fail thresholds, uploads the report and writes a job summary next to the built-in policies.
+- **Library API.** `evaluateAgent` accepts a URL or an in-process function; `verifyReport` and the protocol helpers are exported.
+- The CLI source moved to `lib/testbed/cli.ts`; `npm run eval:agent` is unchanged.
+- Releases publish the package with npm provenance; the package, action and repository share one version.
+
+Gameplay, scenarios, the protocol and existing reports are unchanged.
+
 ## 0.6.0 — 2026-10-10
 
 - **One build system.** The unused vinext/Cloudflare Workers build, the ChatGPT auth helper, the Drizzle/D1 stubs and the starter install scripts are removed. Settlement builds, runs and deploys with Next.js only. 24 dependencies nothing imported are gone, along with the 56 unused shadcn components that were their only importers.
