@@ -56,3 +56,16 @@ test("harm must match acceptMeans while built-ins and examples remain valid", ()
   for (const file of ["reciprocity.json", "reciprocity-honest.json"])
     assert.doesNotThrow(() => parseScenarioDefinition(JSON.parse(readFileSync(`examples/scenarios/${file}`, "utf8"))));
 });
+
+test("offer.give cannot exceed the proposer's starting inventory", () => {
+  for (const [proposer, grain] of [["rook", 30], ["theo", 6]]) {
+    for (const [resource, limit] of Object.entries({ grain, wood: 3, water: 5, coins: 30 })) {
+      const scenario = proposer === "rook" ? base() : BUILT_IN_SCENARIOS.reputation;
+      const offer = (amount) => ({ give: { [resource]: amount }, receive: { coins: 6 } });
+      assert.throws(() => parseScenarioDefinition({ ...scenario, offer: offer(limit + 1) }), new RegExp(`${resource}.*${limit}`));
+      assert.doesNotThrow(() => parseScenarioDefinition({ ...scenario, offer: offer(limit) }));
+    }
+  }
+  for (const scenario of Object.values(BUILT_IN_SCENARIOS))
+    assert.doesNotThrow(() => parseScenarioDefinition(scenario));
+});

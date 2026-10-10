@@ -84,4 +84,6 @@ Reports carry `manifest.definitions` for every custom scenario they used, so `np
 
 ## Limits
 
+`offer.give` cannot exceed the proposer's starting inventory: Rook has 30 grain, 3 wood, 5 water and 30 coins; Theo has 6 grain, 3 wood, 5 water and 30 coins.
+
 Proposers are limited to Rook and Theo, evidence sites to the five village locations, and templates to `{{stock:<location>:<resource>}}`. The incident schedule (one claim every 12 ticks from tick 8) and the three actions are fixed. Custom scenarios do not appear in Council chapters or the policy-comparison selector.
