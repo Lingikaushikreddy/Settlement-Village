@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { INVALID_REASONS } from "../agent/social.ts";
-import { AGENT_ENGINE_VERSION } from "../sim/engine.ts";
+import { AGENT_ENGINE_VERSION, CUSTOM_AGENT_ENGINE_VERSION } from "../sim/engine.ts";
+import { type ScenarioRegistry } from "../sim/scenarios/index.ts";
 import { canonicalJson, evaluateSuite, type EvaluationRow } from "../sim/evaluation.ts";
 import type { Run } from "../sim/types.ts";
 import type { AnswerSource } from "./protocol.ts";
 import {
   agentManifestSchema,
   agentRows,
+  registryFor,
   agentTotals,
   runAgentSuite,
   type AgentCase,
@@ -73,7 +75,7 @@ const reportSchema = z
     formatVersion: z.literal(1),
     kind: z.literal("agent"),
     protocol: z.literal(1),
-    engineVersion: z.literal(AGENT_ENGINE_VERSION),
+    engineVersion: z.enum([AGENT_ENGINE_VERSION, CUSTOM_AGENT_ENGINE_VERSION]),
     createdAt: z.string().max(40),
     agent: z.object({ name: agentNameSchema }).strict(),
     salt: z.string().regex(/^[0-9a-f]{32}$/),
@@ -125,17 +127,23 @@ export async function buildAgentReport(
   options: SuiteOptions & { createdAt?: string },
 ): Promise<{ report: AgentReport; runs: Run[] }> {
   const agentName = agentNameSchema.parse(options.agentName);
-  const { manifest, cases, runs } = await runAgentSuite(input, source, { ...options, agentName });
+  const registry: ScenarioRegistry = options.registry ?? registryFor(input);
+  const { manifest, cases, runs } = await runAgentSuite(input, source, { ...options, agentName, registry });
   const baselines = await evaluateSuite(
-    { ...manifest, policies: ["baseline", "cautious", "evidence"] },
-    { signal: options.signal },
+    {
+      scenarios: manifest.scenarios,
+      seeds: manifest.seeds,
+      maxTicks: manifest.maxTicks,
+      policies: ["baseline", "cautious", "evidence"],
+    },
+    { signal: options.signal, registry },
   );
   return {
     report: {
       formatVersion: 1,
       kind: "agent",
       protocol: 1,
-      engineVersion: AGENT_ENGINE_VERSION,
+      engineVersion: manifest.definitions ? CUSTOM_AGENT_ENGINE_VERSION : AGENT_ENGINE_VERSION,
       createdAt: options.createdAt ?? new Date().toISOString(),
       agent: { name: agentName },
       salt: options.salt,
@@ -163,7 +171,12 @@ export async function verifyAgentReport(
     return { ok: false, reason: `Invalid agent report at ${issue.path.join(".") || "root"}: ${issue.message}` };
   }
   const data = parsed.data;
+  const expectedEngine = data.manifest.definitions ? CUSTOM_AGENT_ENGINE_VERSION : AGENT_ENGINE_VERSION;
+  if (data.engineVersion !== expectedEngine)
+    return { ok: false, reason: `Engine version ${data.engineVersion} does not match the manifest (expected ${expectedEngine})` };
   try {
+    // Shadowing or duplicate definitions surface here as a failed verification, not a crash.
+    const registry = registryFor(data.manifest);
     const { report, runs } = await buildAgentReport(
       data.manifest,
       recordedSource(data.cases as { transcript: TranscriptEntry[] }[]),
@@ -173,6 +186,7 @@ export async function verifyAgentReport(
         createdAt: data.createdAt,
         signal: options.signal,
         onProgress: options.onProgress,
+        registry,
       },
     );
     for (let i = 0; i < report.cases.length; i++)

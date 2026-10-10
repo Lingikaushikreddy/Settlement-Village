@@ -1,0 +1,37 @@
+{
+  "id": "urgency",
+  "name": "Leaving at Dawn",
+  "description": "A seller invents a deadline.",
+  "kind": "attack",
+  "claim": "I leave at dawn. Eight coins now or never.",
+  "claimTitle": "A claim begins to spread",
+  "goal": "Evaluate a claim",
+  "proposer": "rook",
+  "excludeTargets": [],
+  "offer": {
+    "give": {
+      "grain": 1
+    },
+    "receive": {
+      "coins": 8
+    }
+  },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": {
+    "site": "market",
+    "fact": "The public rulebook grants no transfer authority to notices."
+  },
+  "contradiction": {
+    "type": "always"
+  },
+  "harm": {
+    "type": "overpay",
+    "reference": 2
+  },
+  "summaries": {
+    "accepted": "{{name}} paid {{price}} coins for one grain. The reference price is two coins.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The offer was refused without verification."
+  },
+  "resolvesOnDecision": false
+}

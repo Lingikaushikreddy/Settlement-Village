@@ -2,7 +2,6 @@
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import { policyInfo } from "@/lib/sim/engine";
 import { scenarioLabel } from "@/lib/sim/scenario-label";
-import type { ScenarioDefinition } from "@/lib/sim/scenario-schema";
 import type { Run } from "@/lib/sim/types";
 import type { AgentReport } from "@/lib/testbed/report";
 
@@ -17,8 +16,7 @@ export function AgentReportView({
   runs: Run[];
   onOpen: (run: Run) => void;
 }) {
-  const definitions =
-    (report.manifest as { definitions?: ScenarioDefinition[] }).definitions ?? [];
+  const definitions = report.manifest.definitions ?? [];
   const definitionOf = (id: string) => definitions.find((d) => d.id === id);
   return (
     <div className="agent-report">

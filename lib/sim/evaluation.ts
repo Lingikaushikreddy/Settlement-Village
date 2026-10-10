@@ -8,6 +8,7 @@ import {
   verifyReplay,
 } from "./engine.ts";
 import type { BuiltInPolicy, Config, Policy, Run, Scenario } from "./types.ts";
+import { BUILT_IN_IDS, defaultRegistry, isBuiltIn, type ScenarioRegistry } from "./scenarios/index.ts";
 
 export const SCENARIOS = ["scarcity", "reputation", "injection", "benign"] as const;
 const POLICIES = ["baseline", "cautious", "evidence"] as const;
@@ -45,7 +46,7 @@ const manifestSchema = z
   );
 
 export type EvaluationManifest = {
-  scenarios: Scenario[];
+  scenarios: string[];
   policies: BuiltInPolicy[];
   seeds: number[];
   maxTicks: number;
@@ -59,7 +60,7 @@ export type EvaluationCase = {
   inspectionCount: number;
 };
 export type EvaluationRow = {
-  scenario: Scenario;
+  scenario: string;
   policy: BuiltInPolicy;
   runCount: number;
   attacks: number;
@@ -87,6 +88,8 @@ export type EvaluationReport = {
 };
 export type EvaluationOptions = {
   signal?: AbortSignal;
+  /** Resolves custom scenario ids; defaults to the built-ins only. */
+  registry?: ScenarioRegistry;
   onProgress?: (done: number, total: number) => void;
   yieldControl?: () => Promise<void>;
 };
@@ -153,12 +156,36 @@ const reportSchema = z
   })
   .strict();
 
-function normalizeManifest(input: EvaluationManifest): EvaluationManifest {
-  const parsed = manifestSchema.parse(input);
+/** Canonical order: built-ins in engine order, then any registered custom ids alphabetically. */
+export function orderScenarios(ids: readonly string[]): string[] {
+  const builtIns = BUILT_IN_IDS.filter((s) => ids.includes(s));
+  const custom = ids.filter((s) => !isBuiltIn(s)).sort();
+  return [...builtIns, ...custom];
+}
+
+function normalizeManifest(
+  input: EvaluationManifest,
+  registry: ScenarioRegistry = defaultRegistry,
+): EvaluationManifest {
+  // Policy-comparison reports (verifyEvaluationReport) stay built-in only; baselines for
+  // agent reports may run the built-in policies on registered custom scenarios.
+  const parsed = manifestSchema
+    .innerType()
+    .extend({
+      scenarios: z
+        .array(z.string().regex(/^[a-z][a-z0-9-]{1,39}$/))
+        .min(1)
+        .max(8)
+        .refine(unique, "Scenarios must be unique")
+        .refine((ids) => ids.every((id) => registry.has(id)), "Unknown scenario id"),
+    })
+    .refine(
+      (m) => m.scenarios.length * m.policies.length * m.seeds.length <= 240,
+      "Evaluation is limited to 240 cases",
+    )
+    .parse(input);
   return {
-    scenarios: SCENARIOS.filter((scenario) =>
-      parsed.scenarios.includes(scenario),
-    ),
+    scenarios: orderScenarios(parsed.scenarios),
     policies: POLICIES.filter((policy) => parsed.policies.includes(policy)),
     seeds: [...parsed.seeds].sort((a, b) => a - b),
     maxTicks: parsed.maxTicks,
@@ -207,7 +234,7 @@ const yieldToBrowser = () =>
   });
 
 export function summarizeRow<P extends Policy>(
-  scenario: Scenario,
+  scenario: string,
   policy: P,
   selected: { metrics: EvaluationMetrics; inspectionCount: number }[],
 ): Omit<EvaluationRow, "policy"> & { policy: P } {
@@ -281,7 +308,8 @@ export async function evaluateSuite(
   options: EvaluationOptions = {},
 ): Promise<EvaluationReport> {
   checkCancelled(options.signal);
-  const manifest = normalizeManifest(input);
+  const registry = options.registry ?? defaultRegistry;
+  const manifest = normalizeManifest(input, registry);
   const total =
     manifest.scenarios.length *
     manifest.policies.length *
@@ -294,12 +322,10 @@ export async function evaluateSuite(
         checkCancelled(options.signal);
         await (options.yieldControl ?? yieldToBrowser)();
         checkCancelled(options.signal);
-        const run = runToEnd({
-          scenario,
-          policy,
-          seed,
-          maxTicks: manifest.maxTicks,
-        });
+        const run = runToEnd(
+          { scenario, policy, seed, maxTicks: manifest.maxTicks },
+          isBuiltIn(scenario) ? undefined : registry.get(scenario),
+        );
         const issues = checkInvariants(run);
         const replay = verifyReplay(run);
         if (issues.length || !replay.ok) {
@@ -361,7 +387,8 @@ export async function verifyEvaluationReport(
       reason: "Report does not contain the complete declared evaluation matrix",
     };
   }
-  const regenerated = await evaluateSuite(manifest, options);
+  // The checked-in policy report is built-in only; never resolve custom ids here.
+  const regenerated = await evaluateSuite(manifest, { ...options, registry: defaultRegistry });
   if (canonicalJson(parsed.data) !== canonicalJson(regenerated)) {
     return {
       ok: false,

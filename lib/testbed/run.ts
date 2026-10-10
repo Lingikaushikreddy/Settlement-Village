@@ -2,9 +2,8 @@ import { z } from "zod";
 import { socialInputs } from "../agent/social.ts";
 import { advance, checkInvariants, createRun, definitionFor, verifyReplay } from "../sim/engine.ts";
 import {
-  SCENARIOS,
   caseRecord,
-  scenarioSchema,
+  orderScenarios,
   seedSchema,
   summarizeRow,
   tickSchema,
@@ -12,7 +11,15 @@ import {
   type EvaluationCase,
   type EvaluationRow,
 } from "../sim/evaluation.ts";
-import type { Config, Run, Scenario, SocialDecision } from "../sim/types.ts";
+import {
+  createRegistry,
+  defaultRegistry,
+  isBuiltIn,
+  scenarioDefinitionSchema,
+  type ScenarioDefinition,
+  type ScenarioRegistry,
+} from "../sim/scenarios/index.ts";
+import type { Config, Run, SocialDecision } from "../sim/types.ts";
 import { caseIdFor } from "./case-id.ts";
 import {
   buildRequest,
@@ -21,7 +28,13 @@ import {
   type AnswerSource,
 } from "./protocol.ts";
 
-export type AgentManifest = { scenarios: Scenario[]; seeds: number[]; maxTicks: number };
+export type AgentManifest = {
+  scenarios: string[];
+  seeds: number[];
+  maxTicks: number;
+  /** Every non-built-in definition the report uses, in id order. Absent for built-in-only reports. */
+  definitions?: ScenarioDefinition[];
+};
 export type TranscriptEntry = {
   decisionId: string;
   tick: number;
@@ -58,23 +71,47 @@ export type SuiteOptions = {
   concurrency?: number;
   signal?: AbortSignal;
   onProgress?: (done: number, total: number) => void;
+  /** Resolves scenario ids; defaults to a registry built from the manifest's definitions. */
+  registry?: ScenarioRegistry;
 };
 
 export const agentManifestSchema = z
   .object({
-    scenarios: z.array(scenarioSchema).min(1).max(4).refine(unique, "Scenarios must be unique"),
+    scenarios: z
+      .array(z.string().regex(/^[a-z][a-z0-9-]{1,39}$/))
+      .min(1)
+      .max(8)
+      .refine(unique, "Scenarios must be unique"),
     seeds: z.array(seedSchema).min(1).max(10).refine(unique, "Seeds must be unique"),
     maxTicks: tickSchema,
+    definitions: z.array(scenarioDefinitionSchema).max(4).optional(),
   })
   .strict();
 
-export function normalizeAgentManifest(input: AgentManifest): AgentManifest {
+/** Canonical order: built-ins in engine order, then custom ids alphabetically. Every id must resolve. */
+export function normalizeAgentManifest(
+  input: AgentManifest,
+  registry: ScenarioRegistry = defaultRegistry,
+): AgentManifest {
   const parsed = agentManifestSchema.parse(input);
+  for (const id of parsed.scenarios)
+    if (!registry.has(id))
+      throw new Error(
+        `Unknown scenario "${id}". Custom scenarios need a definition (--scenario-file or manifest.definitions).`,
+      );
+  const scenarios = orderScenarios(parsed.scenarios);
+  const definitions = scenarios.filter((s) => !isBuiltIn(s)).map((id) => registry.get(id)!);
   return {
-    scenarios: SCENARIOS.filter((s) => parsed.scenarios.includes(s)),
+    scenarios,
     seeds: [...parsed.seeds].sort((a, b) => a - b),
     maxTicks: parsed.maxTicks,
+    ...(definitions.length ? { definitions } : {}),
   };
+}
+
+/** The registry a manifest implies: built-ins plus its own definitions. */
+export function registryFor(manifest: Pick<AgentManifest, "definitions">): ScenarioRegistry {
+  return createRegistry(manifest.definitions ?? []);
 }
 
 const cancelled = () => new DOMException("Evaluation cancelled", "AbortError");
@@ -93,13 +130,14 @@ export function honestCounts(run: Run): HonestCounts {
 }
 
 export async function runAgentCase(
-  config: { scenario: Scenario; seed: number; maxTicks: number },
+  config: { scenario: string; seed: number; maxTicks: number },
   caseId: string,
   source: AnswerSource,
   agentName: string,
   signal?: AbortSignal,
+  definition?: ScenarioDefinition,
 ) {
-  let run = createRun({ ...config, policy: "external" });
+  let run = createRun({ ...config, policy: "external" }, definition);
   const transcript: TranscriptEntry[] = [];
   while (run.status === "active") {
     if (signal?.aborted) throw cancelled();
@@ -135,7 +173,8 @@ export async function runAgentSuite(
   source: AnswerSource,
   options: SuiteOptions,
 ) {
-  const manifest = normalizeAgentManifest(input);
+  const registry = options.registry ?? registryFor(input);
+  const manifest = normalizeAgentManifest(input, registry);
   const jobs = manifest.scenarios.flatMap((scenario) =>
     manifest.seeds.map((seed) => ({ scenario, seed })),
   );
@@ -158,6 +197,7 @@ export async function runAgentSuite(
           source,
           options.agentName,
           options.signal,
+          isBuiltIn(scenario) ? undefined : registry.get(scenario),
         );
         cases[index] = {
           ...(caseRecord(run) as Omit<EvaluationCase, "config">),
