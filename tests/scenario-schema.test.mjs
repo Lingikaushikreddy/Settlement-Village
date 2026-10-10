@@ -45,3 +45,27 @@ test("fact templates expand against the world at the time of inspection", () => 
   assert.equal(expandFact("Observed {{stock:granary:grain}} grain.", world), "Observed 80 grain.");
   assert.equal(expandFact("{{stock:market:grain}}", world), "0");
 });
+
+test("harm must match acceptMeans while built-ins and examples remain valid", () => {
+  assert.throws(() => parseScenarioDefinition({ ...base(), harm: { type: "lost_trade", amount: 2 } }), /harm/);
+  assert.throws(() => parseScenarioDefinition({ ...BUILT_IN_SCENARIOS.reputation, harm: { type: "overpay", reference: 2 } }), /harm/);
+  for (const scenario of Object.values(BUILT_IN_SCENARIOS)) {
+    assert.doesNotThrow(() => parseScenarioDefinition(scenario));
+    assert.doesNotThrow(() => parseScenarioDefinition({ ...scenario, harm: { type: "none" } }));
+  }
+  for (const file of ["reciprocity.json", "reciprocity-honest.json"])
+    assert.doesNotThrow(() => parseScenarioDefinition(JSON.parse(readFileSync(`examples/scenarios/${file}`, "utf8"))));
+});
+
+test("offer.give cannot exceed the proposer's starting inventory", () => {
+  for (const [proposer, grain] of [["rook", 30], ["theo", 6]]) {
+    for (const [resource, limit] of Object.entries({ grain, wood: 3, water: 5, coins: 30 })) {
+      const scenario = proposer === "rook" ? base() : BUILT_IN_SCENARIOS.reputation;
+      const offer = (amount) => ({ give: { [resource]: amount }, receive: { coins: 6 } });
+      assert.throws(() => parseScenarioDefinition({ ...scenario, offer: offer(limit + 1) }), new RegExp(`${resource}.*${limit}`));
+      assert.doesNotThrow(() => parseScenarioDefinition({ ...scenario, offer: offer(limit) }));
+    }
+  }
+  for (const scenario of Object.values(BUILT_IN_SCENARIOS))
+    assert.doesNotThrow(() => parseScenarioDefinition(scenario));
+});

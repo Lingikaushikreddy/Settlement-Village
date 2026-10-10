@@ -46,7 +46,7 @@ inputs:
     description: settlement-testbed version to run.
     default: "0.8.0"
   node-version:
-    description: Node version to set up if none is present.
+    description: Node version the action sets up before running the testbed (default 22).
     default: "22"
 
 outputs:

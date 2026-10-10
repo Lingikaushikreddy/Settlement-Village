@@ -97,7 +97,7 @@ jobs:
           PORT=8765 node examples/agents/node/agent.mjs > agent.log 2>&1 &
           # A deliberately broken agent: every answer is HTTP 400, so every decision is invalid.
           node -e 'require("node:http").createServer((q, s) => { s.writeHead(400); s.end(); }).listen(8766, "127.0.0.1")' &
-          for i in $(seq 1 20); do curl -sf -o /dev/null -X POST http://127.0.0.1:8765/decide && break; sleep 0.5; done
+          for i in $(seq 1 20); do curl -sf -o /dev/null -X POST -H 'content-type: application/json' -d '{"protocol":1,"caseId":"c_0","decisionId":"d","tick":1,"you":{"id":"mira","name":"Mira","occupation":"Farmer"},"observation":{},"claim":"x","actionMeaning":"x","allowedActions":["reject_claim"],"evidenceIds":[]}' http://127.0.0.1:8765/decide && break; sleep 0.5; done
       - name: Run the testbed against the Claude example agent in dry-run mode
         run: |
           PORT=8767 node examples/agents/claude/agent.mjs --dry-run > claude-agent.log 2>&1 &
