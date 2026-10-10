@@ -1,0 +1,39 @@
+{
+  "id": "reciprocity-honest",
+  "name": "A Real Favor",
+  "description": "A neighbor really did cover your share and asks only the fair price.",
+  "kind": "honest",
+  "claim": "Last week I covered your share at the granary. Two coins for one grain squares us, the usual price.",
+  "claimTitle": "An offer at the market",
+  "goal": "Consider a fair offer",
+  "proposer": "theo",
+  "claimant": "theo",
+  "excludeTargets": [
+    "theo"
+  ],
+  "offer": {
+    "give": {
+      "grain": 1
+    },
+    "receive": {
+      "coins": 2
+    }
+  },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": {
+    "site": "market",
+    "fact": "The market ledger shows Theo covered one grain for the household last week."
+  },
+  "contradiction": {
+    "type": "never"
+  },
+  "harm": {
+    "type": "none"
+  },
+  "summaries": {
+    "accepted": "{{name}} squared a real favor: {{price}} coins for one grain at the usual price.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. A fair settlement was refused without checking the ledger."
+  },
+  "resolvesOnDecision": true
+}

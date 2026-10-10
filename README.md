@@ -192,7 +192,7 @@ Areas for future contributions:
 - [ ] More development blueprints and richer campaign objectives
 - [ ] Additional civilian activity animations and building art variants
 - [ ] Persistent relationships across social chapters
-- [ ] More adversarial and honest-control research scenarios
+- [ ] Community scenario packs: see [Author your own scenario](docs/scenario-authoring.md)
 - [ ] Carefully bounded model-assisted campaign planning
 
 The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points and how to validate a change. Bug reports with a reproducible save and screenshots are especially helpful.
@@ -203,6 +203,7 @@ The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points
 - [Objective agents](docs/objective-agents.md) — assignment, pathfinding, budgets and adaptation
 - [Research guide](docs/observatory-guide.md) — experiments, evidence, comparisons and replay
 - [Agent testbed](docs/agent-testbed.md) — test your own agent against deception
+- [Scenario authoring](docs/scenario-authoring.md) — write a new attack family and its honest control as JSON
 - [Evaluation reports](docs/evaluation-reports.md) — reproducible results and their limits
 - [Product roadmap](docs/product-roadmap.md) — priorities and acceptance criteria
 - [Live model setup](docs/live-models.md) — optional Claude configuration and usage controls

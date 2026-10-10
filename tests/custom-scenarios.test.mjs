@@ -71,3 +71,39 @@ test("stock tokens for a location without that resource render 0", async () => {
   const inspection = run.events.find((e) => e.type === "inspection");
   assert.match(inspection.detail, /Stock: 0\.$/);
 });
+
+test("a default-sized custom run (4 built-ins + 1 custom × 10 seeds) round-trips through verifyReport", async () => {
+  const { report } = await evaluateAgent({ source: rejectAll, name: "t", scenarios: ["scarcity", "reputation", "injection", "benign", urgency], seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+  assert.equal(report.cases.length, 50);
+  assert.equal(report.rows.length, 5);
+  assert.equal(report.baselines.length, 15);
+  const verified = await verifyReport(JSON.parse(JSON.stringify(report)));
+  assert.equal(verified.ok, true, verified.reason);
+});
+
+test("the proposer is never chosen as his own target, even without excludeTargets", async () => {
+  const theoOffer = { ...BUILT_IN_SCENARIOS.benign, id: "theo-offer", name: "Theo's offer", proposer: "theo", excludeTargets: [] };
+  const { report } = await evaluateAgent({ source: rejectAll, scenarios: [theoOffer], seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+  const verified = await verifyReport(JSON.parse(JSON.stringify(report)));
+  assert.equal(verified.ok, true, verified.reason);
+  for (const run of verified.runs) {
+    assert.ok(run.incidents.length > 0);
+    for (const i of run.incidents) assert.notEqual(i.target, "theo", `seed ${run.config.seed} targeted the proposer`);
+    assert.ok(!run.decisions.some((d) => d.outcome === "No valid counterparty offer"), "no dangling offers");
+  }
+});
+
+test("claimant names who voices the claim; built-ins default to Rook", () => {
+  const spoken = { ...BUILT_IN_SCENARIOS.benign, id: "theo-says", name: "Theo says", proposer: "theo", claimant: "theo" };
+  let run = createRun({ scenario: "theo-says", seed: 1, policy: "external", maxTicks: 30 }, spoken);
+  while (socialInputs(run).length === 0) run = advance(run);
+  const claim = run.events.find((e) => e.type === "claim");
+  assert.equal(claim.actor, "theo");
+  assert.equal(run.incidents[0].attacker, "theo");
+  const request = buildRequest(run, "c_deadbeef", socialInputs(run)[0]);
+  assert.equal(request.observation.publicClaims[0].speaker, "theo");
+  let builtIn = createRun({ scenario: "benign", seed: 1, policy: "external", maxTicks: 30 });
+  while (socialInputs(builtIn).length === 0) builtIn = advance(builtIn);
+  assert.equal(builtIn.events.find((e) => e.type === "claim").actor, "rook");
+  assert.equal(BUILT_IN_SCENARIOS.reputation.claimant, "rook");
+});

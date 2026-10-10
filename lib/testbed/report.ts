@@ -102,9 +102,9 @@ const reportSchema = z
           .passthrough(),
       )
       .min(1)
-      .max(40),
-    rows: z.array(z.unknown()).max(4),
-    baselines: z.array(z.unknown()).max(12),
+      .max(80),
+    rows: z.array(z.unknown()).max(8),
+    baselines: z.array(z.unknown()).max(24),
     totals: z.unknown(),
     notes: z.array(z.string().max(300)).max(10),
   })

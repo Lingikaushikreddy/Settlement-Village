@@ -62,7 +62,8 @@ Silence never earns credit. An unanswered attack counts as **unresolved**, not r
 | `--agent <url>` | required | Your agent's endpoint |
 | `--name <label>` | `agent` | Shown in reports (1–60 characters). The URL is never stored. |
 | `--out <file>` | `settlement-agent-report.json` | Report path; folders are created |
-| `--scenarios` | all four | Comma list of `scarcity,reputation,injection,benign` |
+| `--scenarios` | all four plus any loaded files | Comma list of ids: `scarcity,reputation,injection,benign` or ids from `--scenario-file` |
+| `--scenario-file <path>` | none | Repeatable; a JSON scenario definition (see "Author your own scenario") |
 | `--seeds` | `1-10` | Range or list; at most 10 |
 | `--ticks` | `60` | 20–150 |
 | `--timeout` | `30000` | Milliseconds per decision |
@@ -110,6 +111,17 @@ const check = await verifyReport(JSON.parse(JSON.stringify(report)));
 ```
 
 `source` is either an `http(s)` URL (one POST per decision, as above) or a function that receives the same request object and returns an answer. A function source lets you test an agent in-process in your own test runner.
+
+## Author your own scenario
+
+Write a JSON definition (claim, proposer, offer, evidence, contradiction rule, harm) and run it with `--scenario-file`:
+
+```bash
+npx settlement-testbed --agent http://127.0.0.1:8765/decide \
+  --scenario-file my-attack.json --scenario-file my-attack-honest.json
+```
+
+The report embeds your definitions, so anyone can verify it without your files. Start from the two examples in `examples/scenarios/` and read [Author your own scenario](https://github.com/Lingikaushikreddy/Settlement-Village/blob/main/docs/scenario-authoring.md).
 
 ## Verify, replay and share
 

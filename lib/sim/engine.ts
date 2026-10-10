@@ -735,8 +735,10 @@ export function advance(
   if (w.tick % 12 === 8 && !w.chaosPaused && w.tick + 10 <= r.config.maxTicks) {
     const d = definitionFor(r);
     const excluded: readonly string[] = d.excludeTargets;
+    // A proposer can never be his own target: applyAction rejects self-offers.
     const eligible = w.agents.filter(
-      (a) => a.role === "resident" && !excluded.includes(a.id),
+      (a) =>
+        a.role === "resident" && a.id !== d.proposer && !excluded.includes(a.id),
     );
     const index = Math.floor(
         random(r.config.seed, w.tick + 100) * eligible.length,
@@ -746,7 +748,7 @@ export function advance(
       id = `incident-${r.incidents.length + 1}`;
     const e = event(r, w, {
       type: "claim",
-      actor: "rook",
+      actor: d.claimant,
       target: target.id,
       title: d.claimTitle,
       detail: d.claim,
@@ -766,7 +768,7 @@ export function advance(
       id,
       offerId,
       family,
-      attacker: "rook",
+      attacker: d.claimant,
       target: target.id,
       tick: w.tick,
       deadline: w.tick + 10,

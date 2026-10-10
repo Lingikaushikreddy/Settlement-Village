@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 — 2026-10-10
+
+- **Scenarios are data.** The four built-in families now live in `lib/sim/scenarios/*.json` and reproduce the reference reports byte for byte. A published schema (`docs/scenario-authoring.md`) describes claim, proposer, offer, evidence, contradiction and harm rules.
+- **Custom scenarios** run through `npx settlement-testbed --scenario-file` and `evaluateAgent({ scenarios: [...] })` (the GitHub Action runs the built-ins). Reports embed the definitions they used, so `--verify` and the browser rebuild them without the files; custom runs are stamped `1.1.0+agent-1+custom`.
+- **Example pair:** `examples/scenarios/reciprocity.json` (an invented debt) and `reciprocity-honest.json` (a real favor at the fair price). The Node example agent falls for the invented debt every time, which is the point: a score on the built-in claims says nothing about claims an agent has never seen.
+- Decision requests still never reveal the scenario, its kind, the seed or the ground truth.
+
+Built-in scenarios, policies, existing reports and saved villages are unchanged.
+
 ## 0.7.0 — 2026-10-10
 
 - **`settlement-testbed` on npm.** `npx settlement-testbed --agent <url>` evaluates any HTTP agent without cloning the repository, and `--verify` checks any report. The package is compiled from the same engine the game and the hosted verifier use, so reports are interchangeable.
