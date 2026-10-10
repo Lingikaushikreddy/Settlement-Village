@@ -258,21 +258,6 @@
   background: #e76d5555 !important;
   opacity: 1 !important;
 }
-.wandering-villager {
-  position: absolute;
-  width: 35px;
-  height: 35px;
-  pointer-events: none;
-}
-.wander-0 {
-  animation: walkvillage 19s linear infinite;
-}
-.wander-1 {
-  animation: walkvillage 23s linear infinite reverse;
-}
-.wander-2 {
-  animation: walkvillage 29s linear infinite;
-}
 @keyframes walkvillage {
   0%,
   100% {
@@ -464,141 +449,8 @@
   border-color: #edffc7;
   box-shadow: 0 3px 0 #4a6b33;
 }
-.resource-fill {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 3px;
-  background: #f7c64e;
-  max-width: 100%;
-  border-radius: 0 0 0 5px;
-}
-.wood .resource-fill {
-  background: #c19a69;
-}
-.food .resource-fill {
-  background: #bbd573;
-}
 .sound-button {
   flex-shrink: 0;
-}
-.quest-panel {
-  position: absolute;
-  z-index: 9;
-  top: 148px;
-  left: 26px;
-  width: 253px;
-  background: linear-gradient(135deg, #1c3348ee, #182a3ae8);
-  border: 1px solid #ccb6806b;
-  border-radius: 16px;
-  box-shadow:
-    0 8px 30px #18332140,
-    inset 0 1px 0 #ffffff15;
-  padding: 0 18px 17px;
-  backdrop-filter: blur(8px);
-}
-.quest-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 0;
-  border-bottom: 1px solid #b5c6c01c;
-  width: 100%;
-  padding: 14px 0;
-  background: none;
-  color: #dfd3a7;
-  font-size: 10px !important;
-}
-.quest-title > span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.quest-title .rotate {
-  transform: rotate(90deg);
-}
-.quest-panel h1 {
-  font-size: 24px;
-  font-weight: 900;
-  line-height: 1.15;
-  letter-spacing: -0.7px;
-  color: #fff2cf;
-  margin: 19px 0 10px;
-  text-shadow: 0 2px 0 #122236;
-}
-.quest-panel p {
-  font-size: 11px;
-  line-height: 1.7;
-  color: #c6d0c8;
-  margin: 0 0 20px;
-}
-.quest-item {
-  display: flex;
-  text-align: left;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  background: #0e213069;
-  border: 1px solid #a6b8b027;
-  border-radius: 9px;
-  padding: 11px 9px;
-  color: #fff0d4;
-  margin-top: 8px;
-}
-.quest-item > span:nth-child(2) {
-  flex: 1;
-}
-.quest-item b {
-  font-size: 11px;
-  display: block;
-}
-.quest-item small {
-  font-size: 10px;
-  color: #aebcaf;
-  display: block;
-  margin-top: 4px;
-}
-.quest-check {
-  border: 1px solid #b9c4a948;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  display: grid;
-  place-items: center;
-  color: #eaca75;
-}
-.quest-item i {
-  display: block;
-  height: 3px;
-  margin-top: 9px;
-  background: #0c1926;
-  border-radius: 3px;
-  overflow: hidden;
-}
-.quest-item em {
-  height: 100%;
-  display: block;
-  background: #a5d87b;
-}
-.quest-item.complete {
-  border-color: #c8dd8760;
-  background: #5473404f;
-}
-.quest-item.complete small {
-  color: #f3d27b;
-}
-.all-quests {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: #e8d493;
-}
-.quest-panel.collapsed {
-  padding-bottom: 0;
-}
-.quest-panel.collapsed .quest-title {
-  border-bottom: 0;
 }
 .village-badge {
   position: absolute;
@@ -1589,11 +1441,6 @@
   width: 100%;
 }
 @media (min-width: 1600px) {
-  .quest-panel {
-    left: 40px;
-    top: 175px;
-    width: 270px;
-  }
   .game-hud {
     padding: 25px 40px;
   }
@@ -1614,7 +1461,7 @@
     font-size: 24px;
   }
   .player-crest,
-  .player-crest svg {
+.player-crest svg {
     width: 48px;
     height: 58px;
   }
@@ -1631,16 +1478,6 @@
   }
   .hud-builders {
     display: none;
-  }
-  .quest-panel {
-    left: 17px;
-    top: 132px;
-    width: 225px;
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-  .quest-panel h1 {
-    font-size: 22px;
   }
   .village-badge {
     top: 103px;
@@ -1686,7 +1523,7 @@
     gap: 7px;
   }
   .player-crest,
-  .player-crest svg {
+.player-crest svg {
     width: 36px;
     height: 43px;
   }
@@ -1747,46 +1584,6 @@
   }
   .village-badge strong {
     font-size: 15px;
-  }
-  .quest-panel {
-    top: 115px;
-    left: 12px;
-    width: 195px;
-    border-radius: 11px;
-    padding: 0 12px 12px;
-  }
-  .quest-title {
-    padding: 11px 0;
-    font-size: 9px !important;
-  }
-  .quest-panel h1 {
-    font-size: 19px;
-    margin: 12px 0 8px;
-  }
-  .quest-panel p {
-    font-size: 10px;
-    margin-bottom: 11px;
-    line-height: 1.5;
-  }
-  .quest-item {
-    padding: 8px 6px;
-    gap: 6px;
-  }
-  .quest-item b {
-    font-size: 10px;
-  }
-  .quest-item small {
-    font-size: 9px;
-  }
-  .quest-item i {
-    margin-top: 6px;
-  }
-  .quest-check {
-    width: 19px;
-    height: 19px;
-  }
-  .quest-item:nth-of-type(3) {
-    display: none;
   }
   .game-bottom {
     left: 11px;
@@ -1856,7 +1653,7 @@
     display: none;
   }
   .battle-button,
-  .build-button {
+.build-button {
     min-width: 125px;
     height: 44px;
   }
@@ -2161,7 +1958,6 @@
 .battle-banner {
   pointer-events: none;
 }
-.village-game:has(.placement-notice) .quest-panel,
 .village-game:has(.placement-notice) .village-badge {
   display: none;
 }

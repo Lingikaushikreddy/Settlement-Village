@@ -865,7 +865,7 @@
     min-height: 52px;
   }
   .crew-start,
-  .crew-secondary-objective {
+.crew-secondary-objective {
     min-height: 48px;
   }
   .crew-board-actions button {
@@ -1002,7 +1002,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .sim-resident.crew-resident,
-  .crew-progress i {
+.crew-progress i {
     transition: none;
   }
 }

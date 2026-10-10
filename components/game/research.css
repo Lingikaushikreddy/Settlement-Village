@@ -27,12 +27,6 @@
   color: #172b42;
   font-weight: 700;
 }
-.village-game .quest-panel {
-  top: 158px;
-}
-.village-game .village-life {
-  top: 158px;
-}
 .research-active .game-stage {
   right: 652px;
 }
@@ -299,9 +293,6 @@
 .unified-research .policy-grid {
   grid-template-columns: 1fr;
 }
-.unified-research .experiment-controls {
-  flex-wrap: wrap;
-}
 .unified-research .experiment-intro {
   max-width: 100%;
 }
@@ -360,10 +351,6 @@
     flex: 1;
     font-size: 13px;
     padding: 7px 5px;
-  }
-  .village-game .quest-panel,
-  .village-game .village-life {
-    top: 174px;
   }
   .unified-workbench {
     top: 345px;
