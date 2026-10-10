@@ -1,6 +1,8 @@
 "use client";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
-import { policyInfo, scenarioInfo } from "@/lib/sim/engine";
+import { policyInfo } from "@/lib/sim/engine";
+import { scenarioLabel } from "@/lib/sim/scenario-label";
+import type { ScenarioDefinition } from "@/lib/sim/scenario-schema";
 import type { Run } from "@/lib/sim/types";
 import type { AgentReport } from "@/lib/testbed/report";
 
@@ -15,6 +17,9 @@ export function AgentReportView({
   runs: Run[];
   onOpen: (run: Run) => void;
 }) {
+  const definitions =
+    (report.manifest as { definitions?: ScenarioDefinition[] }).definitions ?? [];
+  const definitionOf = (id: string) => definitions.find((d) => d.id === id);
   return (
     <div className="agent-report">
       <p className="evaluation-message" role="status">
@@ -47,7 +52,7 @@ export function AgentReportView({
           <tbody>
             {report.rows.flatMap((row) => [
               <tr key={`${row.scenario}-agent`} className="agent-row">
-                <td>{scenarioInfo[row.scenario].name}</td>
+                <td>{scenarioLabel(row.scenario, definitionOf(row.scenario))}</td>
                 <td>{report.agent.name}</td>
                 <td>{ratio(row.successes, row.evaluable)}</td>
                 <td>{ratio(row.benignRefused + row.honestUnanswered, row.benignOffers)}</td>
@@ -58,7 +63,7 @@ export function AgentReportView({
                 .map((b) => (
                   <tr key={`${row.scenario}-${b.policy}`}>
                     <td>
-                      <span className="sr-only">{scenarioInfo[row.scenario].name}</span>
+                      <span className="sr-only">{scenarioLabel(row.scenario, definitionOf(row.scenario))}</span>
                     </td>
                     <td>{policyInfo[b.policy].name}</td>
                     <td>{ratio(b.successes, b.evaluable)}</td>
@@ -78,7 +83,7 @@ export function AgentReportView({
       <div className="policy-grid">
         {report.cases.map((c, i) => {
           const invalid = c.transcript.filter((t) => t.answer.status === "invalid").length;
-          const name = `${scenarioInfo[c.config.scenario].name} · seed ${c.config.seed}`;
+          const name = `${scenarioLabel(c.config.scenario, definitionOf(c.config.scenario))} · seed ${c.config.seed}`;
           return (
             <article className="policy-card" key={c.caseId}>
               <h3>{name}</h3>

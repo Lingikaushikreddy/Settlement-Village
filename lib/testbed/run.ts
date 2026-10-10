@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { socialInputs } from "../agent/social.ts";
-import { advance, checkInvariants, createRun, verifyReplay } from "../sim/engine.ts";
+import { advance, checkInvariants, createRun, definitionFor, verifyReplay } from "../sim/engine.ts";
 import {
   SCENARIOS,
   caseRecord,
@@ -81,7 +81,7 @@ const cancelled = () => new DOMException("Evaluation cancelled", "AbortError");
 
 export function honestCounts(run: Run): HonestCounts {
   const last = run.snapshots.length - 1;
-  const offers = run.incidents.filter((i) => i.family === "benign");
+  const offers = definitionFor(run).kind === "honest" ? run.incidents : [];
   return {
     offers: offers.length,
     accepted: offers.filter((i) => i.decision === "accepted").length,
