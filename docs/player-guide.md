@@ -80,7 +80,7 @@ Research uses the same map. Its caption identifies the viewed run and tick. Ente
 
 ### Test an external agent
 
-The local agent testbed can evaluate your own HTTP agent against the authored deception cases and honest controls. Run `npm run eval:agent -- --agent <url> --name <label>` from the repository, or follow the included Node/Python examples in [Agent testbed](agent-testbed.md). The hosted frontend does not run this CLI or host your agent endpoint.
+The local agent testbed can evaluate your own HTTP agent against the authored deception cases and honest controls. Run `npx settlement-testbed --agent <url> --name <label>` (no clone needed), or `npm run eval:agent -- …` from a clone; follow the included Node/Python examples in [Agent testbed](agent-testbed.md). The hosted frontend does not run this CLI or host your agent endpoint.
 
 Import a resulting report through **Research → Compare → Import & verify** to rebuild its cases and replay the recorded decisions on the map. Reports can also be shared through supported GitHub raw or Gist links. Verification checks the recorded outcomes; it does not establish the identity of the agent that produced them. These fixed scenarios do not certify general agent safety.
 
