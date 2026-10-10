@@ -1,0 +1,126 @@
+name: Settlement agent testbed
+description: Run your AI agent through Settlement's authored deception scenarios and honest controls, with pass/fail thresholds and a verifiable report.
+author: Kaushik Reddy
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  agent-url:
+    description: URL of your agent's decision endpoint (it receives one POST per decision). Start the agent in an earlier step.
+    required: true
+  name:
+    description: Label shown in the report.
+    default: agent
+  scenarios:
+    description: Comma list of scarcity, reputation, injection, benign. Default is all four.
+    default: ""
+  seeds:
+    description: Seed range or list, for example 1-10 or 1,4,7 (at most 10).
+    default: ""
+  ticks:
+    description: Ticks per run, 20-150.
+    default: ""
+  timeout:
+    description: Milliseconds per decision.
+    default: ""
+  concurrency:
+    description: Cases run in parallel, 1-16.
+    default: ""
+  max-attack-success:
+    description: Fail when the overall attack success rate (unresolved attacks included) exceeds this fraction.
+    default: ""
+  max-honest-refusal:
+    description: Fail when the overall honest refusal rate exceeds this fraction.
+    default: ""
+  max-invalid:
+    description: Fail when the invalid answer rate exceeds this fraction.
+    default: ""
+  report-path:
+    description: Where to write the report.
+    default: settlement-agent-report.json
+  artifact-name:
+    description: Name of the uploaded report artifact. Artifact names must be unique within a workflow run, so set this when the action runs more than once.
+    default: settlement-agent-report
+  package-version:
+    description: settlement-testbed version to run.
+    default: "0.6.0"
+  node-version:
+    description: Node version to set up if none is present.
+    default: "22"
+
+outputs:
+  report-path:
+    description: Path of the written report.
+    value: ${{ steps.summary.outputs.report-path }}
+  attack-success:
+    description: Overall attack success rate (0-1), empty if not applicable.
+    value: ${{ steps.summary.outputs.attack-success }}
+  honest-refusal:
+    description: Overall honest refusal rate (0-1), empty if not applicable.
+    value: ${{ steps.summary.outputs.honest-refusal }}
+  invalid:
+    description: Overall invalid answer rate (0-1), empty if not applicable.
+    value: ${{ steps.summary.outputs.invalid }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+    - id: run
+      shell: bash
+      continue-on-error: true
+      env:
+        AGENT_URL: ${{ inputs.agent-url }}
+        AGENT_NAME: ${{ inputs.name }}
+        SCENARIOS: ${{ inputs.scenarios }}
+        SEEDS: ${{ inputs.seeds }}
+        TICKS: ${{ inputs.ticks }}
+        TIMEOUT: ${{ inputs.timeout }}
+        CONCURRENCY: ${{ inputs.concurrency }}
+        MAX_ATTACK: ${{ inputs.max-attack-success }}
+        MAX_HONEST: ${{ inputs.max-honest-refusal }}
+        MAX_INVALID: ${{ inputs.max-invalid }}
+        REPORT: ${{ inputs.report-path }}
+        VERSION: ${{ inputs.package-version }}
+      run: |
+        args=(--agent "$AGENT_URL" --name "$AGENT_NAME" --out "$REPORT")
+        [ -n "$SCENARIOS" ] && args+=(--scenarios "$SCENARIOS")
+        [ -n "$SEEDS" ] && args+=(--seeds "$SEEDS")
+        [ -n "$TICKS" ] && args+=(--ticks "$TICKS")
+        [ -n "$TIMEOUT" ] && args+=(--timeout "$TIMEOUT")
+        [ -n "$CONCURRENCY" ] && args+=(--concurrency "$CONCURRENCY")
+        [ -n "$MAX_ATTACK" ] && args+=(--max-attack-success "$MAX_ATTACK")
+        [ -n "$MAX_HONEST" ] && args+=(--max-honest-refusal "$MAX_HONEST")
+        [ -n "$MAX_INVALID" ] && args+=(--max-invalid "$MAX_INVALID")
+        if [ -n "$SETTLEMENT_TESTBED_LOCAL" ]; then
+          # This repository's own CI points this at a build of the checkout; consumers never set it.
+          echo "Using local settlement-testbed from $SETTLEMENT_TESTBED_LOCAL"
+          set +e; node "$SETTLEMENT_TESTBED_LOCAL" "${args[@]}"; code=$?; set -e
+        else
+          set +e; npx --yes "settlement-testbed@$VERSION" "${args[@]}"; code=$?; set -e
+        fi
+        echo "code=$code" >> "$GITHUB_OUTPUT"
+        exit $code
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: always()
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.report-path }}
+        if-no-files-found: ignore
+        retention-days: 30
+    - id: summary
+      if: always()
+      shell: bash
+      env:
+        REPORT: ${{ inputs.report-path }}
+        CODE: ${{ steps.run.outputs.code }}
+      run: node "${{ github.action_path }}/.github/actions/testbed-summary/summary.mjs" "$REPORT" "${CODE:-2}" | tee -a "$GITHUB_STEP_SUMMARY"
+    - if: always()
+      shell: bash
+      env:
+        CODE: ${{ steps.run.outputs.code }}
+      run: |
+        if [ "${CODE:-2}" != "0" ]; then echo "settlement-testbed exited with ${CODE:-2}"; exit "${CODE:-2}"; fi
