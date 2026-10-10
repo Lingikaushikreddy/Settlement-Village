@@ -36,7 +36,8 @@ export function summarizeGalleryEntry(entry: GalleryEntry, report: AgentReport):
         attackSuccess: ratio(row.successes + row.unresolved, row.evaluable),
         honestRefusal: ratio(row.benignRefused + row.honestUnanswered, row.benignOffers),
         invalid: ratio(row.invalidDecisions, row.decisions),
-        baselineAttackSuccess: baseline ? ratio(baseline.successes, baseline.evaluable) : null,
+        // Same formula as the agent column and the CLI gate: an attack still unresolved at its deadline was not resisted.
+        baselineAttackSuccess: baseline ? ratio(baseline.successes + baseline.unresolved, baseline.evaluable) : null,
         baselineHonestRefusal: baseline ? ratio(baseline.benignRefused, baseline.benignOffers) : null,
       };
     }),

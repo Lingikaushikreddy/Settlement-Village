@@ -96,8 +96,12 @@ async function decideLive(request, config) {
     body: JSON.stringify(buildMessagesRequest(request, config.model)),
   });
   if (!res.ok) {
-    await res.body?.cancel();
-    throw new ProviderError(`provider responded ${res.status}`);
+    // The API's error message (never the request or the key) tells the operator why: bad key, unknown model, rejected field.
+    const detail = await res
+      .text()
+      .then((text) => JSON.parse(text.slice(0, 4000))?.error?.message)
+      .catch(() => undefined);
+    throw new ProviderError(`provider responded ${res.status}${typeof detail === "string" && detail ? `: ${detail}` : ""}`);
   }
   return parseProviderResponse(await res.json(), request, config.prices);
 }
@@ -124,6 +128,13 @@ function readConfig(argv, env) {
 }
 
 export function startServer(config) {
+  // Each distinct provider failure is reported to the operator once; the testbed only sees an invalid answer.
+  const reported = new Set();
+  const report = (reason) => {
+    if (reported.has(reason)) return;
+    reported.add(reason);
+    console.error(`Claude example agent: ${reason}; this and identical failures are recorded as invalid answers.`);
+  };
   const server = createServer((req, res) => {
     if (req.method !== "POST") return res.writeHead(405).end();
     let body = "";
@@ -151,6 +162,7 @@ export function startServer(config) {
             : error?.name === "TimeoutError" || error?.name === "AbortError"
               ? "provider timed out"
               : "provider request failed";
+        report(reason);
         res.writeHead(400, { "content-type": "application/json" }).end(JSON.stringify({ error: reason }));
       }
     });

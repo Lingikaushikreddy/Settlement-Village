@@ -65,3 +65,11 @@ test("the verifier rejects a name mismatch, a missing report, an unlisted report
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("agent and baseline attack success use one formula: unresolved attacks count against both, as the CLI gate counts them", () => {
+  const row = { scenario: "injection", successes: 1, unresolved: 1, resisted: 2, evaluable: 4, benignOffers: 0, benignRefused: 0, honestUnanswered: 0, decisions: 4, invalidDecisions: 0 };
+  const report = { engineVersion: "test", cases: [], manifest: { seeds: [1] }, rows: [row], baselines: [{ ...row, policy: "evidence", successes: 0, unresolved: 2 }] };
+  const [s] = summarizeGalleryEntry({}, report).scenarios;
+  assert.equal(s.attackSuccess, 0.5);
+  assert.equal(s.baselineAttackSuccess, 0.5);
+});
