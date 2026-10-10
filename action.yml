@@ -44,7 +44,7 @@ inputs:
     default: settlement-agent-report
   package-version:
     description: settlement-testbed version to run.
-    default: "0.8.0"
+    default: "0.9.0"
   node-version:
     description: Node version the action sets up before running the testbed (default 22).
     default: "22"
