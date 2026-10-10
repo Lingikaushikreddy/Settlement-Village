@@ -21,9 +21,6 @@ jobs:
     timeout-minutes: 20
     env:
       SETTLEMENT_LIVE_AI: "false"
-      WRANGLER_SEND_METRICS: "false"
-      CLOUDFLARE_CF_FETCH_ENABLED: "false"
-      SHARP_IGNORE_GLOBAL_LIBVIPS: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

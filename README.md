@@ -85,7 +85,7 @@ npm start -- --port 5173
 
 The default development and production scripts use **Next.js**; the frontend also supports Vercel deployment. The hosted frontend runs the campaign and free Research comparisons, replay and report verification in each visitor's browser. Saves remain browser-local; there are no accounts or server-side campaign saves. The optional SQLite research worker, configured Claude experiments and agent-endpoint evaluation CLI run locally.
 
-The alternative vinext/Cloudflare runtime remains available through `npm run dev:cloudflare`, `npm run build:cloudflare` and `npm run start:cloudflare`. `npm run smoke -- <url>` checks a running frontend's page, assets, research redirect, response headers and preview image.
+`npm run smoke -- <url>` checks a running frontend's page, assets, research redirect, response headers and preview image.
 
 ## How the agents work
 
@@ -140,7 +140,7 @@ You get rates with raw counts next to the built-in policies, a report anyone can
 
 ## Stack and project map
 
-**TypeScript · React · Next.js · Zod · Tailwind CSS · optional Node.js/SQLite worker · alternative vinext/Cloudflare build**
+**TypeScript · React · Next.js · Zod · Tailwind CSS · optional Node.js/SQLite worker**
 
 ```text
 app/                 Application entry points
