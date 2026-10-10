@@ -43,3 +43,41 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" --title "Settlement $GITHUB_REF_NAME" --notes-file release-notes.md --latest
+  publish:
+    name: Publish settlement-testbed to npm
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run check:versions
+      - name: Version must equal the tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(node -p 'require("./package.json").version')"
+          test "$version" = "$tag" || { echo "package.json is $version but the tag is v$tag"; exit 1; }
+      - run: npm run build:package && npm run check:package
+      - name: Packed files must match the expected list
+        working-directory: packages/settlement-testbed
+        run: |
+          npm pack --dry-run --json --ignore-scripts | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s)[0].files.map(f=>f.path).sort().join("\n")))' > packed.txt
+          diff expected-files.txt packed.txt
+      - name: Skip until the package exists on npm (first publish is manual)
+        id: exists
+        run: |
+          if npm view settlement-testbed version >/dev/null 2>&1; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "settlement-testbed is not on npm yet; publish the first version manually (docs/releasing.md)"; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Publish with provenance
+        if: steps.exists.outputs.ok == 'true'
+        working-directory: packages/settlement-testbed
+        run: npm publish --provenance --access public
