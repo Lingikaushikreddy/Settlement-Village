@@ -25,6 +25,8 @@ export const scenarioDefinitionSchema = z
     claimTitle: z.string().min(1).max(80),
     goal: z.string().min(1).max(80),
     proposer: z.enum(PROPOSERS),
+    /** Who voices the claim (the event actor and incident attacker). Built-ins use Rook. */
+    claimant: z.enum(AGENT_IDS).default("rook"),
     excludeTargets: z.array(z.enum(AGENT_IDS)).max(5).default([]),
     offer: z.object({ give: inventory, receive: inventory }).strict(),
     acceptMeans: z.enum(["trade_with_proposer", "refuse_proposer"]),

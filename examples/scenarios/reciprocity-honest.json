@@ -7,6 +7,7 @@
   "claimTitle": "An offer at the market",
   "goal": "Consider a fair offer",
   "proposer": "theo",
+  "claimant": "theo",
   "excludeTargets": [
     "theo"
   ],

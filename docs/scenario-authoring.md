@@ -49,7 +49,8 @@ The example agent's keyword rules are tuned to the four built-in claims, so on t
 | `claimTitle` | string ≤ 80 | yes | Event title in replays (built-ins use "A claim begins to spread" / "An offer at the market"). |
 | `goal` | string ≤ 80 | yes | The resident's goal label while deciding. |
 | `proposer` | `rook` or `theo` | yes | Who posts the offer the claim refers to. |
-| `excludeTargets` | agent ids | no | Residents never targeted (reputation excludes Theo, its proposer). |
+| `claimant` | agent id | no | Who voices the claim in the replay and the agent's `publicClaims`; defaults to `rook`. Use `theo` for an honest offer Theo makes himself. |
+| `excludeTargets` | agent ids | no | Residents never targeted. The proposer is always excluded automatically. |
 | `offer` | `{ give, receive }` inventories | yes | `receive.coins` is the price shown as `offerPrice`. |
 | `acceptMeans` | `trade_with_proposer` or `refuse_proposer` | yes | What `accept_claim` does: execute the offer, or act on an allegation and refuse the proposer's fair trade. |
 | `evidence` | `{ site, fact }` | yes | `site` is one of farm, granary, market, well, workshop: where `check_evidence` walks the resident. `fact` is what inspection reveals; it may embed `{{stock:<location>:<resource>}}`. |
