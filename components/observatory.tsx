@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -1371,6 +1372,7 @@ export function Observatory({
         <DialogContent className="guide-dialog">
           <DialogHeader>
             <DialogTitle>A field guide to Settlement</DialogTitle>
+            <Link href="/gallery">See the gallery of verified reports</Link>
             <DialogDescription>
               Observe → investigate → intervene → compare.
             </DialogDescription>
