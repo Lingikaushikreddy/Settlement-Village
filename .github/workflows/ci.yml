@@ -35,6 +35,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build:package && npm run check:package
+      - run: npm run check:versions && node scripts/build-package-readme.mjs --check
       - run: npm run test:integration
       - run: npm run evaluate -- --verify docs/evaluation-results.json
       - run: npm run eval:agent -- --verify public/examples/agent-report.json
