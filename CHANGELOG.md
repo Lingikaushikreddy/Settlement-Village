@@ -3,10 +3,10 @@
 ## 0.9.0 — 2026-10-10
 
 - **Gallery of verified reports.** `gallery/` holds submitted agent reports; CI re-verifies every one; the hosted `/gallery` page shows per-scenario rates next to the Check evidence policy with verify-and-replay links. Submissions are pull requests (`docs/gallery.md`). Entries are listed, never ranked.
-- **Claude example agent.** `examples/agents/claude/agent.mjs` decides each claim through one strict tool call to Claude (`claude-haiku-5-5` by default), reports real usage and cost, and turns every provider problem into an invalid answer. `--dry-run` needs no key.
+- **Claude example agent.** `examples/agents/claude/agent.mjs` decides each claim through one strict tool call to Claude (`claude-haiku-5-5` by default), reports the provider's token counts with an estimated cost from configured list prices, and turns every provider problem into an invalid answer (each distinct failure is printed once to stderr). `--dry-run` needs no key.
 - Testbed polish from review: a shadowing `--scenario-file` exits 2 with usage, an explicit `scenarios` list wins over loaded files, mismatched harm and accept rules are rejected, offers are bounded by starting inventories, and the player guide points at `npx settlement-testbed`.
 
-Gameplay, scenarios, the protocol and existing reports are unchanged.
+Gameplay, scenarios, the protocol and the two reference reports are unchanged. A custom report whose embedded definition offers more than the starting inventory, or pairs a harm with an incompatible accept rule, now fails verification by the new schema checks.
 
 ## 0.8.0 — 2026-10-10
 
