@@ -10,6 +10,7 @@ This document refines the September 17 product brief against the implemented cod
 - Building, production, recruitment and player-commanded raids, with the same resource validation for agents and manual actions.
 - Four authored Council/research scenarios, including adversarial scarcity, reputation and instruction-injection attempts, plus honest offers.
 - Optional Claude proposals only for explicit steps in configured local-worker research experiments. Free campaign and comparison policies remain deterministic.
+- UI architecture: the campaign and research screens are split into composers, state hooks and one file per region, with size limits and import-cycle checks enforced by tests (0.10.0).
 - Versioned campaign saves and deterministic research replay. Crew continuation is deterministic, but its bounded gameplay log is not a complete replay archive. Crew memories and Council evidence are separate records.
 
 The crew's bid combines role suitability and bounded experience, then subtracts walking distance; it does not multiply those factors. The social research planner and campaign job board are separate components with different scopes.

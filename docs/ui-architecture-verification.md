@@ -26,7 +26,19 @@ Reading: no regression against the baseline on the same machine (162 → 154 ms 
 
 ## After Plan 2 (research split)
 
-Pending.
+Commit: main 427d9e6 plus the Plan 2 composer PR (same PR as this table). Machine: darwin arm64. Node: v26.8.1. Chromium: 156.0.8078.4. Two runs a minute apart:
+
+| Scene | Script ms | Task ms | Layouts | Style recalcs | Heap Δ MB | Seconds |
+| --- | --- | --- | --- | --- | --- | --- |
+| campaign idle | 138.0 | 198.0 | 50 | 0 | -0.91 | 10 |
+| observatory playback | 316.0 | 387.0 | 21 | 21 | 4.12 | 10 |
+
+| Scene | Script ms | Task ms | Layouts | Style recalcs | Heap Δ MB | Seconds |
+| --- | --- | --- | --- | --- | --- | --- |
+| campaign idle | 156.0 | 216.0 | 50 | 0 | 2.17 | 10 |
+| observatory playback | 299.0 | 363.0 | 21 | 21 | -0.41 | 10 |
+
+Reading: run-to-run variation on this machine is about ±10% of script time. Against the baseline (162 ms campaign, 297 ms playback) both scenes sit inside that band, and layout and style-recalculation counts are identical, so the split added no per-tick work. No memo was tried in Plan 2: the playback regions take `run` and `tick`, which change every tick, as the campaign footer did in Plan 1.
 
 ## Memoization decisions
 
