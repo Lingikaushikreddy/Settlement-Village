@@ -1,86 +1,32 @@
 "use client";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { Check, Download, X } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { Check, X } from "lucide-react";
 import { Scene } from "./scene";
-import { CampaignSession, type CampaignSessionState } from "@/lib/game/campaign-session";
+import type { CampaignSession } from "@/lib/game/campaign-session";
 import { deploy, focusTarget, settleBattle } from "@/lib/game/battle";
-import type {
-  Game,
-  BuildingKind,
-  TroopKind,
-} from "@/lib/game/model";
+import type { Game, BuildingKind, TroopKind } from "@/lib/game/model";
 import { CrewInspector } from "./crew";
 import { crewCommand, crewRoster } from "@/lib/game/crew";
 import type { CrewCommand } from "@/lib/game/crew-types";
 import { CouncilPanel } from "./council";
+import { councilCommand } from "@/lib/game/council";
 import { useCampaign } from "./use-campaign";
-import { SessionGate } from "./session-gate";
+import { SessionGate, useCampaignSession } from "./session-gate";
 import { SelectionPanel } from "./selection-panel";
 import { BattleOverlay } from "./battle-overlay";
 import { CampaignHud } from "./campaign-hud";
 import { CampaignFooter } from "./campaign-footer";
-import { CampaignDialogs, download, type Panel } from "./campaign-dialogs";
-import {
-  activeIncidentTargets,
-  displayedResearch,
-  researchCaption,
-  sceneResidents,
-} from "./campaign-view-model";
-import { councilCommand, councilResearchRun, newCouncil } from "@/lib/game/council";
-import type { Run } from "@/lib/sim/types";
-import type { ResearchFrame } from "../observatory";
+import { CampaignDialogs, type Panel } from "./campaign-dialogs";
+import { ResearchOverlay, useResearchDesk } from "./research-overlay";
+import { activeIncidentTargets, sceneResidents } from "./campaign-view-model";
 import "./game.css";
 import "./research.css";
 import "./session.css";
 import "./polish.css";
-const Research = lazy(() =>
-  import("../observatory").then((m) => ({ default: m.Observatory })),
-);
+
+/** Mounts the campaign once its session (save lock and saved game) is ready; otherwise the gate explains why not. */
 export function SettlementGame() {
-  const [attempt, setAttempt] = useState(0);
-  const [view, setView] = useState<{
-    session: CampaignSession;
-    state: CampaignSessionState;
-    attempt: number;
-  } | null>(null);
-
-  useEffect(() => {
-    let disposed = false;
-    const session = new CampaignSession({
-      locks: navigator.locks,
-      storage: {
-        getItem: (key) => window.localStorage.getItem(key),
-        setItem: (key, value) => window.localStorage.setItem(key, value),
-      },
-      onChange: (current) => {
-        if (!disposed)
-          setView({ session: current, state: current.state, attempt });
-      },
-    });
-    session.start();
-    const leave = () => session.close();
-    const returnToPage = () => {
-      // A page restored from the back-forward cache must obtain a fresh lock
-      // and read the latest save before mounting its campaign again.
-      if (session.state === "closed") setAttempt((value) => value + 1);
-    };
-    window.addEventListener("pagehide", leave);
-    window.addEventListener("pageshow", returnToPage);
-    return () => {
-      disposed = true;
-      window.removeEventListener("pagehide", leave);
-      window.removeEventListener("pageshow", returnToPage);
-      session.close();
-    };
-  }, [attempt]);
-
+  const { view, retry } = useCampaignSession();
   if (view?.state === "active" && view.session.active && view.session.game) {
     return (
       <CampaignGame
@@ -94,10 +40,12 @@ export function SettlementGame() {
     <SessionGate
       state={view?.state ?? "checking"}
       session={view?.session ?? null}
-      onRetry={() => setAttempt((value) => value + 1)}
+      onRetry={retry}
     />
   );
 }
+
+/** The campaign composer: shared UI state and the layout of the regions. Game state lives in useCampaign. */
 function CampaignGame({
   session,
   initialGame,
@@ -124,14 +72,20 @@ function CampaignGame({
     [crewOpen, setCrewOpen] = useState(false),
     [crewView, setCrewView] = useState<"agent" | "jobs" | "history">("agent"),
     [resident, setResident] = useState("mira"),
-    [research, setResearch] = useState<{ run: Run; section: string } | null>(
-      null,
-    ),
-    [researchFrame, setResearchFrame] = useState<ResearchFrame | null>(null),
     [placing, setPlacing] = useState<string | null>(null),
     [troop, setTroop] = useState<TroopKind>("knight"),
     [squad, setSquad] = useState(1);
   const crewTrigger = useRef<HTMLElement | null>(null);
+  // Closes every village panel. The research desk calls it when it opens, so it must stay stable.
+  const closeVillagePanels = useCallback(() => {
+    setCouncilOpen(false);
+    setCrewOpen(false);
+    setPanel(null);
+    setSelected(null);
+    setPlacing(null);
+  }, []);
+  const desk = useResearchDesk({ game, update, latest }, closeVillagePanels);
+  const research = desk.research;
   const crewAct = (c: CrewCommand) => {
     if (campaignCrewAct(c) && c.type === "start") {
       setCouncilOpen(false);
@@ -153,8 +107,7 @@ function CampaignGame({
   }
   function openCouncil(id?: string) {
     setCrewOpen(false);
-    setResearch(null);
-    setResearchFrame(null);
+    desk.close();
     if (id) setResident(id);
     update((g) =>
       councilCommand(g.crew ? crewCommand(g, { type: "pause" }) : g, {
@@ -164,59 +117,6 @@ function CampaignGame({
     setSelected(null);
     setCouncilOpen(true);
   }
-  const openResearch = useCallback(
-    (section = "observatory") => {
-      if (latest().battle) return;
-      update((g) =>
-        councilCommand(g.crew ? crewCommand(g, { type: "pause" }) : g, {
-          type: "pause",
-        }),
-      );
-      setResearch((r) =>
-        r
-          ? { ...r, section }
-          : {
-              run: councilResearchRun(latest().council ?? newCouncil()),
-              section,
-            },
-      );
-      setCouncilOpen(false);
-      setCrewOpen(false);
-      setPanel(null);
-      setSelected(null);
-      setPlacing(null);
-    },
-    [update, latest],
-  );
-  const researchSection = useCallback(
-    (section: string) => setResearch((r) => r && { ...r, section }),
-    [],
-  );
-  function closeResearch() {
-    setResearch(null);
-    setResearchFrame(null);
-  }
-  useEffect(() => {
-    const q = new URLSearchParams(location.search);
-    if (
-      q.has("seed") ||
-      q.has("report") ||
-      ["research", "archive"].includes(q.get("view") ?? "")
-    ) {
-      const timer = setTimeout(
-        () =>
-          openResearch(
-            q.get("view") === "archive"
-              ? "library"
-              : q.has("report")
-                ? "experiments"
-                : "observatory",
-          ),
-        0,
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [openResearch]);
   function choose(id: string) {
     if (research) return;
     if (id.startsWith("collect:")) {
@@ -230,9 +130,6 @@ function CampaignGame({
     }
     setSelected((s) => (s === id ? null : id));
   }
-  const building = game.buildings.find((b) => b.id === selected),
-    battle = game.battle,
-    raiding = !!battle;
   function returnHome() {
     update((g) => {
       const n = settleBattle(g);
@@ -254,7 +151,9 @@ function CampaignGame({
     )
       setPlacing(null);
   }
-  const displayed = displayedResearch(researchFrame, research, game);
+  const building = game.buildings.find((b) => b.id === selected),
+    battle = game.battle,
+    raiding = !!battle;
   return (
     <main
       className={`village-game ${research ? "research-active" : ""} ${placing ? "placing-active" : ""} ${raiding ? "raiding-active" : ""}`}
@@ -291,8 +190,8 @@ function CampaignGame({
         selected={selected}
         placing={placing}
         residents={sceneResidents(
-          displayed.run,
-          displayed.tick,
+          desk.displayed.run,
+          desk.displayed.tick,
           game,
           !research && !councilOpen,
         )}
@@ -301,7 +200,10 @@ function CampaignGame({
             ? game.crew.agents
             : undefined
         }
-        activeIncidents={activeIncidentTargets(displayed.run, displayed.tick)}
+        activeIncidents={activeIncidentTargets(
+          desk.displayed.run,
+          desk.displayed.tick,
+        )}
         selectedResident={councilOpen || crewOpen || research ? resident : null}
         onResident={
           research
@@ -332,48 +234,19 @@ function CampaignGame({
         researchSection={research?.section ?? null}
         councilOpen={councilOpen}
         onVillage={() => {
-          closeResearch();
+          desk.close();
           setCouncilOpen(false);
         }}
         onCouncil={() => openCouncil()}
-        onResearch={openResearch}
+        onResearch={desk.open}
       />
-      {research && (
-        <>
-          <div className="research-map-caption">
-            <strong>{displayed.run.name}</strong>
-            <span>
-              Tick {displayed.tick} · {researchCaption(researchFrame?.mode)}
-            </span>
-            <p>Select a resident on the map to follow their decisions.</p>
-          </div>
-          <aside
-            className="unified-workbench"
-            aria-label="Village research desk"
-          >
-            <Suspense
-              fallback={
-                <p className="research-loading">Opening the village records…</p>
-              }
-            >
-              <Research
-                currentRun={research.run}
-                section={research.section}
-                onSection={researchSection}
-                selectedResident={resident}
-                onSelected={setResident}
-                onFrame={setResearchFrame}
-                onExit={closeResearch}
-              />
-            </Suspense>
-          </aside>
-        </>
-      )}
+      <ResearchOverlay desk={desk} resident={resident} onResident={setResident} />
       {!raiding ? (
         !research && (
           <>
             <CampaignFooter
               game={game}
+              saved={saved}
               act={act}
               crewAct={crewAct}
               onInspect={openCrew}
@@ -407,18 +280,6 @@ function CampaignGame({
           onReturnHome={returnHome}
         />
       ) : null}
-      {!raiding && !research ? (
-        <div className="save-status" role="status">
-          <span />
-          {saved}
-          <button
-            aria-label="Export village save"
-            onClick={() => download(game)}
-          >
-            <Download size={12} />
-          </button>
-        </div>
-      ) : null}
       {notice ? (
         <div className="game-toast" role="status">
           <Check size={18} />
@@ -445,16 +306,12 @@ function CampaignGame({
         }}
         guide={{
           game,
-          onResearch: () => openResearch(),
+          onResearch: () => desk.open(),
           onError: setNotice,
           onImport: (imported) => {
             if (!update(() => imported)) return;
-            closeResearch();
-            setCouncilOpen(false);
-            setCrewOpen(false);
-            setSelected(null);
-            setPlacing(null);
-            setPanel(null);
+            desk.close();
+            closeVillagePanels();
             setNotice("Village restored from your save.");
           },
         }}
