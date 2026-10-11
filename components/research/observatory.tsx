@@ -1,78 +1,46 @@
 "use client";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Sprout,
   Play,
-  Pause,
-  StepForward,
-  RotateCcw,
   ShieldAlert,
-  FlaskConical,
   ArrowUpRight,
   Download,
-  Plus,
-  BookOpen,
   CheckCircle2,
   Users,
   Library,
   ChevronRight,
-  Activity,
-  Sparkles,
 } from "lucide-react";
-import { ResidentInspector } from "../resident-inspector";
 import { Experiments, exportJson } from "../experiments";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import {
-  createRun,
-  metrics,
-  policyName,
-  runToEnd,
-  verifyReplay,
-} from "@/lib/sim/engine";
-import { scenarioDescription, scenarioLabel } from "@/lib/sim/scenario-label";
+import { createRun, metrics, policyName, runToEnd } from "@/lib/sim/engine";
+import { scenarioLabel } from "@/lib/sim/scenario-label";
 import type { Run, Intervention } from "@/lib/sim/types";
 import type { ResearchFrame } from "./types";
 import { usePlayback } from "./use-playback";
 import { useModelContextTools } from "./use-model-context";
-import {
-  useLocalWorker,
-  workerOrigin,
-  type NewRunConfig,
-} from "./use-local-worker";
+import { useLocalWorker, type NewRunConfig } from "./use-local-worker";
 import { NewExperimentDialog } from "./new-experiment-dialog";
 import { EventDialog } from "./event-dialog";
 import { FieldGuideDialog } from "./field-guide-dialog";
+import { ResearchTabs } from "./research-tabs";
+import { RunOverview } from "./run-overview";
+import { PlaybackTimeline } from "./playback-timeline";
+import { ModelReadiness } from "./model-readiness";
 import {
   addToLibrary,
   boardEvents,
-  canAskModel,
   feedEvents,
-  incidentEvents,
   incidentOutcome,
-  modeLabel,
   nameIn,
-  nextIncidentEvent,
   parseSavedLibrary,
-  playbackStatus,
-  researchHeading,
   snapshotAt,
   visibleIncidents,
   wealthBars,
 } from "./research-view-model";
 export type { ResearchFrame } from "./types";
 const STORAGE = "settlement-library-v1";
-const noSubscription = () => () => {};
 // Residents are shown by name; "village" and "observer" fall back to their label.
-const RUN_LOCALLY =
-  "https://github.com/Lingikaushikreddy/Settlement-Village#run-locally";
 const defaultRun = () =>
   runToEnd({
     seed: 42,
@@ -99,17 +67,12 @@ export function Observatory({
   onExit: () => void;
 }) {
   const playback = usePlayback(currentRun);
-  const { run, tick, playing, speed, mode, queued } = playback;
+  const { run, tick, playing, mode, queued } = playback;
   const [newOpen, setNewOpen] = useState(false),
     [helpOpen, setHelpOpen] = useState(false),
     [eventId, setEventId] = useState<string | null>(null),
     [notice, setNotice] = useState(""),
     [library, setLibrary] = useState<Run[]>([]);
-  const hosted = useSyncExternalStore(
-    noSubscription,
-    () => !workerOrigin(),
-    () => false,
-  );
   const selected = selectedResident,
     select = onSelected,
     view = section,
@@ -125,7 +88,6 @@ export function Observatory({
   const last = run.snapshots.length - 1,
     w = snapshotAt(run, tick),
     m = metrics(run, tick);
-  const claimEvents = incidentEvents(run);
   const shownIncidents = visibleIncidents(run, tick);
   const latestClaim = shownIncidents.at(-1);
   useEffect(() => {
@@ -209,341 +171,50 @@ export function Observatory({
   const wealth = useMemo(() => wealthBars(w), [w]);
   return (
     <section className="settlement unified-research">
-      <header className="research-heading">
-        <div>
-          <span>Settlement / research desk</span>
-          <h2>{researchHeading(view)}</h2>
-        </div>
-        <button
-          className="research-close"
-          onClick={onExit}
-          aria-label="Close research and return to village"
-        >
-          ×
-        </button>
-      </header>
-      <div className="research-tabs">
-        <nav aria-label="Research tools">
-          {[
-            ["observatory", "Inspect"],
-            ["experiments", "Compare"],
-            ["library", "Archive"],
-          ].map(([id, label]) => (
-            <button
-              key={id}
-              aria-pressed={view === id}
-              disabled={worker.modelBusy}
-              onClick={() => {
-                if (mode !== "worker") playback.setPlaying(false);
-                setView(id);
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-        <button
-          className="primary"
-          disabled={worker.modelBusy}
-          onClick={() => setNewOpen(true)}
-        >
-          <Plus size={15} /> New experiment
-        </button>
-      </div>
-      <button
-        className="text-button research-help"
-        onClick={() => setHelpOpen(true)}
-      >
-        <BookOpen size={14} /> Research field guide
-      </button>
-      <div className="research-boundary">
-        <ShieldAlert size={16} />
-        <span>{modeLabel(mode)} · village resources stay unchanged</span>
-      </div>
+      <ResearchTabs
+        view={view}
+        mode={mode}
+        busy={worker.modelBusy}
+        onExit={onExit}
+        onView={(id) => {
+          if (mode !== "worker") playback.setPlaying(false);
+          setView(id);
+        }}
+        onNew={() => setNewOpen(true)}
+        onHelp={() => setHelpOpen(true)}
+      />
       {view === "observatory" && (
         <>
-          <div className="scenario-strip">
-            <div className="scenario-icon">
-              <FlaskConical size={20} />
-            </div>
-            <div>
-              <strong>{run.name}</strong>
-              <span>
-                {scenarioDescription(run.config.scenario, run.definition)}
-              </span>
-            </div>
-            <span className="policy-label">
-              {policyName(run.config.policy, run.socialDecisions?.[0]?.model)}
-            </span>
-            <button
-              className="text-button"
-              onClick={() => {
-                const e = nextIncidentEvent(run, tick);
-                if (e) {
-                  jump(e.tick);
-                  select(e.target || "rook");
-                } else
-                  setNotice(
-                    mode === "recorded"
-                      ? "This village record ends before the first claim. Continue its day in Council, or create an experiment."
-                      : "The first claim arrives at tick 8. Advance the simulation.",
-                  );
-              }}
-            >
-              Find an incident <ArrowUpRight size={15} />
-            </button>
-          </div>
-          <section className="world-layout">
-            <div className="research-residents" aria-label="Research residents">
-              {w.agents.map((a) => (
-                <button
-                  key={a.id}
-                  aria-pressed={a.id === selected}
-                  onClick={() => select(a.id)}
-                >
-                  <i style={{ background: a.color }} />
-                  {a.name}
-                </button>
-              ))}
-            </div>
-            <ResidentInspector
-              run={run}
-              tick={tick}
-              selected={selected}
-              onEvidence={(id) => setEventId(id)}
-            />
-          </section>
-          <section className="timeline" aria-label="Simulation playback">
-            <div className="transport">
-              <button
-                className="icon-button"
-                aria-label="Rewind to beginning"
-                disabled={mode === "worker"}
-                onClick={() => jump(0)}
-              >
-                <RotateCcw size={16} />
-              </button>
-              <button
-                className="play-button"
-                aria-label={playing ? "Pause" : "Play"}
-                onClick={toggle}
-                disabled={
-                  worker.modelBusy ||
-                  (mode === "recorded" && last === 0) ||
-                  (tick === last &&
-                    run.status === "completed" &&
-                    mode !== "recorded")
-                }
-              >
-                {playing ? (
-                  <Pause size={16} fill="currentColor" />
-                ) : (
-                  <Play size={16} fill="currentColor" />
-                )}
-              </button>
-              <button
-                className="icon-button"
-                aria-label="Advance one tick"
-                onClick={step}
-                disabled={
-                  (tick === last &&
-                    (run.status === "completed" || mode === "recorded")) ||
-                  (mode === "worker" && playing) ||
-                  worker.modelBusy
-                }
-              >
-                <StepForward size={18} />
-              </button>
-            </div>
-            <div className="timeline-track">
-              <div className="tick-label">
-                <strong>Tick {tick.toString().padStart(2, "0")}</strong>
-                <span>
-                  {run.config.maxTicks} ticks ·{" "}
-                  {playbackStatus(run, tick, playing)}
-                </span>
-              </div>
-              <Slider
-                aria-label="Playback tick"
-                min={0}
-                max={Math.max(last, 1)}
-                value={[tick]}
-                onValueChange={(v) => jump(v[0])}
-                disabled={last === 0 || mode === "worker" || worker.modelBusy}
-              />
-              <div className="incident-markers">
-                {claimEvents.map((e) => (
-                  <button
-                    key={e.id}
-                    aria-label={`Go to incident at tick ${e.tick}`}
-                    title={`Incident at tick ${e.tick}`}
-                    onClick={() => jump(e.tick)}
-                    style={{ left: `${(e.tick / Math.max(last, 1)) * 100}%` }}
-                  />
-                ))}
-              </div>
-            </div>
-            <Select value={speed} onValueChange={playback.setSpeed}>
-              <SelectTrigger
-                aria-label="Playback speed"
-                disabled={mode === "worker"}
-                className="speed-select"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["1", "2", "4"].map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {v}× speed
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <button className="secondary save-run" onClick={save}>
-              Save run
-            </button>
-          </section>
-          <div className="run-toolbar">
-            <span>
-              <Activity size={14} />
-              {run.modelCalls
-                ? "Model-assisted decisions"
-                : "Rule-based decisions"}{" "}
-              · {run.modelCalls} model calls · ${run.estimatedCost.toFixed(4)}{" "}
-              estimated API cost
-            </span>
-            <div>
-              {mode !== "recorded" && run.status === "active" && (
-                <Select
-                  value=""
-                  disabled={worker.modelBusy}
-                  onValueChange={(v) => intervene(v as Intervention)}
-                >
-                  <SelectTrigger aria-label="Intervene in simulation">
-                    <SelectValue
-                      placeholder={queued ? "Intervention queued" : "Intervene"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="add-grain">Add 12 grain</SelectItem>
-                    <SelectItem value="publish-stock">
-                      Publish verified stock
-                    </SelectItem>
-                    <SelectItem value="pause-chaos">
-                      Stop future Chaos attempts
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              <button
-                className="text-button"
-                onClick={() => exportJson(run, `${run.id}.json`)}
-              >
-                <Download size={14} />
-                Export run
-              </button>
-              <button
-                className="text-button"
-                onClick={() => {
-                  const result = verifyReplay(run);
-                  setNotice(
-                    result.ok
-                      ? "Replay verified: every checkpoint matches."
-                      : result.reason,
-                  );
-                }}
-              >
-                <CheckCircle2 size={14} />
-                Verify replay
-              </button>
-            </div>
-          </div>
-          <section className="model-readiness">
-            <div>
-              <Sparkles size={20} />
-              <span>
-                <strong>Live model decisions</strong>
-                <small>
-                  {worker.provider?.reason ??
-                    (hosted ? (
-                      <>
-                        You&apos;re playing the hosted demo. Free simulations,
-                        comparisons and replays run here in your browser.
-                        Live-model experiments need the optional local worker —
-                        see{" "}
-                        <a href={RUN_LOCALLY} target="_blank" rel="noreferrer">
-                          Run locally
-                        </a>
-                        .
-                      </>
-                    ) : (
-                      "Free policies are active. Start the optional local worker to configure model decisions."
-                    ))}
-                </small>
-              </span>
-            </div>
-            {worker.provider?.ready && (
-              <p>
-                {worker.provider.model} · daily budget $
-                {worker.provider.dailyBudgetUSD} · six requests per run maximum.
-                Each model step sends this recipient’s visible evidence to
-                Claude and may incur API cost.
-              </p>
-            )}
-            <button
-              className="secondary"
-              disabled={
-                !canAskModel({
-                  ready: !!worker.provider?.ready,
-                  mode,
-                  playing,
-                  queued: !!queued,
-                  busy: worker.modelBusy,
-                  run,
-                  tick,
-                })
-              }
-              onClick={() => void worker.modelStep()}
-            >
-              <Sparkles size={15} />
-              {worker.modelBusy
-                ? "Evaluating the next decision…"
-                : "Ask Claude to decide next tick"}
-            </button>
-            {mode !== "worker" && (
-              <small>
-                Create an experiment on the local worker to use configured model
-                decisions.
-              </small>
-            )}
-            {run.socialDecisions
-              ?.filter((d) => d.tick <= tick)
-              .map((d) => (
-                <details key={`${d.tick}-${d.actor}`}>
-                  <summary>
-                    Tick {d.tick} · {nameIn(w.agents, d.actor)} ·{" "}
-                    {d.action === "invalid"
-                      ? `no valid answer (${d.invalidReason?.replaceAll("_", " ") ?? "invalid"})`
-                      : d.action.replaceAll("_", " ")}{" "}
-                    ·{" "}
-                    {run.config.policy === "external"
-                      ? `${d.model} decision`
-                      : "model proposal"}
-                  </summary>
-                  {d.summary && <p>{d.summary}</p>}
-                  {d.evidenceIds.length > 0 && (
-                    <small>Cited evidence: {d.evidenceIds.join(", ")}</small>
-                  )}
-                  {run.config.policy !== "external" && (
-                    <small>
-                      {d.model} · {d.usage.inputTokens} input /{" "}
-                      {d.usage.outputTokens} output tokens · $
-                      {d.costUSD.toFixed(4)} estimated
-                    </small>
-                  )}
-                </details>
-              ))}
-          </section>
+          <RunOverview
+            run={run}
+            tick={tick}
+            mode={mode}
+            selected={selected}
+            onSelect={select}
+            onJump={jump}
+            onEvidence={setEventId}
+            onNotice={setNotice}
+          />
+          <PlaybackTimeline
+            playback={playback}
+            busy={worker.modelBusy}
+            onJump={jump}
+            onToggle={toggle}
+            onStep={step}
+            onIntervene={intervene}
+            onSave={save}
+            onNotice={setNotice}
+          />
+          <ModelReadiness
+            run={run}
+            tick={tick}
+            mode={mode}
+            playing={playing}
+            queued={!!queued}
+            provider={worker.provider}
+            busy={worker.modelBusy}
+            onAsk={() => void worker.modelStep()}
+          />
           <div className="lower-grid">
             <section className="activity-panel">
               <Tabs defaultValue="incidents">
