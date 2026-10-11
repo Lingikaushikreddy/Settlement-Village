@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   Sprout,
@@ -18,20 +17,12 @@ import {
   Library,
   ChevronRight,
   Activity,
-  Server,
   Sparkles,
 } from "lucide-react";
 import { ResidentInspector } from "../resident-inspector";
 import { Experiments, exportJson } from "../experiments";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectTrigger,
@@ -42,23 +33,23 @@ import {
 import {
   createRun,
   metrics,
-  policyInfo,
   policyName,
   runToEnd,
-  scenarioInfo,
   verifyReplay,
 } from "@/lib/sim/engine";
 import { scenarioDescription, scenarioLabel } from "@/lib/sim/scenario-label";
-import type {
-  BuiltInPolicy,
-  Run,
-  Scenario,
-  Intervention,
-} from "@/lib/sim/types";
+import type { Run, Intervention } from "@/lib/sim/types";
 import type { ResearchFrame } from "./types";
 import { usePlayback } from "./use-playback";
 import { useModelContextTools } from "./use-model-context";
-import { useLocalWorker, workerOrigin } from "./use-local-worker";
+import {
+  useLocalWorker,
+  workerOrigin,
+  type NewRunConfig,
+} from "./use-local-worker";
+import { NewExperimentDialog } from "./new-experiment-dialog";
+import { EventDialog } from "./event-dialog";
+import { FieldGuideDialog } from "./field-guide-dialog";
 import {
   addToLibrary,
   boardEvents,
@@ -70,7 +61,6 @@ import {
   nameIn,
   nextIncidentEvent,
   parseSavedLibrary,
-  parseSeed,
   playbackStatus,
   researchHeading,
   snapshotAt,
@@ -111,14 +101,10 @@ export function Observatory({
   const playback = usePlayback(currentRun);
   const { run, tick, playing, speed, mode, queued } = playback;
   const [newOpen, setNewOpen] = useState(false),
-    [starting, setStarting] = useState(false),
     [helpOpen, setHelpOpen] = useState(false),
     [eventId, setEventId] = useState<string | null>(null),
     [notice, setNotice] = useState(""),
-    [library, setLibrary] = useState<Run[]>([]),
-    [draftScenario, setDraftScenario] = useState<Scenario>("scarcity"),
-    [draftPolicy, setDraftPolicy] = useState<BuiltInPolicy>("baseline"),
-    [draftSeed, setDraftSeed] = useState("42");
+    [library, setLibrary] = useState<Run[]>([]);
   const hosted = useSyncExternalStore(
     noSubscription,
     () => !workerOrigin(),
@@ -141,7 +127,6 @@ export function Observatory({
     m = metrics(run, tick);
   const claimEvents = incidentEvents(run);
   const shownIncidents = visibleIncidents(run, tick);
-  const activeEvent = run.events.find((e) => e.id === eventId);
   const latestClaim = shownIncidents.at(-1);
   useEffect(() => {
     const hydrate = setTimeout(() => {
@@ -185,36 +170,20 @@ export function Observatory({
       setNotice("Browser storage is full. Use Export run to save a file.");
     }
   }
-  async function start(useWorker = false) {
-    const seed = parseSeed(draftSeed);
-    if (seed === null) {
-      setNotice("Choose a whole-number seed from 0 to 999999.");
-      return;
+  async function start(config: NewRunConfig, useWorker: boolean) {
+    if (useWorker) {
+      if (!(await worker.create(config))) return;
+    } else {
+      worker.detach();
+      playback.startLocal({
+        ...createRun(config),
+        id: `local-${crypto.randomUUID()}`,
+      });
     }
-    setStarting(true);
-    const config = {
-      seed,
-      scenario: draftScenario,
-      policy: draftPolicy,
-      maxTicks: 60,
-    };
-    try {
-      if (useWorker) {
-        if (!(await worker.create(config))) return;
-      } else {
-        worker.detach();
-        playback.startLocal({
-          ...createRun(config),
-          id: `local-${crypto.randomUUID()}`,
-        });
-      }
-      playback.resetCursor();
-      setView("observatory");
-      setNewOpen(false);
-      select("mira");
-    } finally {
-      setStarting(false);
-    }
+    playback.resetCursor();
+    setView("observatory");
+    setNewOpen(false);
+    select("mira");
   }
   function jump(t: number) {
     if (playback.current().mode === "worker") {
@@ -867,175 +836,22 @@ export function Observatory({
         </span>
         <span>Built to be observed. Designed to be questioned.</span>
       </footer>
-      <Dialog open={newOpen} onOpenChange={setNewOpen}>
-        <DialogContent className="new-run-dialog">
-          <DialogHeader>
-            <DialogTitle>Start a new simulation</DialogTitle>
-            <DialogDescription>
-              Seven agents. One village. A new set of choices.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="form-field">
-            <label>Scenario</label>
-            <Select
-              value={draftScenario}
-              onValueChange={(v) => setDraftScenario(v as Scenario)}
-            >
-              <SelectTrigger aria-label="New run scenario">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(scenarioInfo).map(([id, s]) => (
-                  <SelectItem key={id} value={id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p>{scenarioDescription(draftScenario)}</p>
-          </div>
-          <div className="form-field">
-            <label>Resident policy</label>
-            <Select
-              value={draftPolicy}
-              onValueChange={(v) => setDraftPolicy(v as BuiltInPolicy)}
-            >
-              <SelectTrigger aria-label="New run policy">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(policyInfo).map(([id, p]) => (
-                  <SelectItem key={id} value={id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p>{policyInfo[draftPolicy].description}</p>
-          </div>
-          <div className="form-field">
-            <label htmlFor="seed">World seed</label>
-            <input
-              id="seed"
-              type="number"
-              min="0"
-              max="999999"
-              value={draftSeed}
-              onChange={(e) => setDraftSeed(e.target.value)}
-            />
-            <p>Matching seeds reproduce the same starting conditions.</p>
-          </div>
-          <div className="simulation-note">
-            <CheckCircle2 size={17} />
-            <span>No paid AI calls. Runs for 60 ticks in this browser.</span>
-          </div>
-          <button
-            className="primary"
-            disabled={starting}
-            onClick={() => void start()}
-          >
-            <Play size={16} />
-            Create simulation
-          </button>
-          {worker.available && (
-            <button
-              className="secondary"
-              disabled={starting}
-              onClick={() => void start(true)}
-            >
-              <Server size={16} />
-              Create on local worker
-            </button>
-          )}
-        </DialogContent>
-      </Dialog>
-      <Dialog open={!!activeEvent} onOpenChange={(v) => !v && setEventId(null)}>
-        <DialogContent className="evidence-dialog">
-          <DialogHeader>
-            <DialogTitle>{activeEvent?.title}</DialogTitle>
-            <DialogDescription>
-              Recorded evidence · tick {activeEvent?.tick} · {activeEvent?.id}
-            </DialogDescription>
-          </DialogHeader>
-          <blockquote>{activeEvent?.detail}</blockquote>
-          <dl className="evidence-details">
-            <div>
-              <dt>Source</dt>
-              <dd>{activeEvent?.actor}</dd>
-            </div>
-            <div>
-              <dt>Visibility</dt>
-              <dd>
-                {activeEvent?.visibility === "public"
-                  ? "Public message"
-                  : "Scoped observation"}
-              </dd>
-            </div>
-            <div>
-              <dt>Observed by</dt>
-              <dd>{activeEvent?.audience.join(", ")}</dd>
-            </div>
-          </dl>
-          <p className="muted-small">
-            Statements are attributed to their source. A recorded claim is not
-            proof that the statement is true.
-          </p>
-          <button
-            className="primary"
-            onClick={() => {
-              if (activeEvent) {
-                jump(activeEvent.tick);
-                if (w.agents.some((a) => a.id === activeEvent.actor))
-                  select(activeEvent.actor);
-              }
-              setEventId(null);
-            }}
-          >
-            Go to this tick <ArrowUpRight size={15} />
-          </button>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
-        <DialogContent className="guide-dialog">
-          <DialogHeader>
-            <DialogTitle>A field guide to Settlement</DialogTitle>
-            <Link href="/gallery">See the gallery of verified reports</Link>
-            <DialogDescription>
-              Observe → investigate → intervene → compare.
-            </DialogDescription>
-          </DialogHeader>
-          <p>
-            Residents plan meals, gather resources, and trade. Rook introduces
-            fixed adversarial claims. Policies decide whether to trust, refuse,
-            or inspect.
-          </p>
-          <ol>
-            <li>
-              <strong>Watch.</strong> Play a recorded run or start your own
-              simulation.
-            </li>
-            <li>
-              <strong>Investigate.</strong> Select a resident, inspect their
-              memories, and follow source evidence.
-            </li>
-            <li>
-              <strong>Intervene.</strong> In a new simulation, publish stock
-              evidence, add grain, or stop future attacks.
-            </li>
-            <li>
-              <strong>Compare.</strong> Test the same seeds under three
-              policies, including honest-offer controls.
-            </li>
-          </ol>
-          <p className="guide-limit">
-            Free runs use deterministic rules. Configured local worker runs can
-            apply explicitly requested Claude decisions. Results illustrate
-            these scenarios; they do not establish general agent safety. Browser
-            runs advance while this page is open. The optional local worker
-            persists and advances independently.
-          </p>
-        </DialogContent>
-      </Dialog>
+      <NewExperimentDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        workerAvailable={worker.available}
+        onStart={start}
+        onNotice={setNotice}
+      />
+      <EventDialog
+        run={run}
+        tick={tick}
+        eventId={eventId}
+        onClose={() => setEventId(null)}
+        onJump={jump}
+        onSelect={select}
+      />
+      <FieldGuideDialog open={helpOpen} onOpenChange={setHelpOpen} />
       {notice && (
         <div className="notice" role="status">
           <CheckCircle2 size={17} />
