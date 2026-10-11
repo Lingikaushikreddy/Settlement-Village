@@ -37,7 +37,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Scene, Sprite } from "./scene";
-import { command, advanceGame, restoreGame } from "@/lib/game/economy";
+import { restoreGame } from "@/lib/game/economy";
 import {
   CampaignSession,
   type CampaignSessionState,
@@ -63,7 +63,6 @@ import type {
   BuildingKind,
   TroopKind,
   Resources,
-  Command,
 } from "@/lib/game/model";
 import { CrewBoard, CrewInspector } from "./crew";
 import { VillageJournal } from "./village-journal";
@@ -71,6 +70,7 @@ import { actionProblem, buildProblem } from "@/lib/game/action-availability";
 import { crewCommand, crewRoster } from "@/lib/game/crew";
 import type { CrewCommand } from "@/lib/game/crew-types";
 import { CouncilPanel } from "./council";
+import { useCampaign } from "./use-campaign";
 import {
   councilCommand,
   councilRun,
@@ -259,8 +259,20 @@ function CampaignGame({
   session: CampaignSession;
   initialGame: Game;
 }) {
-  const [game, setGame] = useState<Game>(initialGame),
-    [selected, setSelected] = useState<string | null>(null),
+  const {
+    game,
+    update,
+    act,
+    crewAct: campaignCrewAct,
+    latest,
+    notice,
+    setNotice,
+    saved,
+    sound,
+    setSound,
+    chime,
+  } = useCampaign(session, initialGame);
+  const [selected, setSelected] = useState<string | null>(null),
     [panel, setPanel] = useState<"build" | "train" | "raid" | "guide" | null>(
       null,
     ),
@@ -273,120 +285,19 @@ function CampaignGame({
     ),
     [researchFrame, setResearchFrame] = useState<ResearchFrame | null>(null),
     [placing, setPlacing] = useState<string | null>(null),
-    [notice, setNotice] = useState(""),
     [troop, setTroop] = useState<TroopKind>("knight"),
-    [squad, setSquad] = useState(1),
-    [saved, setSaved] = useState("Saved on this device"),
-    [sound, setSound] = useState(false);
+    [squad, setSquad] = useState(1);
   const crewTrigger = useRef<HTMLElement | null>(null);
-  const current = useRef(game),
-    audio = useRef<AudioContext | null>(null),
-    file = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    let stopped = false;
-    const save = () => {
-      if (!session.active) return;
-      try {
-        session.save(current.current);
-        setSaved("Saved on this device");
-      } catch {
-        setSaved("Cannot save on this device · export your village");
-      }
-    };
-    const advance = setInterval(() => {
-      if (stopped || !session.active) return;
-      const next = advanceGame(current.current, 0.2);
-      current.current = next;
-      setGame(next);
-    }, 200);
-    const autosave = setInterval(save, 2000);
-    const hide = () => {
-      if (document.visibilityState === "hidden") save();
-    };
-    document.addEventListener("visibilitychange", hide);
-    const shutdown = () => {
-      if (stopped) return;
-      stopped = true;
-      clearInterval(advance);
-      clearInterval(autosave);
-      document.removeEventListener("visibilitychange", hide);
-      save();
-    };
-    const unregister = session.registerShutdown(shutdown);
-    return () => {
-      shutdown();
-      unregister();
-    };
-  }, [session]);
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(""), 4500);
-    return () => clearTimeout(t);
-  }, [notice]);
-  function chime() {
-    if (!sound) return;
-    try {
-      audio.current ??= new AudioContext();
-      const ctx = audio.current;
-      void ctx.resume();
-      [523, 659, 784].forEach((frequency, i) => {
-        const o = ctx.createOscillator(),
-          v = ctx.createGain();
-        o.type = "sine";
-        o.frequency.value = frequency;
-        v.gain.setValueAtTime(0.045, ctx.currentTime + i * 0.06);
-        v.gain.exponentialRampToValueAtTime(
-          0.001,
-          ctx.currentTime + 0.2 + i * 0.06,
-        );
-        o.connect(v);
-        v.connect(ctx.destination);
-        o.start(ctx.currentTime + i * 0.06);
-        o.stop(ctx.currentTime + 0.25 + i * 0.06);
-      });
-    } catch {}
-  }
-  const update = useCallback(
-    (fn: (g: Game) => Game) => {
-      if (!session.active) return false;
-      try {
-        const next = fn(current.current);
-        current.current = next;
-        setGame(next);
-        // Browsers may terminate a tab without pagehide. Persist player actions
-        // before returning, rather than relying on the next autosave or close.
-        try {
-          session.save(next);
-          setSaved("Saved on this device");
-        } catch {
-          setSaved("Cannot save on this device · export your village");
-        }
-        return true;
-      } catch (e) {
-        setNotice(
-          e instanceof Error ? e.message : "That action is unavailable.",
-        );
-        return false;
-      }
-    },
-    [session],
-  );
-  function act(c: Command, message?: string) {
-    if (update((g) => command(g, c))) {
-      chime();
-      if (message) setNotice(message);
-      return true;
-    }
-    return false;
-  }
-  function crewAct(c: CrewCommand) {
-    if (update((g) => crewCommand(g, c)) && c.type === "start") {
+  const file = useRef<HTMLInputElement>(null);
+  const crewAct = (c: CrewCommand) => {
+    if (campaignCrewAct(c) && c.type === "start") {
       setCouncilOpen(false);
       setSelected(null);
       setPlacing(null);
       setNotice("Objective set. Your residents are choosing their jobs.");
     }
-  }
+    return true;
+  };
   function openCrew(id?: string) {
     crewTrigger.current =
       document.activeElement instanceof HTMLElement
@@ -412,7 +323,7 @@ function CampaignGame({
   }
   const openResearch = useCallback(
     (section = "observatory") => {
-      if (current.current.battle) return;
+      if (latest().battle) return;
       update((g) =>
         councilCommand(g.crew ? crewCommand(g, { type: "pause" }) : g, {
           type: "pause",
@@ -422,7 +333,7 @@ function CampaignGame({
         r
           ? { ...r, section }
           : {
-              run: councilResearchRun(current.current.council ?? newCouncil()),
+              run: councilResearchRun(latest().council ?? newCouncil()),
               section,
             },
       );
@@ -432,7 +343,7 @@ function CampaignGame({
       setSelected(null);
       setPlacing(null);
     },
-    [update],
+    [update, latest],
   );
   const researchSection = useCallback(
     (section: string) => setResearch((r) => r && { ...r, section }),
