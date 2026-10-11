@@ -73,8 +73,19 @@ import { CouncilPanel } from "./council";
 import { useCampaign } from "./use-campaign";
 import { SessionGate } from "./session-gate";
 import {
+  activeIncidentTargets,
+  armyTotal,
+  battleStars,
+  buildingSummary,
+  destructionPercent,
+  displayedResearch,
+  hudFigures,
+  placementTitle,
+  researchCaption,
+  sceneResidents,
+} from "./campaign-view-model";
+import {
   councilCommand,
-  councilRun,
   councilResearchRun,
   newCouncil,
 } from "@/lib/game/council";
@@ -313,15 +324,7 @@ function CampaignGame({
   const upgradeProblem = building
     ? actionProblem(game, { type: "upgrade", id: building.id })
     : null;
-  const stars = battle
-    ? Number(battle.buildings.find((b) => b.kind === "hall")!.hp <= 0) +
-      Number(
-        battle.buildings.filter((b) => b.hp <= 0).length /
-          battle.buildings.length >=
-          0.5,
-      ) +
-      Number(battle.buildings.every((b) => b.hp <= 0))
-    : 0;
+  const stars = battle ? battleStars(battle) : 0;
   function returnHome() {
     update((g) => {
       const n = settleBattle(g);
@@ -343,12 +346,8 @@ function CampaignGame({
     )
       setPlacing(null);
   }
-  const displayedRun =
-    researchFrame?.run ??
-    research?.run ??
-    councilRun(game.council ?? newCouncil());
-  const displayedTick =
-    researchFrame?.tick ?? displayedRun.snapshots.length - 1;
+  const displayed = displayedResearch(researchFrame, research, game);
+  const hud = hudFigures(game);
   return (
     <main
       className={`village-game ${research ? "research-active" : ""} ${placing ? "placing-active" : ""} ${raiding ? "raiding-active" : ""}`}
@@ -384,27 +383,18 @@ function CampaignGame({
         game={game}
         selected={selected}
         placing={placing}
-        residents={displayedRun.snapshots[displayedTick].agents.map((a) => {
-          const crewPerson =
-            !research && !councilOpen && game.crew?.objective
-              ? crewRoster.find((r) => r.id === a.id)
-              : null;
-          return crewPerson
-            ? { ...a, occupation: crewPerson.role, color: crewPerson.color }
-            : a;
-        })}
+        residents={sceneResidents(
+          displayed.run,
+          displayed.tick,
+          game,
+          !research && !councilOpen,
+        )}
         crewAgents={
           !research && !councilOpen && game.crew?.objective
             ? game.crew.agents
             : undefined
         }
-        activeIncidents={displayedRun.incidents
-          .filter(
-            (i) =>
-              i.tick <= displayedTick &&
-              (i.resolvedTick === null || i.resolvedTick > displayedTick),
-          )
-          .map((i) => i.target)}
+        activeIncidents={activeIncidentTargets(displayed.run, displayed.tick)}
         selectedResident={councilOpen || crewOpen || research ? resident : null}
         onResident={
           research
@@ -434,7 +424,7 @@ function CampaignGame({
         >
           <span className="player-crest">
             <Shield fill="#5faee3" />
-            <b>{game.buildings.find((b) => b.kind === "hall")?.level}</b>
+            <b>{hud.hallLevel}</b>
           </span>
           <span>
             <strong>Settlement</strong>
@@ -445,28 +435,24 @@ function CampaignGame({
         </button>
         <div className="hud-builders">
           <Hammer size={19} />
-          <b>{freeBuilders(game)}/2</b>
+          <b>{hud.builders}</b>
           <span>Builders</span>
         </div>
         <div className="resource-hud">
-          {(["gold", "wood", "food"] as const).map((r) => {
-            const Icon = resourceIcons[r];
+          {hud.resources.map((r) => {
+            const Icon = resourceIcons[r.key];
             return (
               <div
-                className={`resource-pill ${r}`}
-                key={r}
-                aria-label={`${r}: ${Math.floor(game.resources[r])}`}
+                className={`resource-pill ${r.key}`}
+                key={r.key}
+                aria-label={`${r.key}: ${r.amount}`}
               >
                 <span className="resource-emblem">
                   <Icon />
                 </span>
                 <div>
-                  <strong>
-                    {Math.floor(game.resources[r]).toLocaleString("en-US")}
-                  </strong>
-                  <small>
-                    {r === "wood" ? "Timber" : r === "food" ? "Food" : "Gold"}
-                  </small>
+                  <strong>{r.display}</strong>
+                  <small>{r.label}</small>
                 </div>
               </div>
             );
@@ -518,14 +504,9 @@ function CampaignGame({
       {research && (
         <>
           <div className="research-map-caption">
-            <strong>{displayedRun.name}</strong>
+            <strong>{displayed.run.name}</strong>
             <span>
-              Tick {displayedTick} ·{" "}
-              {researchFrame?.mode === "worker"
-                ? "Worker experiment"
-                : researchFrame?.mode === "local"
-                  ? "Browser experiment"
-                  : "Recorded replay"}
+              Tick {displayed.tick} · {researchCaption(researchFrame?.mode)}
             </span>
             <p>Select a resident on the map to follow their decisions.</p>
           </div>
@@ -591,11 +572,7 @@ function CampaignGame({
               <div className="placement-notice">
                 <Hammer size={20} />
                 <div>
-                  <b>
-                    {game.buildings.some((b) => b.id === placing)
-                      ? "Choose a new location"
-                      : `Place your ${buildings[placing.slice(4) as BuildingKind].name.toLowerCase()}`}
-                  </b>
+                  <b>{placementTitle(game, placing)}</b>
                   <span>Tap an empty diamond. Drag the map to explore.</span>
                 </div>
                 <button
@@ -622,13 +599,7 @@ function CampaignGame({
                     {building.readyAt ? " · Builder working" : ""}
                   </small>
                   <h2>{def.name}</h2>
-                  <p>
-                    {building.readyAt
-                      ? `Ready in ${Math.ceil(building.readyAt - game.clock)} seconds`
-                      : def.resource
-                        ? `${def.rate * building.level} ${def.resource} / second · ${Math.floor(building.stored)} / ${def.capacity * building.level} stored`
-                        : def.description}
-                  </p>
+                  <p>{buildingSummary(game, building)}</p>
                 </div>
                 <div className="building-actions">
                   {def.resource ? (
@@ -702,9 +673,7 @@ function CampaignGame({
                   <Shield size={16} />
                   <span>
                     Your army{" "}
-                    <b>
-                      {Object.values(game.army).reduce((a, b) => a + b, 0)}/40
-                    </b>
+                    <b>{armyTotal(game)}/40</b>
                   </span>
                   <ChevronRight size={16} />
                 </button>
@@ -785,12 +754,7 @@ function CampaignGame({
                 ))}
               </span>
               <span>
-                {Math.floor(
-                  (battle.buildings.filter((b) => b.hp <= 0).length /
-                    battle.buildings.length) *
-                    100,
-                )}
-                % destroyed
+                {destructionPercent(battle)}% destroyed
               </span>
             </div>
           </div>
