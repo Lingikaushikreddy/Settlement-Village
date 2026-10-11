@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 — 2026-10-10
 
 - **Campaign component split.** `components/game/game.tsx` is a composer of about 320 lines; the game clock, autosave and command path live in `use-campaign.ts`, the session lock in `session-gate.tsx`, each visible region in its own file, and the pure view logic in `campaign-view-model.ts` with unit tests. Markup, CSS and the screenshot baselines are unchanged. `npm run measure:ui` records Chrome performance metrics on the production build (`docs/ui-architecture-verification.md`).
 - **Research screen split.** `components/observatory.tsx` moved to `components/research/` and split into a composer, `usePlayback` (the only writer of the displayed run), `useLocalWorker` (every request to the optional local worker, with its session and revision guards), one file per region and a unit-tested view model. Fifteen new browser tests pin the screen, six of them against a stubbed worker. Markup, CSS and the screenshot baselines are unchanged.
+
+Gameplay, scenarios, the protocol, saves and existing reports are unchanged.
 
 ## 0.9.0 — 2026-10-10
 
