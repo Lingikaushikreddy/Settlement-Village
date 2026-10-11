@@ -15,7 +15,14 @@ Reading: the campaign spends about 16 ms of script per second at rest, one layou
 
 ## After Plan 1 (campaign split)
 
-Pending.
+Commit: main a7f1918 plus the Task 9 extraction (same PR as this table). Machine: darwin arm64. Node: v26.8.1. Chromium: 156.0.8078.4.
+
+| Scene | Script ms | Task ms | Layouts | Style recalcs | Heap Δ MB | Seconds |
+| --- | --- | --- | --- | --- | --- | --- |
+| campaign idle | 154.0 | 211.0 | 50 | 0 | 0.15 | 10 |
+| observatory playback | 293.0 | 361.0 | 21 | 21 | 3.24 | 10 |
+
+Reading: no regression against the baseline on the same machine (162 → 154 ms script for the campaign, 297 → 293 ms for playback; both within run-to-run noise). The split added no per-tick work.
 
 ## After Plan 2 (research split)
 
@@ -23,4 +30,6 @@ Pending.
 
 ## Memoization decisions
 
-None yet. A `React.memo` is listed here with the measurement that justified it, or it is removed.
+A `React.memo` is listed here with the measurement that justified it, or it is removed.
+
+- `CampaignFooter` memo tried after Plan 1: campaign idle script 154.0 ms without the memo, 156.0 ms with it (same machine, same build settings). No drop, removed. The footer's inputs include the game object, which changes every tick, so the memo could not skip work.

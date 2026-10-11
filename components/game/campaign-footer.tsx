@@ -1,5 +1,12 @@
 "use client";
-import { ChevronRight, Hammer, Shield, Swords, Trophy } from "lucide-react";
+import {
+  ChevronRight,
+  Download,
+  Hammer,
+  Shield,
+  Swords,
+  Trophy,
+} from "lucide-react";
 import { quests, troops } from "@/lib/game/catalog";
 import type { Command, Game, TroopKind } from "@/lib/game/model";
 import type { CrewCommand } from "@/lib/game/crew-types";
@@ -7,11 +14,12 @@ import { Sprite } from "./scene";
 import { CrewBoard } from "./crew";
 import { VillageJournal } from "./village-journal";
 import { armyTotal } from "./campaign-view-model";
-import type { Panel } from "./campaign-dialogs";
+import { download, type Panel } from "./campaign-dialogs";
 
-/** Everything below the map while the village is at peace: crew board, journal, league badge, army dock and the Build / Battle buttons. */
+/** Everything below the map while the village is at peace: crew board, journal, league badge, army dock, the Build / Battle buttons and the save status. */
 export function CampaignFooter({
   game,
+  saved,
   act,
   crewAct,
   onInspect,
@@ -21,6 +29,7 @@ export function CampaignFooter({
   onNotice,
 }: {
   game: Game;
+  saved: string;
   act: (c: Command, message?: string) => boolean;
   crewAct: (c: CrewCommand) => boolean;
   onInspect: (id?: string) => void;
@@ -125,6 +134,16 @@ export function CampaignFooter({
           </button>
         </div>
       </footer>
+      <div className="save-status" role="status">
+        <span />
+        {saved}
+        <button
+          aria-label="Export village save"
+          onClick={() => download(game)}
+        >
+          <Download size={12} />
+        </button>
+      </div>
     </>
   );
 }

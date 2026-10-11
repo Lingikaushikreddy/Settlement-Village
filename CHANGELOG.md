@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Campaign component split.** `components/game/game.tsx` is a 300-line composer; the game clock, autosave and command path live in `use-campaign.ts`, the session lock in `session-gate.tsx`, each visible region in its own file, and the pure view logic in `campaign-view-model.ts` with unit tests. Markup, CSS and the screenshot baselines are unchanged. `npm run measure:ui` records Chrome performance metrics on the production build (`docs/ui-architecture-verification.md`).
+
 ## 0.9.0 — 2026-10-10
 
 - **Gallery of verified reports.** `gallery/` holds submitted agent reports; CI re-verifies every one; the hosted `/gallery` page shows per-scenario rates next to the Check evidence policy with verify-and-replay links. Submissions are pull requests (`docs/gallery.md`). Entries are listed, never ranked.

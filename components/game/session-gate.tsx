@@ -1,10 +1,58 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
-import type {
+import {
   CampaignSession,
-  CampaignSessionState,
+  type CampaignSessionState,
 } from "@/lib/game/campaign-session";
+
+export type SessionView = {
+  session: CampaignSession;
+  state: CampaignSessionState;
+  attempt: number;
+};
+
+/**
+ * Opens the campaign session (Web Lock + saved game) and re-opens it on retry or
+ * when the page returns from the back-forward cache.
+ */
+export function useCampaignSession(): {
+  view: SessionView | null;
+  retry: () => void;
+} {
+  const [attempt, setAttempt] = useState(0);
+  const [view, setView] = useState<SessionView | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    const session = new CampaignSession({
+      locks: navigator.locks,
+      storage: {
+        getItem: (key) => window.localStorage.getItem(key),
+        setItem: (key, value) => window.localStorage.setItem(key, value),
+      },
+      onChange: (current) => {
+        if (!disposed)
+          setView({ session: current, state: current.state, attempt });
+      },
+    });
+    session.start();
+    const leave = () => session.close();
+    const returnToPage = () => {
+      // A page restored from the back-forward cache must obtain a fresh lock
+      // and read the latest save before mounting its campaign again.
+      if (session.state === "closed") setAttempt((value) => value + 1);
+    };
+    window.addEventListener("pagehide", leave);
+    window.addEventListener("pageshow", returnToPage);
+    return () => {
+      disposed = true;
+      window.removeEventListener("pagehide", leave);
+      window.removeEventListener("pageshow", returnToPage);
+      session.close();
+    };
+  }, [attempt]);
+  return { view, retry: () => setAttempt((value) => value + 1) };
+}
 
 const copy: Record<string, { title: string; description: string }> = {
   blocked: {
