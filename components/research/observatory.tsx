@@ -50,6 +50,7 @@ export function Observatory({
   const saved = useSavedRuns(setNotice);
   const worker = useLocalWorker({
     listRuns: view === "library" || newOpen,
+    listKey: `${view}:${newOpen}`,
     onRun: playback.receive,
     onNotice: setNotice,
   });
