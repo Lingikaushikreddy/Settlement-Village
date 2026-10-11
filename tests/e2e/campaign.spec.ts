@@ -81,3 +81,16 @@ test("the campaign fits a 390px phone width without horizontal scroll", async ({
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBe(0);
 });
+
+test("scouts a stronghold, ends the raid and returns to the village", async ({ page }) => {
+  await page.locator(".battle-button").click();
+  const dialog = page.getByRole("dialog", { name: "Beyond the treeline." });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: /^Scout/ }).first().click();
+  await expect(page.locator(".battle-banner")).toContainText("Raiding");
+  await expect(page.locator(".build-button")).toHaveCount(0);
+  await page.getByRole("button", { name: "End raid" }).click();
+  await expect(page.getByRole("dialog", { name: "Live to fight another day." })).toBeVisible();
+  await page.getByRole("button", { name: "Return to village" }).click();
+  await expect(page.locator(".build-button")).toBeVisible();
+});

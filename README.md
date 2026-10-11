@@ -156,7 +156,7 @@ You get rates with raw counts next to the built-in policies, a report anyone can
 app/                 Application entry points
 components/game/     Village, combat, crew inspector and research views
 components/game/game.tsx            Campaign composer; use-campaign.ts owns state, clock and saves
-components/game/campaign-*.tsx      HUD, footer, dialogs, selection, battle and research regions
+components/game/*.tsx               One file per region: HUD, footer, dialogs, guide, selection panel, battle and research overlays, session gate
 lib/game/            Pure campaign, crew, economy and battle transitions
 lib/sim/             Deterministic social engine and bounded planner
 lib/agent/           Optional Claude proposals and action validation

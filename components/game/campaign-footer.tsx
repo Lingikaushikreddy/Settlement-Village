@@ -14,7 +14,8 @@ import { Sprite } from "./scene";
 import { CrewBoard } from "./crew";
 import { VillageJournal } from "./village-journal";
 import { armyTotal } from "./campaign-view-model";
-import { download, type Panel } from "./campaign-dialogs";
+import type { Panel } from "./campaign-dialogs";
+import { download } from "./campaign-shared";
 
 /** Everything below the map while the village is at peace: crew board, journal, league badge, army dock, the Build / Battle buttons and the save status. */
 export function CampaignFooter({
@@ -70,14 +71,10 @@ export function CampaignFooter({
       </div>
       <footer className="game-bottom">
         <div className="army-dock">
-          <button
-            className="army-heading"
-            onClick={() => onPanel("train")}
-          >
+          <button className="army-heading" onClick={() => onPanel("train")}>
             <Shield size={16} />
             <span>
-              Your army{" "}
-              <b>{armyTotal(game)}/40</b>
+              Your army <b>{armyTotal(game)}/40</b>
             </span>
             <ChevronRight size={16} />
           </button>
@@ -94,10 +91,7 @@ export function CampaignFooter({
                 <small>{troops[k].name}</small>
               </button>
             ))}
-            <button
-              className="train-more"
-              onClick={() => onPanel("train")}
-            >
+            <button className="train-more" onClick={() => onPanel("train")}>
               <Hammer size={19} />
               <span>Train</span>
               {game.training.length ? (
@@ -137,10 +131,7 @@ export function CampaignFooter({
       <div className="save-status" role="status">
         <span />
         {saved}
-        <button
-          aria-label="Export village save"
-          onClick={() => download(game)}
-        >
+        <button aria-label="Export village save" onClick={() => download(game)}>
           <Download size={12} />
         </button>
       </div>

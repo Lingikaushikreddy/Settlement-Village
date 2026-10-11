@@ -10,7 +10,7 @@ import { deploy, retreat } from "@/lib/game/battle";
 import { opponents, troops } from "@/lib/game/catalog";
 import type { Battle, Game, TroopKind } from "@/lib/game/model";
 import { Sprite } from "./scene";
-import { Cost } from "./campaign-dialogs";
+import { Cost } from "./campaign-shared";
 import { battleStars, destructionPercent } from "./campaign-view-model";
 
 /** The raid: banner, hint with deployment shortcuts, controls, and the results dialog once the battle is settled. */
@@ -62,9 +62,7 @@ export function BattleOverlay({
               />
             ))}
           </span>
-          <span>
-            {destructionPercent(battle)}% destroyed
-          </span>
+          <span>{destructionPercent(battle)}% destroyed</span>
         </div>
       </div>
       {!done ? (
@@ -98,10 +96,7 @@ export function BattleOverlay({
             </div>
           </div>
           <div className="battle-controls">
-            <button
-              className="retreat-button"
-              onClick={() => update(retreat)}
-            >
+            <button className="retreat-button" onClick={() => update(retreat)}>
               <Flag size={17} />
               End raid
             </button>

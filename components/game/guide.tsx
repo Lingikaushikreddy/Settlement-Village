@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { BookOpen, Download, Hammer, Shield, Swords } from "lucide-react";
 import { restoreGame } from "@/lib/game/economy";
 import type { Game } from "@/lib/game/model";
-import { download } from "./campaign-dialogs";
+import { download } from "./campaign-shared";
 
 export type GuideProps = {
   game: Game;
@@ -25,53 +25,50 @@ export function Guide({ game, onImport, onError, onResearch }: GuideProps) {
       <div>
         <Hammer />
         <p>
-          <b>Build your village</b>Collect from the floating resource
-          bubbles. Place and upgrade buildings to grow production.
+          <b>Build your village</b>Collect from the floating resource bubbles.
+          Place and upgrade buildings to grow production.
         </p>
       </div>
       <div>
         <Shield />
         <p>
-          <b>Train your army</b>Kavyas absorb damage. Jhansis strike
-          from range. Catapults break through strong defenses.
+          <b>Train your army</b>Kavyas absorb damage. Jhansis strike from range.
+          Catapults break through strong defenses.
         </p>
       </div>
       <div>
         <Swords />
         <p>
-          <b>Lead the raid</b>Deploy along the edges and focus towers
-          first. Destroy the town hall, half the village, and every
-          building for three stars.
+          <b>Lead the raid</b>Deploy along the edges and focus towers first.
+          Destroy the town hall, half the village, and every building for three
+          stars.
         </p>
       </div>
       <div>
         <BookOpen />
         <p>
-          <b>Give your crew an objective</b>Choose Grow the village,
-          Prepare for a raid or Restock supplies in Village orders.
-          Residents collect actual resources, build and upgrade a new
-          farm, organize recruitment, and replan around shortages.
-          Review the growth plan’s spending ceiling and protected
-          reserves before starting. Inspect a resident to see their
-          job and memories. Crew work pauses during raids, offline, in
-          Council and in Research.
+          <b>Give your crew an objective</b>Choose Grow the village, Prepare for
+          a raid or Restock supplies in Village orders. Residents collect actual
+          resources, build and upgrade a new farm, organize recruitment, and
+          replan around shortages. Review the growth plan’s spending ceiling and
+          protected reserves before starting. Inspect a resident to see their
+          job and memories. Crew work pauses during raids, offline, in Council
+          and in Research.
         </p>
       </div>
       <div>
         <BookOpen />
         <p>
-          <b>Care for your residents</b>Open Council stories to meet
-          six residents. Start their day, inspect rumors, and give
-          evidence before they decide. Work earns supplies; deception
-          can cost gold. Social stories pause during raids and while
-          offline.
+          <b>Care for your residents</b>Open Council stories to meet six
+          residents. Start their day, inspect rumors, and give evidence before
+          they decide. Work earns supplies; deception can cost gold. Social
+          stories pause during raids and while offline.
         </p>
       </div>
       <p className="guide-limit">
         Single-player campaign. Progress saves on this device; offline
-        production is capped at 8 hours. Free resident policies are
-        the default. Optional model decisions are configured in
-        Research.
+        production is capped at 8 hours. Free resident policies are the default.
+        Optional model decisions are configured in Research.
       </p>
       <div className="guide-links">
         <button onClick={() => download(game)}>
@@ -82,9 +79,7 @@ export function Guide({ game, onImport, onError, onResearch }: GuideProps) {
           <BookOpen size={16} />
           Import save
         </button>
-        <button onClick={onResearch}>
-          Open village research
-        </button>
+        <button onClick={onResearch}>Open village research</button>
       </div>
       <input
         type="file"
@@ -100,9 +95,7 @@ export function Guide({ game, onImport, onError, onResearch }: GuideProps) {
             onImport(restoreGame(await f.text()));
           } catch (error) {
             onError(
-              error instanceof Error
-                ? error.message
-                : "Cannot read save.",
+              error instanceof Error ? error.message : "Cannot read save.",
             );
           }
           e.target.value = "";
