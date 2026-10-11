@@ -8,22 +8,13 @@ import {
   useState,
 } from "react";
 import {
-  Coins,
-  TreePine,
-  Wheat,
   Hammer,
-  Swords,
-  Shield,
   Trophy,
-  ChevronRight,
   Check,
   Flag,
   Move,
   ArrowUp,
-  BookOpen,
   Download,
-  Volume2,
-  VolumeX,
   Star,
   Clock,
   Home,
@@ -50,7 +41,6 @@ import {
   buildings,
   troops,
   opponents,
-  quests,
   upgradeCost,
 } from "@/lib/game/catalog";
 import type {
@@ -58,14 +48,15 @@ import type {
   BuildingKind,
   TroopKind,
 } from "@/lib/game/model";
-import { CrewBoard, CrewInspector } from "./crew";
-import { VillageJournal } from "./village-journal";
+import { CrewInspector } from "./crew";
 import { actionProblem } from "@/lib/game/action-availability";
 import { crewCommand, crewRoster } from "@/lib/game/crew";
 import type { CrewCommand } from "@/lib/game/crew-types";
 import { CouncilPanel } from "./council";
 import { useCampaign } from "./use-campaign";
 import { SessionGate } from "./session-gate";
+import { CampaignHud } from "./campaign-hud";
+import { CampaignFooter } from "./campaign-footer";
 import {
   CampaignDialogs,
   Cost,
@@ -74,12 +65,10 @@ import {
 } from "./campaign-dialogs";
 import {
   activeIncidentTargets,
-  armyTotal,
   battleStars,
   buildingSummary,
   destructionPercent,
   displayedResearch,
-  hudFigures,
   placementTitle,
   researchCaption,
   sceneResidents,
@@ -98,7 +87,6 @@ import "./polish.css";
 const Research = lazy(() =>
   import("../observatory").then((m) => ({ default: m.Observatory })),
 );
-const resourceIcons = { gold: Coins, wood: TreePine, food: Wheat };
 export function SettlementGame() {
   const [attempt, setAttempt] = useState(0);
   const [view, setView] = useState<{
@@ -317,7 +305,6 @@ function CampaignGame({
       setPlacing(null);
   }
   const displayed = displayedResearch(researchFrame, research, game);
-  const hud = hudFigures(game);
   return (
     <main
       className={`village-game ${research ? "research-active" : ""} ${placing ? "placing-active" : ""} ${raiding ? "raiding-active" : ""}`}
@@ -386,91 +373,21 @@ function CampaignGame({
             chime();
         }}
       />
-      <header className="game-hud">
-        <button
-          className="player-banner"
-          onClick={() => setPanel("guide")}
-          aria-label="Open village guide"
-        >
-          <span className="player-crest">
-            <Shield fill="#5faee3" />
-            <b>{hud.hallLevel}</b>
-          </span>
-          <span>
-            <strong>Settlement</strong>
-            <small>
-              {raiding ? "Expedition in progress" : "Willowmere village"}
-            </small>
-          </span>
-        </button>
-        <div className="hud-builders">
-          <Hammer size={19} />
-          <b>{hud.builders}</b>
-          <span>Builders</span>
-        </div>
-        <div className="resource-hud">
-          {hud.resources.map((r) => {
-            const Icon = resourceIcons[r.key];
-            return (
-              <div
-                className={`resource-pill ${r.key}`}
-                key={r.key}
-                aria-label={`${r.key}: ${r.amount}`}
-              >
-                <span className="resource-emblem">
-                  <Icon />
-                </span>
-                <div>
-                  <strong>{r.display}</strong>
-                  <small>{r.label}</small>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <button
-          className="sound-button"
-          onClick={() => setSound(!sound)}
-          aria-label={sound ? "Mute game sounds" : "Enable game sounds"}
-        >
-          {sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
-        </button>
-      </header>
-      {!raiding && (
-        <nav
-          className="settlement-navigation"
-          aria-label="Settlement navigation"
-        >
-          <button
-            aria-pressed={!research && !councilOpen}
-            onClick={() => {
-              closeResearch();
-              setCouncilOpen(false);
-            }}
-          >
-            <Home size={16} />
-            Village
-          </button>
-          <button aria-pressed={councilOpen} onClick={() => openCouncil()}>
-            <BookOpen size={16} />
-            Council
-          </button>
-          <button
-            aria-pressed={!!research && research.section !== "library"}
-            onClick={() => openResearch()}
-          >
-            <Shield size={16} />
-            Research
-          </button>
-          <button
-            aria-pressed={research?.section === "library"}
-            onClick={() => openResearch("library")}
-          >
-            <Clock size={16} />
-            Archive
-          </button>
-        </nav>
-      )}
+      <CampaignHud
+        game={game}
+        raiding={raiding}
+        sound={sound}
+        onSound={setSound}
+        onGuide={() => setPanel("guide")}
+        researchSection={research?.section ?? null}
+        councilOpen={councilOpen}
+        onVillage={() => {
+          closeResearch();
+          setCouncilOpen(false);
+        }}
+        onCouncil={() => openCouncil()}
+        onResearch={openResearch}
+      />
       {research && (
         <>
           <div className="research-map-caption">
@@ -505,39 +422,16 @@ function CampaignGame({
       {!raiding ? (
         !research && (
           <>
-            <CrewBoard
+            <CampaignFooter
               game={game}
-              onCommand={crewAct}
+              act={act}
+              crewAct={crewAct}
               onInspect={openCrew}
               onCouncil={() => openCouncil()}
-              onRaid={() => setPanel("raid")}
+              onPanel={setPanel}
+              onSelect={setSelected}
+              onNotice={setNotice}
             />
-            <VillageJournal
-              game={game}
-              onResident={openCrew}
-              onGuide={() => setPanel("guide")}
-              onQuest={(id) => {
-                const quest = quests.find((q) => q.id === id);
-                if (!quest) return;
-                if (game.stats[quest.stat] >= quest.goal)
-                  act(
-                    { type: "claim", id },
-                    `Milestone complete! +${quest.reward} gold`,
-                  );
-                else if (id === "build") setPanel("build");
-                else if (id === "raid") setPanel("raid");
-                else if (id === "upgrade") setSelected("hall");
-                else
-                  setNotice(
-                    "Tap the resource bubbles above your mine, mill and farm.",
-                  );
-              }}
-            />
-            <div className="village-badge">
-              <Trophy size={17} />
-              <strong>{game.trophies}</strong>
-              <span>Explorer league</span>
-            </div>
             {placing ? (
               <div className="placement-notice">
                 <Hammer size={20} />
@@ -634,72 +528,6 @@ function CampaignGame({
                 )}
               </section>
             ) : null}
-            <footer className="game-bottom">
-              <div className="army-dock">
-                <button
-                  className="army-heading"
-                  onClick={() => setPanel("train")}
-                >
-                  <Shield size={16} />
-                  <span>
-                    Your army{" "}
-                    <b>{armyTotal(game)}/40</b>
-                  </span>
-                  <ChevronRight size={16} />
-                </button>
-                <div className="army-cards">
-                  {(Object.keys(troops) as TroopKind[]).map((k) => (
-                    <button
-                      className="army-card"
-                      key={k}
-                      onClick={() => setPanel("train")}
-                      aria-label={`Train ${troops[k].name}, ${game.army[k]} ready`}
-                    >
-                      <Sprite index={troops[k].sprite} />
-                      <span className="troop-count">{game.army[k]}</span>
-                      <small>{troops[k].name}</small>
-                    </button>
-                  ))}
-                  <button
-                    className="train-more"
-                    onClick={() => setPanel("train")}
-                  >
-                    <Hammer size={19} />
-                    <span>Train</span>
-                    {game.training.length ? (
-                      <b>{game.training.length} queued</b>
-                    ) : null}
-                  </button>
-                </div>
-              </div>
-              <div className="village-actions">
-                <button
-                  className="game-button blue build-button"
-                  onClick={() => {
-                    setPanel("build");
-                    setSelected(null);
-                  }}
-                >
-                  <Hammer />
-                  <span>
-                    Build<small>Grow your village</small>
-                  </span>
-                </button>
-                <button
-                  className="game-button gold battle-button"
-                  onClick={() => {
-                    setPanel("raid");
-                    setSelected(null);
-                  }}
-                >
-                  <Swords />
-                  <span>
-                    Battle<small>Adventure awaits</small>
-                  </span>
-                  <ChevronRight />
-                </button>
-              </div>
-            </footer>
           </>
         )
       ) : (
