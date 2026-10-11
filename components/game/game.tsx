@@ -7,77 +7,33 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  Hammer,
-  Trophy,
-  Check,
-  Flag,
-  Move,
-  ArrowUp,
-  Download,
-  Star,
-  Clock,
-  Home,
-  X,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Scene, Sprite } from "./scene";
-import {
-  CampaignSession,
-  type CampaignSessionState,
-} from "@/lib/game/campaign-session";
-import {
-  deploy,
-  focusTarget,
-  settleBattle,
-  retreat,
-} from "@/lib/game/battle";
-import {
-  buildings,
-  troops,
-  opponents,
-  upgradeCost,
-} from "@/lib/game/catalog";
+import { Check, Download, X } from "lucide-react";
+import { Scene } from "./scene";
+import { CampaignSession, type CampaignSessionState } from "@/lib/game/campaign-session";
+import { deploy, focusTarget, settleBattle } from "@/lib/game/battle";
 import type {
   Game,
   BuildingKind,
   TroopKind,
 } from "@/lib/game/model";
 import { CrewInspector } from "./crew";
-import { actionProblem } from "@/lib/game/action-availability";
 import { crewCommand, crewRoster } from "@/lib/game/crew";
 import type { CrewCommand } from "@/lib/game/crew-types";
 import { CouncilPanel } from "./council";
 import { useCampaign } from "./use-campaign";
 import { SessionGate } from "./session-gate";
+import { SelectionPanel } from "./selection-panel";
+import { BattleOverlay } from "./battle-overlay";
 import { CampaignHud } from "./campaign-hud";
 import { CampaignFooter } from "./campaign-footer";
-import {
-  CampaignDialogs,
-  Cost,
-  download,
-  type Panel,
-} from "./campaign-dialogs";
+import { CampaignDialogs, download, type Panel } from "./campaign-dialogs";
 import {
   activeIncidentTargets,
-  battleStars,
-  buildingSummary,
-  destructionPercent,
   displayedResearch,
-  placementTitle,
   researchCaption,
   sceneResidents,
 } from "./campaign-view-model";
-import {
-  councilCommand,
-  councilResearchRun,
-  newCouncil,
-} from "@/lib/game/council";
+import { councilCommand, councilResearchRun, newCouncil } from "@/lib/game/council";
 import type { Run } from "@/lib/sim/types";
 import type { ResearchFrame } from "../observatory";
 import "./game.css";
@@ -275,14 +231,8 @@ function CampaignGame({
     setSelected((s) => (s === id ? null : id));
   }
   const building = game.buildings.find((b) => b.id === selected),
-    def = building ? buildings[building.kind] : null,
     battle = game.battle,
-    raiding = !!battle,
-    done = battle?.result;
-  const upgradeProblem = building
-    ? actionProblem(game, { type: "upgrade", id: building.id })
-    : null;
-  const stars = battle ? battleStars(battle) : 0;
+    raiding = !!battle;
   function returnHome() {
     update((g) => {
       const n = settleBattle(g);
@@ -432,203 +382,31 @@ function CampaignGame({
               onSelect={setSelected}
               onNotice={setNotice}
             />
-            {placing ? (
-              <div className="placement-notice">
-                <Hammer size={20} />
-                <div>
-                  <b>{placementTitle(game, placing)}</b>
-                  <span>Tap an empty diamond. Drag the map to explore.</span>
-                </div>
-                <button
-                  onClick={() => setPlacing(null)}
-                  aria-label="Cancel placement"
-                >
-                  <X />
-                </button>
-              </div>
-            ) : null}
-            {building && def && !placing ? (
-              <section className="building-panel">
-                <button
-                  className="panel-close"
-                  onClick={() => setSelected(null)}
-                  aria-label="Close building details"
-                >
-                  <X size={18} />
-                </button>
-                <Sprite index={def.sprite} />
-                <div className="building-info">
-                  <small>
-                    Level {building.level}
-                    {building.readyAt ? " · Builder working" : ""}
-                  </small>
-                  <h2>{def.name}</h2>
-                  <p>{buildingSummary(game, building)}</p>
-                </div>
-                <div className="building-actions">
-                  {def.resource ? (
-                    <button
-                      className="game-button gold small"
-                      onClick={() =>
-                        act(
-                          { type: "collect", id: building.id },
-                          "Resources collected!",
-                        )
-                      }
-                      disabled={building.stored < 1}
-                    >
-                      Collect{" "}
-                      <Cost
-                        cost={{ [def.resource]: Math.floor(building.stored) }}
-                      />
-                    </button>
-                  ) : building.kind === "barracks" ? (
-                    <button
-                      className="game-button blue small"
-                      onClick={() => setPanel("train")}
-                    >
-                      Train troops
-                    </button>
-                  ) : null}
-                  <button
-                    className="game-button green small"
-                    disabled={!!upgradeProblem}
-                    aria-describedby={
-                      upgradeProblem ? "upgrade-problem" : undefined
-                    }
-                    onClick={() =>
-                      act(
-                        { type: "upgrade", id: building.id },
-                        "Upgrade started!",
-                      )
-                    }
-                  >
-                    <ArrowUp size={16} />
-                    Upgrade{" "}
-                    {building.level < 5 ? (
-                      <Cost cost={upgradeCost(building.kind, building.level)} />
-                    ) : null}
-                  </button>
-                  <button
-                    className="move-button"
-                    aria-label={`Move ${def.name}`}
-                    disabled={!!building.readyAt}
-                    onClick={() => setPlacing(building.id)}
-                  >
-                    <Move size={20} />
-                  </button>
-                </div>
-                {upgradeProblem && (
-                  <p
-                    id="upgrade-problem"
-                    className="action-problem building-problem"
-                  >
-                    {upgradeProblem}
-                  </p>
-                )}
-              </section>
-            ) : null}
+            <SelectionPanel
+              game={game}
+              placing={placing}
+              building={building}
+              act={act}
+              onCancelPlacing={() => setPlacing(null)}
+              onClose={() => setSelected(null)}
+              onTrain={() => setPanel("train")}
+              onMove={setPlacing}
+            />
           </>
         )
-      ) : (
-        <>
-          <div className="battle-banner">
-            <span className="battle-eyebrow">
-              Raiding {opponents[battle.level].region}
-            </span>
-            <h1>{opponents[battle.level].name}</h1>
-            <div>
-              <span>
-                <Clock size={17} />
-                {Math.max(0, 90 - Math.floor(battle.elapsed))}s
-              </span>
-              <span className="battle-stars">
-                {[1, 2, 3].map((n) => (
-                  <Star
-                    key={n}
-                    size={25}
-                    fill={stars >= n ? "#ffc451" : "transparent"}
-                  />
-                ))}
-              </span>
-              <span>
-                {destructionPercent(battle)}% destroyed
-              </span>
-            </div>
-          </div>
-          {!done ? (
-            <>
-              <div className="battle-hint">
-                <b>
-                  {battle.deployed
-                    ? "Command the battlefield"
-                    : "Choose your approach"}
-                </b>
-                <span>
-                  {battle.deployed
-                    ? "Tap a building to focus your army’s attack."
-                    : "Select troops below, then tap a glowing deployment flag."}
-                </span>
-                <div
-                  className="deployment-directions"
-                  aria-label="Deployment shortcuts"
-                >
-                  {["north", "west", "south", "east"].map((zone) => (
-                    <button
-                      key={zone}
-                      disabled={!game.army[troop]}
-                      aria-label={`Deploy from ${zone} edge`}
-                      onClick={() =>
-                        update((g) =>
-                          deploy(
-                            g,
-                            troop,
-                            zone,
-                            Math.min(squad, g.army[troop]),
-                          ),
-                        )
-                      }
-                    >
-                      <Flag size={12} />
-                      {zone}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="battle-controls">
-                <button
-                  className="retreat-button"
-                  onClick={() => update(retreat)}
-                >
-                  <Flag size={17} />
-                  End raid
-                </button>
-                <div className="deployment-army">
-                  {(Object.keys(troops) as TroopKind[]).map((k) => (
-                    <button
-                      className={`army-card ${troop === k ? "active" : ""}`}
-                      key={k}
-                      onClick={() => setTroop(k)}
-                      disabled={!game.army[k]}
-                      aria-label={`Select ${troops[k].name} for deployment`}
-                    >
-                      <Sprite index={troops[k].sprite} />
-                      <span className="troop-count">{game.army[k]}</span>
-                      <small>{troops[k].name}</small>
-                    </button>
-                  ))}
-                </div>
-                <button
-                  className="squad-button"
-                  onClick={() => setSquad(squad === 1 ? 5 : 1)}
-                >
-                  Deploy <b>{squad}</b> at a time
-                </button>
-              </div>
-            </>
-          ) : null}
-        </>
-      )}
+      ) : battle ? (
+        <BattleOverlay
+          game={game}
+          battle={battle}
+          troop={troop}
+          squad={squad}
+          onTroop={setTroop}
+          onSquad={setSquad}
+          update={update}
+          onDeployed={chime}
+          onReturnHome={returnHome}
+        />
+      ) : null}
       {!raiding && !research ? (
         <div className="save-status" role="status">
           <span />
@@ -681,52 +459,6 @@ function CampaignGame({
           },
         }}
       />
-      {done ? (
-        <Dialog open onOpenChange={() => {}}>
-          <DialogContent
-            className="game-dialog results-dialog"
-            showCloseButton={false}
-          >
-            <div className="result-medallion">
-              <Trophy size={48} />
-            </div>
-            <DialogTitle className="game-dialog-title">
-              {done && done.stars > 0
-                ? "A victorious return."
-                : "Live to fight another day."}
-            </DialogTitle>
-            <DialogDescription>
-              {done?.destruction}% of the stronghold destroyed.{" "}
-              {done?.stars === 3
-                ? "A flawless raid!"
-                : "Train, regroup, and try a new approach."}
-            </DialogDescription>
-            <div className="result-stars">
-              {[1, 2, 3].map((n) => (
-                <Star
-                  key={n}
-                  size={56}
-                  fill={(done?.stars ?? 0) >= n ? "#ffc451" : "#364557"}
-                />
-              ))}
-            </div>
-            <div className="loot-summary">
-              <span>Your spoils</span>
-              <Cost
-                cost={
-                  done
-                    ? { gold: done.gold, wood: done.wood, food: done.food }
-                    : {}
-                }
-              />
-            </div>
-            <button className="game-button gold" onClick={returnHome}>
-              <Home size={20} />
-              Return to village
-            </button>
-          </DialogContent>
-        </Dialog>
-      ) : null}
     </main>
   );
 }
