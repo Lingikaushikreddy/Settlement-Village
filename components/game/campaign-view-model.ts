@@ -11,7 +11,7 @@ import type {
   Resource,
 } from "../../lib/game/model.ts";
 import type { Agent, Run } from "../../lib/sim/types.ts";
-import type { ResearchFrame } from "../observatory";
+import type { ResearchFrame } from "../research/types.ts";
 
 export type HudResource = {
   key: Resource;

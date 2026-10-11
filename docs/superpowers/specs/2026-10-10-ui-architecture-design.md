@@ -44,20 +44,22 @@ Two alternatives were considered and rejected: turning on the React Compiler wit
 
 ### Research (`components/research/`)
 
-`components/observatory.tsx` moves here in Plan 2. During Plan 1 the campaign keeps importing `Observatory` and `ResearchFrame` from the old path. When the file moves, the old path becomes a one-line re-export so the campaign's lazy import keeps working; Plan 2's last task points the campaign at the new path and deletes the shim.
+`components/observatory.tsx` moved here in Plan 2. While the split was in progress the old path re-exported `Observatory` and `ResearchFrame`; Plan 2's last task pointed the campaign at `components/research` and deleted that shim. A test in `tests/component-size.test.mjs` keeps it deleted.
 
 | File | Owns | Size limit |
 |---|---|---|
 | `observatory.tsx` | The composer: wires the two hooks to the regions, holds the view (observatory, experiments, library), the open dialog, the selected event. | 250 lines |
 | `types.ts` | `ResearchFrame` and the small prop types shared by more than one region. | 100 lines |
 | `use-playback.ts` | `run`, `tick`, `playing`, `speed`, the playback interval, `runToEnd` starts for local runs, the queued intervention. | 200 lines |
-| `use-local-worker.ts` | Every call to the local worker on port 8787: health, model status, run list, run load, commands, the EventSource stream and its revision guard, the worker-run list. Exposes `available`, `provider`, `runs`, and functions. Nothing else in the tree may call `fetch` against the worker. | 250 lines |
-| `research-tabs.tsx` | The heading, the tools nav and the close button. | 120 lines |
+| `use-local-worker.ts` | Every call to the local worker on port 8787: health, model status, run list, run load, commands, the EventSource stream and its revision guard, the worker-run list. Exposes `available`, `provider`, `runs`, and functions. Nothing else in the tree may call `fetch` against the worker. | 300 lines |
+| `research-tabs.tsx` | The heading and close button, the tools nav, the new-experiment and field-guide buttons, and the evidence boundary strip. | 120 lines |
+| `run-overview.tsx` | The scenario strip with "Find an incident", the resident buttons and the `ResidentInspector`. | 120 lines |
+| `use-model-context.ts` | The `settlement_inspect_run` and `settlement_seek_tick` tools registered with an in-page `document.modelContext`. | 100 lines |
 | `playback-timeline.tsx` | The timeline track, play, pause, step, reset, speed select, intervention select, export and verify buttons. | 250 lines |
 | `model-readiness.tsx` | The model step panel and its budget text. | 150 lines |
 | `activity-panel.tsx` | The incidents, event feed and public board tabs. | 250 lines |
 | `metrics-panel.tsx` | The metrics aside and the coins legend. | 150 lines |
-| `run-library.tsx` | The saved and worker run lists with open and delete. | 200 lines |
+| `run-library.tsx` | The archive view: the campaign's record, the reference run, worker runs and saved runs, with open and export; and `useSavedRuns`. | 200 lines |
 | `new-experiment-dialog.tsx` | Scenario, policy and seed draft state and the start action. | 150 lines |
 | `event-dialog.tsx` | The event detail dialog. | 120 lines |
 | `field-guide-dialog.tsx` | The research field guide. | 150 lines |

@@ -8,11 +8,11 @@ import {
 } from "@/lib/game/council";
 import type { Game } from "@/lib/game/model";
 import type { Run } from "@/lib/sim/types";
-import type { ResearchFrame } from "../observatory";
+import type { ResearchFrame } from "../research/types";
 import { displayedResearch, researchCaption } from "./campaign-view-model";
 
 const Research = lazy(() =>
-  import("../observatory").then((m) => ({ default: m.Observatory })),
+  import("../research/observatory").then((m) => ({ default: m.Observatory })),
 );
 
 export type ResearchDesk = {

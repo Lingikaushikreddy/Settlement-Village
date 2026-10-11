@@ -157,6 +157,7 @@ app/                 Application entry points
 components/game/     Village, combat, crew inspector and research views
 components/game/game.tsx            Campaign composer; use-campaign.ts owns state, clock and saves
 components/game/*.tsx               One file per region: HUD, footer, dialogs, guide, selection panel, battle and research overlays, session gate
+components/research/                Research desk: playback and local-worker hooks, one file per region, view model
 lib/game/            Pure campaign, crew, economy and battle transitions
 lib/sim/             Deterministic social engine and bounded planner
 lib/agent/           Optional Claude proposals and action validation
