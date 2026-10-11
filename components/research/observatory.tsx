@@ -50,7 +50,6 @@ import {
 import {
   advance,
   createRun,
-  supportedEngine,
   metrics,
   policyInfo,
   policyName,
@@ -67,14 +66,30 @@ import type {
   Intervention,
 } from "@/lib/sim/types";
 import type { ResearchFrame, ResearchMode } from "./types";
+import {
+  addToLibrary,
+  boardEvents,
+  canAskModel,
+  feedEvents,
+  incidentEvents,
+  incidentOutcome,
+  modeLabel,
+  nameIn,
+  nextIncidentEvent,
+  parseSavedLibrary,
+  parseSeed,
+  playbackStatus,
+  researchHeading,
+  snapshotAt,
+  visibleIncidents,
+  wealthBars,
+} from "./research-view-model";
 export type { ResearchFrame } from "./types";
 const STORAGE = "settlement-library-v1";
 const workerOrigin = () =>
   ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
 const noSubscription = () => () => {};
 // Residents are shown by name; "village" and "observer" fall back to their label.
-const nameIn = (agents: { id: string; name: string }[], id: string) =>
-  agents.find((a) => a.id === id)?.name ?? id;
 const RUN_LOCALLY =
   "https://github.com/Lingikaushikreddy/Settlement-Village#run-locally";
 const defaultRun = () =>
@@ -84,19 +99,6 @@ const defaultRun = () =>
     policy: "baseline",
     maxTicks: 60,
   });
-function validateSaved(x: unknown): x is Run {
-  return (
-    !!x &&
-    typeof x === "object" &&
-    (x as Run).schemaVersion === 1 &&
-    supportedEngine((x as Run).engineVersion) &&
-    Array.isArray((x as Run).snapshots) &&
-    (x as Run).snapshots.length <= 151 &&
-    Array.isArray((x as Run).events) &&
-    Array.isArray((x as Run).incidents) &&
-    !!(x as Run).config
-  );
-}
 
 export function Observatory({
   currentRun,
@@ -163,33 +165,25 @@ export function Observatory({
   const streamRef = useRef<EventSource | null>(null);
   const revisionRef = useRef(0);
   const last = run.snapshots.length - 1,
-    w = run.snapshots[tick] || run.snapshots[last],
+    w = snapshotAt(run, tick),
     m = metrics(run, tick);
-  const incidentEvents = run.events.filter((e) => e.type === "claim");
-  const visibleIncidents = run.incidents.filter((i) => i.tick <= tick);
+  const claimEvents = incidentEvents(run);
+  const shownIncidents = visibleIncidents(run, tick);
   const activeEvent = run.events.find((e) => e.id === eventId);
-  const latestClaim = visibleIncidents.at(-1);
+  const latestClaim = shownIncidents.at(-1);
   useEffect(() => {
     const hydrate = setTimeout(() => {
+      let stored: { runs: Run[]; error: boolean };
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE) || "[]");
-        if (Array.isArray(saved))
-          setLibrary(
-            saved
-              .filter((x) => {
-                try {
-                  return validateSaved(x) && verifyReplay(x).ok;
-                } catch {
-                  return false;
-                }
-              })
-              .slice(0, 8),
-          );
+        stored = parseSavedLibrary(localStorage.getItem(STORAGE));
       } catch {
+        stored = { runs: [], error: true };
+      }
+      if (stored.error)
         setNotice(
           "Saved runs could not be read. You can still start a new simulation.",
         );
-      }
+      else setLibrary(stored.runs);
       const q = new URLSearchParams(location.search);
       if (q.has("seed")) {
         const c = {
@@ -424,7 +418,7 @@ export function Observatory({
   }
   function save() {
     try {
-      const next = [run, ...library.filter((r) => r.id !== run.id)].slice(0, 6);
+      const next = addToLibrary(library, run);
       localStorage.setItem(STORAGE, JSON.stringify(next));
       setLibrary(next);
       setNotice(
@@ -435,8 +429,8 @@ export function Observatory({
     }
   }
   async function start(useWorker = false) {
-    const seed = Number(draftSeed);
-    if (!Number.isInteger(seed) || seed < 0 || seed > 999999) {
+    const seed = parseSeed(draftSeed);
+    if (seed === null) {
       setNotice("Choose a whole-number seed from 0 to 999999.");
       return;
     }
@@ -573,29 +567,13 @@ export function Observatory({
     ).catch(() => {});
     return () => lifecycle.abort();
   }, []);
-  const wealth = useMemo(
-    () =>
-      w.agents
-        .filter((a) => a.role === "resident")
-        .map((a) => ({
-          name: a.name,
-          coins: a.inventory.coins,
-          color: a.color,
-        })),
-    [w],
-  );
+  const wealth = useMemo(() => wealthBars(w), [w]);
   return (
     <section className="settlement unified-research">
       <header className="research-heading">
         <div>
           <span>Settlement / research desk</span>
-          <h2>
-            {view === "experiments"
-              ? "Test a different decision."
-              : view === "library"
-                ? "Your village archive."
-                : "Follow the evidence."}
-          </h2>
+          <h2>{researchHeading(view)}</h2>
         </div>
         <button
           className="research-close"
@@ -641,14 +619,7 @@ export function Observatory({
       </button>
       <div className="research-boundary">
         <ShieldAlert size={16} />
-        <span>
-          {mode === "recorded"
-            ? "Recorded evidence"
-            : mode === "worker"
-              ? "Local worker experiment"
-              : "Browser experiment"}{" "}
-          · village resources stay unchanged
-        </span>
+        <span>{modeLabel(mode)} · village resources stay unchanged</span>
       </div>
       {view === "observatory" && (
         <>
@@ -668,9 +639,7 @@ export function Observatory({
             <button
               className="text-button"
               onClick={() => {
-                const e =
-                  incidentEvents.find((e) => e.tick > tick) ||
-                  incidentEvents[0];
+                const e = nextIncidentEvent(run, tick);
                 if (e) {
                   jump(e.tick);
                   select(e.target || "rook");
@@ -752,11 +721,7 @@ export function Observatory({
                 <strong>Tick {tick.toString().padStart(2, "0")}</strong>
                 <span>
                   {run.config.maxTicks} ticks ·{" "}
-                  {playing
-                    ? "Playing"
-                    : tick === last && run.status === "completed"
-                      ? "Completed"
-                      : "Paused"}
+                  {playbackStatus(run, tick, playing)}
                 </span>
               </div>
               <Slider
@@ -768,7 +733,7 @@ export function Observatory({
                 disabled={last === 0 || mode === "worker" || modelBusy}
               />
               <div className="incident-markers">
-                {incidentEvents.map((e) => (
+                {claimEvents.map((e) => (
                   <button
                     key={e.id}
                     aria-label={`Go to incident at tick ${e.tick}`}
@@ -888,16 +853,15 @@ export function Observatory({
             <button
               className="secondary"
               disabled={
-                !provider?.ready ||
-                mode !== "worker" ||
-                playing ||
-                !!queued ||
-                modelBusy ||
-                !run.incidents.some(
-                  (i) =>
-                    ["pending", "checking"].includes(i.decision) &&
-                    i.deadline > tick,
-                )
+                !canAskModel({
+                  ready: !!provider?.ready,
+                  mode,
+                  playing,
+                  queued: !!queued,
+                  busy: modelBusy,
+                  run,
+                  tick,
+                })
               }
               onClick={() => void requestModelStep()}
             >
@@ -947,7 +911,7 @@ export function Observatory({
                   <TabsList variant="line">
                     <TabsTrigger value="incidents">
                       Incident log{" "}
-                      <span className="count">{visibleIncidents.length}</span>
+                      <span className="count">{shownIncidents.length}</span>
                     </TabsTrigger>
                     <TabsTrigger value="events">Event feed</TabsTrigger>
                     <TabsTrigger value="blackboard">Public board</TabsTrigger>
@@ -955,7 +919,7 @@ export function Observatory({
                   <span className="muted-small">At tick {tick}</span>
                 </div>
                 <TabsContent value="incidents">
-                  {visibleIncidents.length === 0 ? (
+                  {shownIncidents.length === 0 ? (
                     <div className="quiet-state">
                       <ShieldAlert size={25} />
                       <h3>A quiet morning. For now.</h3>
@@ -981,14 +945,11 @@ export function Observatory({
                       </button>
                     </div>
                   ) : (
-                    visibleIncidents
+                    shownIncidents
                       .slice()
                       .reverse()
                       .map((i) => {
-                        const outcome =
-                          i.resolvedTick !== null && i.resolvedTick <= tick
-                            ? i.outcome
-                            : "pending";
+                        const outcome = incidentOutcome(i, tick);
                         return (
                           <button
                             className={`incident-card ${outcome === "succeeded" ? "harm" : ""}`}
@@ -1033,23 +994,19 @@ export function Observatory({
                 </TabsContent>
                 <TabsContent value="events">
                   <div className="event-feed">
-                    {run.events
-                      .filter((e) => e.tick <= tick)
-                      .slice(-20)
-                      .reverse()
-                      .map((e) => (
-                        <button
-                          className="event-item"
-                          key={e.id}
-                          onClick={() => setEventId(e.id)}
-                        >
-                          <span>{String(e.tick).padStart(2, "0")}</span>
-                          <div>
-                            <strong>{e.title}</strong>
-                            <p>{e.detail}</p>
-                          </div>
-                        </button>
-                      ))}
+                    {feedEvents(run, tick).map((e) => (
+                      <button
+                        className="event-item"
+                        key={e.id}
+                        onClick={() => setEventId(e.id)}
+                      >
+                        <span>{String(e.tick).padStart(2, "0")}</span>
+                        <div>
+                          <strong>{e.title}</strong>
+                          <p>{e.detail}</p>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </TabsContent>
                 <TabsContent value="blackboard">
@@ -1058,24 +1015,18 @@ export function Observatory({
                       Attributed claims are public messages. They are not
                       authoritative world facts.
                     </p>
-                    {run.events
-                      .filter(
-                        (e) =>
-                          e.tick <= tick &&
-                          (e.type === "claim" || e.type === "intervention"),
-                      )
-                      .map((e) => (
-                        <button
-                          className="board-note"
-                          key={e.id}
-                          onClick={() => setEventId(e.id)}
-                        >
-                          <span>
-                            Tick {e.tick} · {nameIn(w.agents, e.actor)}
-                          </span>
-                          <p>{e.detail}</p>
-                        </button>
-                      ))}
+                    {boardEvents(run, tick).map((e) => (
+                      <button
+                        className="board-note"
+                        key={e.id}
+                        onClick={() => setEventId(e.id)}
+                      >
+                        <span>
+                          Tick {e.tick} · {nameIn(w.agents, e.actor)}
+                        </span>
+                        <p>{e.detail}</p>
+                      </button>
+                    ))}
                     {!latestClaim && (
                       <p className="muted-small">
                         No public claims posted yet.
@@ -1117,7 +1068,7 @@ export function Observatory({
                     <div>
                       <i
                         style={{
-                          width: `${(a.coins / Math.max(40, ...wealth.map((x) => x.coins))) * 100}%`,
+                          width: `${a.width}%`,
                           background: a.color,
                         }}
                       />
