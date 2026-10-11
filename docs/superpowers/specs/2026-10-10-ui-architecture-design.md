@@ -48,9 +48,9 @@ Two alternatives were considered and rejected: turning on the React Compiler wit
 
 | File | Owns | Size limit |
 |---|---|---|
-| `observatory.tsx` | The composer: wires the two hooks to the regions, holds the view (observatory, experiments, library), the open dialog, the selected event. | 250 lines |
+| `observatory.tsx` | The composer: wires the hooks to the regions, branches between playback and the worker for step, toggle, intervene and jump, and holds the open dialogs, the selected event and the notice. The view (observatory, experiments, library) comes from the campaign's `section` prop. | 250 lines |
 | `types.ts` | `ResearchFrame` and the small prop types shared by more than one region. | 100 lines |
-| `use-playback.ts` | `run`, `tick`, `playing`, `speed`, the playback interval, `runToEnd` starts for local runs, the queued intervention. | 200 lines |
+| `use-playback.ts` | `run`, `tick`, `playing`, `speed`, `mode` and the queued intervention; the playback interval; the `?seed=` start (`runToEnd`); browser runs advanced with `createRun` and `advance`; `receive` for worker runs. | 200 lines |
 | `use-local-worker.ts` | Every call to the local worker on port 8787: health, model status, run list, run load, commands, the EventSource stream and its revision guard, the worker-run list. Exposes `available`, `provider`, `runs`, and functions. Nothing else in the tree may call `fetch` against the worker. | 300 lines |
 | `research-tabs.tsx` | The heading and close button, the tools nav, the new-experiment and field-guide buttons, and the evidence boundary strip. | 120 lines |
 | `run-overview.tsx` | The scenario strip with "Find an incident", the resident buttons and the `ResidentInspector`. | 120 lines |

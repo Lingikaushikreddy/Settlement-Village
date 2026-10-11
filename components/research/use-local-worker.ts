@@ -53,10 +53,13 @@ type Attached = {
  */
 export function useLocalWorker({
   listRuns,
+  listKey,
   onRun,
   onNotice,
 }: {
   listRuns: boolean;
+  /** The run list is refetched whenever this changes while listRuns is true (the view or the new-experiment dialog). */
+  listKey: string;
   onRun: (update: WorkerRun) => void;
   onNotice: (text: string) => void;
 }) {
@@ -118,7 +121,7 @@ export function useLocalWorker({
           }
         })
         .catch(() => setAvailable(false));
-  }, [listRuns]);
+  }, [listRuns, listKey]);
 
   const attach = useCallback((data: Attached) => {
     const current = ++session.current;
