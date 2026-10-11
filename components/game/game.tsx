@@ -240,7 +240,11 @@ function CampaignGame({
         onCouncil={() => openCouncil()}
         onResearch={desk.open}
       />
-      <ResearchOverlay desk={desk} resident={resident} onResident={setResident} />
+      <ResearchOverlay
+        desk={desk}
+        resident={resident}
+        onResident={setResident}
+      />
       {!raiding ? (
         !research && (
           <>

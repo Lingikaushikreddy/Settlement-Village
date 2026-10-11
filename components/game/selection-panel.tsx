@@ -4,7 +4,7 @@ import { actionProblem } from "@/lib/game/action-availability";
 import { buildings, upgradeCost } from "@/lib/game/catalog";
 import type { Building, Command, Game } from "@/lib/game/model";
 import { Sprite } from "./scene";
-import { Cost } from "./campaign-dialogs";
+import { Cost } from "./campaign-shared";
 import { buildingSummary, placementTitle } from "./campaign-view-model";
 
 /** The placement notice while placing, else the panel for the selected building. */
@@ -35,10 +35,7 @@ export function SelectionPanel({
           <b>{placementTitle(game, placing)}</b>
           <span>Tap an empty diamond. Drag the map to explore.</span>
         </div>
-        <button
-          onClick={onCancelPlacing}
-          aria-label="Cancel placement"
-        >
+        <button onClick={onCancelPlacing} aria-label="Cancel placement">
           <X />
         </button>
       </div>
@@ -72,37 +69,24 @@ export function SelectionPanel({
           <button
             className="game-button gold small"
             onClick={() =>
-              act(
-                { type: "collect", id: building.id },
-                "Resources collected!",
-              )
+              act({ type: "collect", id: building.id }, "Resources collected!")
             }
             disabled={building.stored < 1}
           >
             Collect{" "}
-            <Cost
-              cost={{ [def.resource]: Math.floor(building.stored) }}
-            />
+            <Cost cost={{ [def.resource]: Math.floor(building.stored) }} />
           </button>
         ) : building.kind === "barracks" ? (
-          <button
-            className="game-button blue small"
-            onClick={onTrain}
-          >
+          <button className="game-button blue small" onClick={onTrain}>
             Train troops
           </button>
         ) : null}
         <button
           className="game-button green small"
           disabled={!!upgradeProblem}
-          aria-describedby={
-            upgradeProblem ? "upgrade-problem" : undefined
-          }
+          aria-describedby={upgradeProblem ? "upgrade-problem" : undefined}
           onClick={() =>
-            act(
-              { type: "upgrade", id: building.id },
-              "Upgrade started!",
-            )
+            act({ type: "upgrade", id: building.id }, "Upgrade started!")
           }
         >
           <ArrowUp size={16} />
@@ -121,10 +105,7 @@ export function SelectionPanel({
         </button>
       </div>
       {upgradeProblem && (
-        <p
-          id="upgrade-problem"
-          className="action-problem building-problem"
-        >
+        <p id="upgrade-problem" className="action-problem building-problem">
           {upgradeProblem}
         </p>
       )}

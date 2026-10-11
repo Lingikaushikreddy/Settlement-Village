@@ -2,13 +2,10 @@
 import {
   ChevronRight,
   Clock,
-  Coins,
   Hammer,
   Lock,
   Shield,
   Swords,
-  TreePine,
-  Wheat,
 } from "lucide-react";
 import {
   Dialog,
@@ -25,48 +22,12 @@ import {
   opponents,
   troops,
 } from "@/lib/game/catalog";
-import type {
-  BuildingKind,
-  Command,
-  Game,
-  Resources,
-  TroopKind,
-} from "@/lib/game/model";
+import type { BuildingKind, Command, Game, TroopKind } from "@/lib/game/model";
 import { Sprite } from "./scene";
 import { Guide, type GuideProps } from "./guide";
+import { Cost } from "./campaign-shared";
 
 export type Panel = "build" | "train" | "raid" | "guide";
-
-const resourceIcons = { gold: Coins, wood: TreePine, food: Wheat };
-
-export function Cost({ cost }: { cost: Partial<Resources> }) {
-  return (
-    <span className="game-cost">
-      {Object.entries(cost)
-        .filter(([, n]) => n! > 0)
-        .map(([r, n]) => {
-          const Icon = resourceIcons[r as keyof Resources];
-          return (
-            <span key={r}>
-              <Icon size={14} />
-              {Math.floor(n!)}
-            </span>
-          );
-        })}
-    </span>
-  );
-}
-
-export function download(g: Game) {
-  const a = document.createElement("a"),
-    url = URL.createObjectURL(
-      new Blob([JSON.stringify(g, null, 2)], { type: "application/json" }),
-    );
-  a.href = url;
-  a.download = "Settlement-village.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 const titles: Record<Panel, string> = {
   build: "Make room for possibility.",
@@ -110,181 +71,177 @@ export function CampaignDialogs({
         <DialogTitle className="game-dialog-title">{titles[panel]}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
         {panel === "build" ? (
-        <div className="build-shop">
-          {(Object.keys(buildings) as BuildingKind[])
-            .filter((k) => k !== "hall")
-            .map((k) => (
-              <button
-                className="shop-item"
-                key={k}
-                disabled={!!buildProblem(game, k)}
-                onClick={() => onPlace(k)}
-              >
-                <Sprite index={buildings[k].sprite} />
-                <h3>{buildings[k].name}</h3>
-                <span>
-                  <Clock size={12} />
-                  {buildings[k].seconds}s to build
-                </span>
-                <Cost cost={buildings[k].cost} />
-                <b className="shop-cta">
-                  {buildProblem(game, k) || (
-                    <>
-                      Place building <ChevronRight size={13} />
-                    </>
-                  )}
-                </b>
-              </button>
-            ))}
-        </div>
+          <div className="build-shop">
+            {(Object.keys(buildings) as BuildingKind[])
+              .filter((k) => k !== "hall")
+              .map((k) => (
+                <button
+                  className="shop-item"
+                  key={k}
+                  disabled={!!buildProblem(game, k)}
+                  onClick={() => onPlace(k)}
+                >
+                  <Sprite index={buildings[k].sprite} />
+                  <h3>{buildings[k].name}</h3>
+                  <span>
+                    <Clock size={12} />
+                    {buildings[k].seconds}s to build
+                  </span>
+                  <Cost cost={buildings[k].cost} />
+                  <b className="shop-cta">
+                    {buildProblem(game, k) || (
+                      <>
+                        Place building <ChevronRight size={13} />
+                      </>
+                    )}
+                  </b>
+                </button>
+              ))}
+          </div>
         ) : null}
         {panel === "train" ? (
-        <>
-          <div className="training-shop">
-            {(Object.keys(troops) as TroopKind[]).map((k) => (
-              <article className="training-card" key={k}>
-                <Sprite index={troops[k].sprite} />
-                <h3>{troops[k].name}</h3>
-                <p>{troops[k].role}</p>
-                <div className="troop-stats">
-                  <span>
-                    <Shield size={13} />
-                    {troops[k].hp}
-                  </span>
-                  <span>
-                    <Swords size={13} />
-                    {troops[k].damage}/s
-                  </span>
-                </div>
-                <Cost cost={troops[k].cost} />
-                <button
-                  className="game-button blue small"
-                  disabled={
-                    !!actionProblem(game, {
+          <>
+            <div className="training-shop">
+              {(Object.keys(troops) as TroopKind[]).map((k) => (
+                <article className="training-card" key={k}>
+                  <Sprite index={troops[k].sprite} />
+                  <h3>{troops[k].name}</h3>
+                  <p>{troops[k].role}</p>
+                  <div className="troop-stats">
+                    <span>
+                      <Shield size={13} />
+                      {troops[k].hp}
+                    </span>
+                    <span>
+                      <Swords size={13} />
+                      {troops[k].damage}/s
+                    </span>
+                  </div>
+                  <Cost cost={troops[k].cost} />
+                  <button
+                    className="game-button blue small"
+                    disabled={
+                      !!actionProblem(game, {
+                        type: "train",
+                        kind: k,
+                        count: 1,
+                      })
+                    }
+                    aria-describedby={`train-${k}-problem`}
+                    onClick={() =>
+                      act(
+                        { type: "train", kind: k, count: 1 },
+                        `${troops[k].name} added to training.`,
+                      )
+                    }
+                  >
+                    Train 1 · {troops[k].seconds}s
+                  </button>
+                  <button
+                    className="train-five"
+                    disabled={
+                      !!actionProblem(game, {
+                        type: "train",
+                        kind: k,
+                        count: 5,
+                      })
+                    }
+                    aria-describedby={`train-${k}-problem`}
+                    onClick={() =>
+                      act(
+                        { type: "train", kind: k, count: 5 },
+                        `Five ${troops[k].plural} queued.`,
+                      )
+                    }
+                  >
+                    Queue 5
+                  </button>
+                  <p className="action-problem" id={`train-${k}-problem`}>
+                    {actionProblem(game, {
                       type: "train",
                       kind: k,
                       count: 1,
-                    })
-                  }
-                  aria-describedby={`train-${k}-problem`}
-                  onClick={() =>
-                    act(
-                      { type: "train", kind: k, count: 1 },
-                      `${troops[k].name} added to training.`,
-                    )
-                  }
-                >
-                  Train 1 · {troops[k].seconds}s
-                </button>
-                <button
-                  className="train-five"
-                  disabled={
-                    !!actionProblem(game, {
-                      type: "train",
-                      kind: k,
-                      count: 5,
-                    })
-                  }
-                  aria-describedby={`train-${k}-problem`}
-                  onClick={() =>
-                    act(
-                      { type: "train", kind: k, count: 5 },
-                      `Five ${troops[k].plural} queued.`,
-                    )
-                  }
-                >
-                  Queue 5
-                </button>
-                <p className="action-problem" id={`train-${k}-problem`}>
-                  {actionProblem(game, {
-                    type: "train",
-                    kind: k,
-                    count: 1,
-                  }) ||
-                    (actionProblem(game, {
-                      type: "train",
-                      kind: k,
-                      count: 5,
-                    })
-                      ? `Queue 5: ${actionProblem(game, { type: "train", kind: k, count: 5 })}`
-                      : "")}
-                </p>
-              </article>
-            ))}
-          </div>
-          <div className="training-queue">
-            <Hammer size={18} />
-            {game.training.length ? (
-              <>
-                <b>{game.training.length} training</b>
-                <span>
-                  Next {troops[game.training[0].kind].noun} in{" "}
-                  {Math.max(
-                    1,
-                    Math.ceil(game.training[0].readyAt - game.clock),
-                  )}
-                  s
-                </span>
-              </>
-            ) : (
-              <span>
-                The training queue is clear. Ready when you are.
-              </span>
-            )}
-          </div>
-        </>
+                    }) ||
+                      (actionProblem(game, {
+                        type: "train",
+                        kind: k,
+                        count: 5,
+                      })
+                        ? `Queue 5: ${actionProblem(game, { type: "train", kind: k, count: 5 })}`
+                        : "")}
+                  </p>
+                </article>
+              ))}
+            </div>
+            <div className="training-queue">
+              <Hammer size={18} />
+              {game.training.length ? (
+                <>
+                  <b>{game.training.length} training</b>
+                  <span>
+                    Next {troops[game.training[0].kind].noun} in{" "}
+                    {Math.max(
+                      1,
+                      Math.ceil(game.training[0].readyAt - game.clock),
+                    )}
+                    s
+                  </span>
+                </>
+              ) : (
+                <span>The training queue is clear. Ready when you are.</span>
+              )}
+            </div>
+          </>
         ) : null}
         {panel === "raid" ? (
-        <div className="raid-list">
-          {opponents.map((o, i) => (
-            <article
-              className={`raid-option ${i > game.unlocked ? "locked" : ""}`}
-              key={o.name}
-            >
-              <div className="raid-illustration">
-                <Sprite index={i === 0 ? 5 : i === 1 ? 4 : 0} />
-                <span>{i + 1}</span>
-              </div>
-              <div>
-                <small>
-                  {o.region} · {o.difficulty}
-                </small>
-                <h3>{o.name}</h3>
-                <Cost
-                  cost={{ gold: o.gold, wood: o.wood, food: o.food }}
-                />
-              </div>
-              <button
-                className="game-button gold small"
-                disabled={
-                  i > game.unlocked ||
-                  Object.values(game.army).every((n) => n === 0)
-                }
-                onClick={() => {
-                  if (update((g) => startBattle(g, i))) onScouted();
-                }}
+          <div className="raid-list">
+            {opponents.map((o, i) => (
+              <article
+                className={`raid-option ${i > game.unlocked ? "locked" : ""}`}
+                key={o.name}
               >
-                {i > game.unlocked ? (
-                  <>
-                    <Lock size={14} />
-                    Locked
-                  </>
-                ) : (
-                  <>
-                    Scout <ChevronRight size={14} />
-                  </>
-                )}
-              </button>
-            </article>
-          ))}
-          <p className="raid-note">
-            {Object.values(game.army).every((n) => n === 0)
-              ? "Train at least one troop before scouting. "
-              : ""}
-            Deployed troops are spent. Troops left in reserve return home.
-            Earn a star to unlock the next stronghold.
-          </p>
-        </div>
+                <div className="raid-illustration">
+                  <Sprite index={i === 0 ? 5 : i === 1 ? 4 : 0} />
+                  <span>{i + 1}</span>
+                </div>
+                <div>
+                  <small>
+                    {o.region} · {o.difficulty}
+                  </small>
+                  <h3>{o.name}</h3>
+                  <Cost cost={{ gold: o.gold, wood: o.wood, food: o.food }} />
+                </div>
+                <button
+                  className="game-button gold small"
+                  disabled={
+                    i > game.unlocked ||
+                    Object.values(game.army).every((n) => n === 0)
+                  }
+                  onClick={() => {
+                    if (update((g) => startBattle(g, i))) onScouted();
+                  }}
+                >
+                  {i > game.unlocked ? (
+                    <>
+                      <Lock size={14} />
+                      Locked
+                    </>
+                  ) : (
+                    <>
+                      Scout <ChevronRight size={14} />
+                    </>
+                  )}
+                </button>
+              </article>
+            ))}
+            <p className="raid-note">
+              {Object.values(game.army).every((n) => n === 0)
+                ? "Train at least one troop before scouting. "
+                : ""}
+              Deployed troops are spent. Troops left in reserve return home.
+              Earn a star to unlock the next stronghold.
+            </p>
+          </div>
         ) : null}
         {panel === "guide" ? <Guide {...guide} /> : null}
       </DialogContent>

@@ -15,7 +15,7 @@ Reading: the campaign spends about 16 ms of script per second at rest, one layou
 
 ## After Plan 1 (campaign split)
 
-Commit: main a7f1918 plus the Task 9 extraction (same PR as this table). Machine: darwin arm64. Node: v26.8.1. Chromium: 156.0.8078.4.
+Commit: 3fa195d. Machine: darwin arm64. Node: v26.8.1. Chromium: 156.0.8078.4.
 
 | Scene | Script ms | Task ms | Layouts | Style recalcs | Heap Δ MB | Seconds |
 | --- | --- | --- | --- | --- | --- | --- |

@@ -2,19 +2,15 @@
 import {
   BookOpen,
   Clock,
-  Coins,
   Hammer,
   Home,
   Shield,
-  TreePine,
   Volume2,
   VolumeX,
-  Wheat,
 } from "lucide-react";
 import type { Game } from "@/lib/game/model";
 import { hudFigures } from "./campaign-view-model";
-
-const resourceIcons = { gold: Coins, wood: TreePine, food: Wheat };
+import { resourceIcons } from "./campaign-shared";
 
 /** The top bar: banner, builders, resources, sound; and the settlement navigation while not raiding. */
 export function CampaignHud({
@@ -99,10 +95,7 @@ export function CampaignHud({
           className="settlement-navigation"
           aria-label="Settlement navigation"
         >
-          <button
-            aria-pressed={!research && !councilOpen}
-            onClick={onVillage}
-          >
+          <button aria-pressed={!research && !councilOpen} onClick={onVillage}>
             <Home size={16} />
             Village
           </button>

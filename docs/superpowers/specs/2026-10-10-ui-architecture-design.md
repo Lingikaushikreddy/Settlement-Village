@@ -31,15 +31,16 @@ Two alternatives were considered and rejected: turning on the React Compiler wit
 |---|---|---|
 | `game.tsx` | `SettlementGame` (mounts the session, renders `SessionGate` or `CampaignGame`) and the `CampaignGame` composer: shared UI state (selected building, open panel, placing, council/crew open flags, resident), the `Scene`, `CrewInspector` and `CouncilPanel` mounts, and the layout of the regions below. | 330 lines |
 | `session-gate.tsx` | `useCampaignSession` (opens the session, retries, re-opens after the back-forward cache) and the blocked, unsupported, recovery and unavailable screens with the export-original-save action and the replace confirmation. | 200 lines |
-| `use-campaign.ts` | The game ref, the 200 ms advance loop, the 2 s autosave, the visibility-change save, shutdown registration, `update`, `act`, `crewAct`, the notice and saved messages with their timers, the sound flag and the chime. Returns `{ game, update, act, crewAct, notice, setNotice, saved, sound, setSound }` with stable callbacks. | 250 lines |
+| `use-campaign.ts` | The game ref, the 200 ms advance loop, the 2 s autosave, the visibility-change save, shutdown registration, `update`, `act`, `crewAct`, the notice and saved messages with their timers, the sound flag and the chime. Returns `{ game, update, act, crewAct, latest, notice, setNotice, saved, sound, setSound, chime }` with stable callbacks. | 250 lines |
 | `campaign-hud.tsx` | The header: village name, resources, builders strip, sound and navigation buttons. Props: `game`, flags, callbacks. | 200 lines |
 | `selection-panel.tsx` | The building panel for the selected building: upgrade, move, troop training entry, close. | 250 lines |
 | `campaign-footer.tsx` | The bottom bar that hosts `CrewBoard` and `VillageJournal` plus the quest and guide shortcuts, and the save status shown under the same condition. | 150 lines |
-| `campaign-dialogs.tsx` | The build, train and raid dialogs, with the troop and squad picks as local state. | 300 lines |
+| `campaign-dialogs.tsx` | The build, train and raid dialogs. The troop and squad picks stay in the composer because the map's deployment flags share them. | 300 lines |
 | `guide.tsx` | The player guide dialog content. | 200 lines |
 | `battle-overlay.tsx` | The raid banner, hint with deployment shortcuts, controls, and the results dialog. | 250 lines |
 | `research-overlay.tsx` | `useResearchDesk` (which run and section are open, the `ResearchFrame` the Observatory reports, opening from the URL parameters) and the overlay: the research map caption, the lazy `Observatory` mount and its Suspense fallback. | 150 lines |
 | `campaign-view-model.ts` | Pure functions the regions call: HUD figures from a `Game`, the displayed run and tick from a `ResearchFrame`, the caption text per research mode. | 150 lines |
+| `campaign-shared.tsx` | Leaf module with the helpers more than one region renders: `resourceIcons`, `Cost`, `download`. Region files import it and never each other in a cycle. | 60 lines |
 
 ### Research (`components/research/`)
 

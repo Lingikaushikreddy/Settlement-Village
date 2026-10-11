@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Campaign component split.** `components/game/game.tsx` is a 300-line composer; the game clock, autosave and command path live in `use-campaign.ts`, the session lock in `session-gate.tsx`, each visible region in its own file, and the pure view logic in `campaign-view-model.ts` with unit tests. Markup, CSS and the screenshot baselines are unchanged. `npm run measure:ui` records Chrome performance metrics on the production build (`docs/ui-architecture-verification.md`).
+- **Campaign component split.** `components/game/game.tsx` is a composer of about 320 lines; the game clock, autosave and command path live in `use-campaign.ts`, the session lock in `session-gate.tsx`, each visible region in its own file, and the pure view logic in `campaign-view-model.ts` with unit tests. Markup, CSS and the screenshot baselines are unchanged. `npm run measure:ui` records Chrome performance metrics on the production build (`docs/ui-architecture-verification.md`).
 
 ## 0.9.0 — 2026-10-10
 
