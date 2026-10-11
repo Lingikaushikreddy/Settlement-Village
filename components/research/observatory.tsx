@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -48,7 +47,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import {
-  advance,
   createRun,
   metrics,
   policyInfo,
@@ -62,10 +60,11 @@ import type {
   BuiltInPolicy,
   Run,
   Scenario,
-  Policy,
   Intervention,
 } from "@/lib/sim/types";
-import type { ResearchFrame, ResearchMode } from "./types";
+import type { ResearchFrame } from "./types";
+import { usePlayback } from "./use-playback";
+import { useModelContextTools } from "./use-model-context";
 import {
   addToLibrary,
   boardEvents,
@@ -117,12 +116,11 @@ export function Observatory({
   onFrame: (frame: ResearchFrame) => void;
   onExit: () => void;
 }) {
-  const [run, setRun] = useState<Run>(() => currentRun),
-    [tick, setTick] = useState(currentRun.snapshots.length - 1),
-    [playing, setPlaying] = useState(false),
-    [speed, setSpeed] = useState("1"),
-    [mode, setMode] = useState<ResearchMode>("recorded"),
-    [newOpen, setNewOpen] = useState(false),
+  const playback = usePlayback(currentRun);
+  const { run, tick, playing, speed, mode, queued } = playback;
+  // Stable for the component's life: safe inside the worker callbacks below.
+  const { receive: receivePlayback, current: currentPlayback } = playback;
+  const [newOpen, setNewOpen] = useState(false),
     [starting, setStarting] = useState(false),
     [helpOpen, setHelpOpen] = useState(false),
     [eventId, setEventId] = useState<string | null>(null),
@@ -131,7 +129,6 @@ export function Observatory({
     [draftScenario, setDraftScenario] = useState<Scenario>("scarcity"),
     [draftPolicy, setDraftPolicy] = useState<BuiltInPolicy>("baseline"),
     [draftSeed, setDraftSeed] = useState("42"),
-    [queued, setQueued] = useState<Intervention>(),
     [workerAvailable, setWorkerAvailable] = useState(false),
     [workerRuns, setWorkerRuns] = useState<
       { id: string; name: string; tick: number; running: boolean }[]
@@ -158,10 +155,6 @@ export function Observatory({
   }, [run, tick, selected, mode, onFrame]);
   const sessionRef = useRef(0);
   const loadRef = useRef(0);
-  const ref = useRef({ run, tick, mode, queued });
-  useLayoutEffect(() => {
-    ref.current = { run, tick, mode, queued };
-  }, [run, tick, mode, queued]);
   const streamRef = useRef<EventSource | null>(null);
   const revisionRef = useRef(0);
   const last = run.snapshots.length - 1,
@@ -184,16 +177,6 @@ export function Observatory({
           "Saved runs could not be read. You can still start a new simulation.",
         );
       else setLibrary(stored.runs);
-      const q = new URLSearchParams(location.search);
-      if (q.has("seed")) {
-        const c = {
-          seed: Number(q.get("seed")),
-          scenario: q.get("scenario") as Scenario,
-          policy: q.get("policy") as Policy,
-        };
-        setRun(runToEnd(c));
-        setTick(0);
-      }
     }, 0);
     if (workerOrigin())
       fetch("http://127.0.0.1:8787/health")
@@ -259,12 +242,12 @@ export function Observatory({
   }) {
     const session = ++sessionRef.current;
     streamRef.current?.close();
-    setQueued(data.queued);
     revisionRef.current = data.version;
-    setRun(data.run);
-    setMode("worker");
-    setTick(data.run.snapshots.length - 1);
-    setPlaying(!!data.running);
+    playback.receive({
+      run: data.run,
+      running: !!data.running,
+      queued: data.queued,
+    });
     const stream = new EventSource(
       `http://127.0.0.1:8787/runs/${data.run.id}/stream`,
     );
@@ -278,10 +261,11 @@ export function Observatory({
         update.version >= revisionRef.current
       ) {
         revisionRef.current = update.version;
-        setRun(update.run);
-        setTick(update.run.snapshots.length - 1);
-        setPlaying(update.running);
-        setQueued(update.queued);
+        playback.receive({
+          run: update.run,
+          running: update.running,
+          queued: update.queued,
+        });
       }
     };
     stream.onerror = () => {
@@ -311,7 +295,7 @@ export function Observatory({
   const workerCommand = useCallback(
     async (action: string, intervention?: Intervention) => {
       const session = sessionRef.current;
-      const runId = ref.current.run.id;
+      const runId = currentPlayback().run.id;
       try {
         const r = await fetch(`http://127.0.0.1:8787/runs/${runId}/commands`, {
           method: "POST",
@@ -334,43 +318,27 @@ export function Observatory({
         if (session !== sessionRef.current) return;
         if (data.version >= revisionRef.current) {
           revisionRef.current = data.version;
-          setRun(data.run);
-          setTick(data.run.snapshots.length - 1);
-          setPlaying(data.running);
-          setQueued(data.queued);
+          receivePlayback({
+            run: data.run,
+            running: data.running,
+            queued: data.queued,
+          });
         }
       } catch (e) {
         if (session !== sessionRef.current) return;
         setNotice(e instanceof Error ? e.message : "Worker unavailable");
       }
     },
-    [],
+    [currentPlayback, receivePlayback],
   );
-  const step = useCallback(() => {
-    const s = ref.current;
-    if (s.mode === "worker") {
-      void workerCommand("step");
-      return;
-    }
-    if (s.tick < s.run.snapshots.length - 1) {
-      setTick((t) => Math.min(t + 1, s.run.snapshots.length - 1));
-      return;
-    }
-    if (s.mode === "local" && s.run.status === "active") {
-      const next = advance(s.run, s.queued);
-      setRun(next);
-      setTick(next.snapshots.length - 1);
-      setQueued(undefined);
-    } else setPlaying(false);
-  }, [workerCommand]);
-  useEffect(() => {
-    if (!playing || mode === "worker") return;
-    const t = setInterval(step, 1000 / Number(speed));
-    return () => clearInterval(t);
-  }, [playing, speed, step, mode]);
+  const workerStep = useCallback(
+    () => void workerCommand("step"),
+    [workerCommand],
+  );
+  const step = mode === "worker" ? workerStep : playback.step;
   async function requestModelStep() {
     const session = sessionRef.current;
-    const id = ref.current.run.id;
+    const id = playback.current().run.id;
     setModelBusy(true);
     try {
       const response = await fetch(
@@ -408,11 +376,7 @@ export function Observatory({
   function openRun(r: Run) {
     sessionRef.current++;
     streamRef.current?.close();
-    setRun(r);
-    setTick(0);
-    setMode("recorded");
-    setPlaying(false);
-    setQueued(undefined);
+    playback.openRecorded(r);
     setView("observatory");
     select("mira");
   }
@@ -462,14 +426,14 @@ export function Observatory({
       } else {
         sessionRef.current++;
         streamRef.current?.close();
-        setPlaying(false);
-        setRun({ ...createRun(config), id: `local-${crypto.randomUUID()}` });
-        setMode("local");
+        playback.startLocal({
+          ...createRun(config),
+          id: `local-${crypto.randomUUID()}`,
+        });
       }
-      setTick(0);
+      playback.resetCursor();
       setView("observatory");
       setNewOpen(false);
-      setQueued(undefined);
       select("mira");
     } catch (e) {
       if (session === sessionRef.current && request === loadRef.current)
@@ -479,94 +443,26 @@ export function Observatory({
     }
   }
   function jump(t: number) {
-    if (ref.current.mode === "worker") {
+    if (playback.current().mode === "worker") {
       setNotice("Save this worker run, then open its replay to rewind.");
       return;
     }
-    setPlaying(false);
-    setTick(Math.max(0, Math.min(t, last)));
+    playback.seek(t);
   }
   function toggle() {
     if (mode === "worker") {
       void workerCommand(playing ? "pause" : "resume");
-    } else setPlaying(!playing);
+    } else playback.setPlaying(!playing);
   }
   function intervene(action: Intervention) {
     if (mode === "worker") {
       void workerCommand("intervene", action);
     } else {
-      setQueued(action);
+      playback.queue(action);
       setNotice("Intervention queued for the next new tick.");
     }
   }
-  const exposed = useRef({ jump, openRun, step });
-  useLayoutEffect(() => {
-    exposed.current = { jump, openRun, step };
-  });
-  useEffect(() => {
-    type MC = {
-      registerTool: (
-        x: unknown,
-        o: { signal: AbortSignal },
-      ) => Promise<void> | void;
-    };
-    const mc = (document as unknown as { modelContext?: MC }).modelContext;
-    if (!mc?.registerTool) return;
-    const lifecycle = new AbortController();
-    Promise.resolve(
-      mc.registerTool(
-        {
-          name: "settlement_inspect_run",
-          description: "Read the visible run status and incident metrics.",
-          inputSchema: {
-            type: "object",
-            properties: {},
-            additionalProperties: false,
-          },
-          annotations: { readOnlyHint: true },
-          execute: () => {
-            const s = ref.current;
-            return {
-              tick: s.tick,
-              mode: s.mode,
-              metrics: metrics(s.run, s.tick),
-              config: s.run.config,
-            };
-          },
-        },
-        { signal: lifecycle.signal },
-      ),
-    ).catch(() => {});
-    Promise.resolve(
-      mc.registerTool(
-        {
-          name: "settlement_seek_tick",
-          description:
-            "Move recorded playback to an existing tick and pause playback.",
-          inputSchema: {
-            type: "object",
-            properties: { tick: { type: "integer", minimum: 0, maximum: 150 } },
-            required: ["tick"],
-            additionalProperties: false,
-          },
-          annotations: { readOnlyHint: false },
-          execute: (input: unknown) => {
-            const n = (input as { tick: number })?.tick;
-            if (
-              !Number.isInteger(n) ||
-              n < 0 ||
-              n >= ref.current.run.snapshots.length
-            )
-              throw Error("Tick is outside the recorded run");
-            exposed.current.jump(n);
-            return { tick: n };
-          },
-        },
-        { signal: lifecycle.signal },
-      ),
-    ).catch(() => {});
-    return () => lifecycle.abort();
-  }, []);
+  useModelContextTools(playback.current, jump);
   const wealth = useMemo(() => wealthBars(w), [w]);
   return (
     <section className="settlement unified-research">
@@ -595,7 +491,7 @@ export function Observatory({
               aria-pressed={view === id}
               disabled={modelBusy}
               onClick={() => {
-                if (mode !== "worker") setPlaying(false);
+                if (mode !== "worker") playback.setPlaying(false);
                 setView(id);
               }}
             >
@@ -744,7 +640,7 @@ export function Observatory({
                 ))}
               </div>
             </div>
-            <Select value={speed} onValueChange={setSpeed}>
+            <Select value={speed} onValueChange={playback.setSpeed}>
               <SelectTrigger
                 aria-label="Playback speed"
                 disabled={mode === "worker"}
