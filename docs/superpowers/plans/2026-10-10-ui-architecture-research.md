@@ -113,7 +113,7 @@ const notice = (page: import("@playwright/test").Page, text: string | RegExp) =>
 // The research desk first shows the one-snapshot council run (also "The Missing Grain", 32 ticks);
 // the ?seed= run replaces it a moment later. Wait for the seeded run's 60-tick label.
 async function openSeeded(page: import("@playwright/test").Page) {
-  await openSeeded(page);
+  await page.goto(SEEDED);
   await expect(page.locator(".tick-label span")).toContainText("60 ticks");
 }
 
@@ -311,7 +311,7 @@ test("ignores a stream message for a run the player has left", async ({ page }) 
     await route.fulfill({ status: 200, contentType: "text/event-stream", body: `retry: 600000\ndata: ${message}\n\n` }).catch(() => {});
   });
   await connect(page);
-  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await page.getByRole("navigation", { name: "Research tools" }).getByRole("button", { name: "Archive" }).click();
   await page.locator(".library-feature").filter({ hasText: "Included reference run" }).getByRole("button", { name: /Open replay/ }).click();
   await expect(boundary(page)).toContainText("Recorded evidence");
   release();
