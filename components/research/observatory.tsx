@@ -1,13 +1,6 @@
 "use client";
 import Link from "next/link";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   Sprout,
   Play,
@@ -65,6 +58,7 @@ import type {
 import type { ResearchFrame } from "./types";
 import { usePlayback } from "./use-playback";
 import { useModelContextTools } from "./use-model-context";
+import { useLocalWorker, workerOrigin } from "./use-local-worker";
 import {
   addToLibrary,
   boardEvents,
@@ -85,8 +79,6 @@ import {
 } from "./research-view-model";
 export type { ResearchFrame } from "./types";
 const STORAGE = "settlement-library-v1";
-const workerOrigin = () =>
-  ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
 const noSubscription = () => () => {};
 // Residents are shown by name; "village" and "observer" fall back to their label.
 const RUN_LOCALLY =
@@ -118,8 +110,6 @@ export function Observatory({
 }) {
   const playback = usePlayback(currentRun);
   const { run, tick, playing, speed, mode, queued } = playback;
-  // Stable for the component's life: safe inside the worker callbacks below.
-  const { receive: receivePlayback, current: currentPlayback } = playback;
   const [newOpen, setNewOpen] = useState(false),
     [starting, setStarting] = useState(false),
     [helpOpen, setHelpOpen] = useState(false),
@@ -128,11 +118,7 @@ export function Observatory({
     [library, setLibrary] = useState<Run[]>([]),
     [draftScenario, setDraftScenario] = useState<Scenario>("scarcity"),
     [draftPolicy, setDraftPolicy] = useState<BuiltInPolicy>("baseline"),
-    [draftSeed, setDraftSeed] = useState("42"),
-    [workerAvailable, setWorkerAvailable] = useState(false),
-    [workerRuns, setWorkerRuns] = useState<
-      { id: string; name: string; tick: number; running: boolean }[]
-    >([]);
+    [draftSeed, setDraftSeed] = useState("42");
   const hosted = useSyncExternalStore(
     noSubscription,
     () => !workerOrigin(),
@@ -142,21 +128,14 @@ export function Observatory({
     select = onSelected,
     view = section,
     setView = onSection;
-  const [provider, setProvider] = useState<{
-    ready: boolean;
-    reason: string;
-    model: string | null;
-    dailyBudgetUSD: number | null;
-    reservedUSD?: number;
-  } | null>(null);
-  const [modelBusy, setModelBusy] = useState(false);
+  const worker = useLocalWorker({
+    listRuns: view === "library" || newOpen,
+    onRun: playback.receive,
+    onNotice: setNotice,
+  });
   useEffect(() => {
     onFrame({ run, tick, selected, mode });
   }, [run, tick, selected, mode, onFrame]);
-  const sessionRef = useRef(0);
-  const loadRef = useRef(0);
-  const streamRef = useRef<EventSource | null>(null);
-  const revisionRef = useRef(0);
   const last = run.snapshots.length - 1,
     w = snapshotAt(run, tick),
     m = metrics(run, tick);
@@ -178,204 +157,18 @@ export function Observatory({
         );
       else setLibrary(stored.runs);
     }, 0);
-    if (workerOrigin())
-      fetch("http://127.0.0.1:8787/health")
-        .then((r) => r.ok && setWorkerAvailable(true))
-        .catch(() => {});
-    if (workerOrigin())
-      fetch("http://127.0.0.1:8787/model/status")
-        .then((r) =>
-          r.ok
-            ? r.json()
-            : r.status === 404
-              ? {
-                  ready: false,
-                  reason:
-                    "Restart your local worker to load the model-decision controls.",
-                  model: null,
-                  dailyBudgetUSD: null,
-                }
-              : null,
-        )
-        .then((data) => setProvider(data as typeof provider))
-        .catch(() => setProvider(null));
-    return () => {
-      // Invalidate asynchronous requests using the current session, not the mount's value.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      sessionRef.current++;
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      loadRef.current++;
-      clearTimeout(hydrate);
-      streamRef.current?.close();
-    };
+    return () => clearTimeout(hydrate);
   }, []);
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(""), 6000);
     return () => clearTimeout(t);
   }, [notice]);
-  useEffect(() => {
-    if (!workerOrigin()) return;
-    if (view === "library" || newOpen)
-      fetch("http://127.0.0.1:8787/runs")
-        .then(async (r) => {
-          if (r.ok) {
-            setWorkerAvailable(true);
-            const data = (await r.json()) as {
-              runs: {
-                id: string;
-                name: string;
-                tick: number;
-                running: boolean;
-              }[];
-            };
-            setWorkerRuns(data.runs);
-          }
-        })
-        .catch(() => setWorkerAvailable(false));
-  }, [view, newOpen]);
-  function attachWorker(data: {
-    run: Run;
-    version: number;
-    running?: boolean;
-    queued?: Intervention;
-  }) {
-    const session = ++sessionRef.current;
-    streamRef.current?.close();
-    revisionRef.current = data.version;
-    playback.receive({
-      run: data.run,
-      running: !!data.running,
-      queued: data.queued,
-    });
-    const stream = new EventSource(
-      `http://127.0.0.1:8787/runs/${data.run.id}/stream`,
-    );
-    streamRef.current = stream;
-    stream.onmessage = (e) => {
-      const update = JSON.parse(e.data);
-      if (
-        session === sessionRef.current &&
-        update.run &&
-        update.run.id === data.run.id &&
-        update.version >= revisionRef.current
-      ) {
-        revisionRef.current = update.version;
-        playback.receive({
-          run: update.run,
-          running: update.running,
-          queued: update.queued,
-        });
-      }
-    };
-    stream.onerror = () => {
-      if (session === sessionRef.current)
-        setNotice("Worker stream disconnected. Reconnecting automatically.");
-    };
-  }
-  async function openWorker(id: string) {
-    const session = sessionRef.current,
-      request = ++loadRef.current;
-    try {
-      const res = await fetch(`http://127.0.0.1:8787/runs/${id}`);
-      if (!res.ok) throw Error("Cannot load worker run");
-      const data = (await res.json()) as {
-        run: Run;
-        version: number;
-        running: boolean;
-      };
-      if (session !== sessionRef.current || request !== loadRef.current) return;
-      attachWorker(data);
-      setView("observatory");
-    } catch (e) {
-      if (session === sessionRef.current && request === loadRef.current)
-        setNotice(e instanceof Error ? e.message : "Worker unavailable");
-    }
-  }
-  const workerCommand = useCallback(
-    async (action: string, intervention?: Intervention) => {
-      const session = sessionRef.current;
-      const runId = currentPlayback().run.id;
-      try {
-        const r = await fetch(`http://127.0.0.1:8787/runs/${runId}/commands`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: crypto.randomUUID(),
-            expectedVersion: revisionRef.current,
-            action,
-            intervention,
-          }),
-        });
-        const data = (await r.json()) as {
-          run: Run;
-          version: number;
-          running: boolean;
-          queued?: Intervention;
-          error?: string;
-        };
-        if (!r.ok) throw Error(data.error || "Worker command failed");
-        if (session !== sessionRef.current) return;
-        if (data.version >= revisionRef.current) {
-          revisionRef.current = data.version;
-          receivePlayback({
-            run: data.run,
-            running: data.running,
-            queued: data.queued,
-          });
-        }
-      } catch (e) {
-        if (session !== sessionRef.current) return;
-        setNotice(e instanceof Error ? e.message : "Worker unavailable");
-      }
-    },
-    [currentPlayback, receivePlayback],
-  );
-  const workerStep = useCallback(
-    () => void workerCommand("step"),
-    [workerCommand],
-  );
-  const step = mode === "worker" ? workerStep : playback.step;
-  async function requestModelStep() {
-    const session = sessionRef.current;
-    const id = playback.current().run.id;
-    setModelBusy(true);
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8787/runs/${id}/model-step`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: crypto.randomUUID(),
-            expectedVersion: revisionRef.current,
-          }),
-        },
-      );
-      const data = (await response.json()) as {
-        run: Run;
-        version: number;
-        running?: boolean;
-        error?: string;
-      };
-      if (session !== sessionRef.current) return;
-      if (!response.ok) throw Error(data.error || "Model step failed.");
-      attachWorker(data);
-      setNotice(
-        "Model decision recorded and applied. Replay will reuse this response.",
-      );
-    } catch (error) {
-      if (session === sessionRef.current)
-        setNotice(
-          error instanceof Error ? error.message : "Model step failed.",
-        );
-    } finally {
-      setModelBusy(false);
-    }
-  }
+
+  const step =
+    mode === "worker" ? () => void worker.command("step") : playback.step;
   function openRun(r: Run) {
-    sessionRef.current++;
-    streamRef.current?.close();
+    worker.detach();
     playback.openRecorded(r);
     setView("observatory");
     select("mira");
@@ -398,8 +191,6 @@ export function Observatory({
       setNotice("Choose a whole-number seed from 0 to 999999.");
       return;
     }
-    const session = sessionRef.current,
-      request = ++loadRef.current;
     setStarting(true);
     const config = {
       seed,
@@ -409,23 +200,9 @@ export function Observatory({
     };
     try {
       if (useWorker) {
-        const res = await fetch("http://127.0.0.1:8787/runs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(config),
-        });
-        const data = (await res.json()) as {
-          run: Run;
-          version: number;
-          error?: string;
-        };
-        if (!res.ok) throw Error(data.error || "Cannot create worker run");
-        if (session !== sessionRef.current || request !== loadRef.current)
-          return;
-        attachWorker(data);
+        if (!(await worker.create(config))) return;
       } else {
-        sessionRef.current++;
-        streamRef.current?.close();
+        worker.detach();
         playback.startLocal({
           ...createRun(config),
           id: `local-${crypto.randomUUID()}`,
@@ -435,9 +212,6 @@ export function Observatory({
       setView("observatory");
       setNewOpen(false);
       select("mira");
-    } catch (e) {
-      if (session === sessionRef.current && request === loadRef.current)
-        setNotice(e instanceof Error ? e.message : "Worker unavailable");
     } finally {
       setStarting(false);
     }
@@ -451,12 +225,12 @@ export function Observatory({
   }
   function toggle() {
     if (mode === "worker") {
-      void workerCommand(playing ? "pause" : "resume");
+      void worker.command(playing ? "pause" : "resume");
     } else playback.setPlaying(!playing);
   }
   function intervene(action: Intervention) {
     if (mode === "worker") {
-      void workerCommand("intervene", action);
+      void worker.command("intervene", action);
     } else {
       playback.queue(action);
       setNotice("Intervention queued for the next new tick.");
@@ -489,7 +263,7 @@ export function Observatory({
             <button
               key={id}
               aria-pressed={view === id}
-              disabled={modelBusy}
+              disabled={worker.modelBusy}
               onClick={() => {
                 if (mode !== "worker") playback.setPlaying(false);
                 setView(id);
@@ -501,7 +275,7 @@ export function Observatory({
         </nav>
         <button
           className="primary"
-          disabled={modelBusy}
+          disabled={worker.modelBusy}
           onClick={() => setNewOpen(true)}
         >
           <Plus size={15} /> New experiment
@@ -585,7 +359,7 @@ export function Observatory({
                 aria-label={playing ? "Pause" : "Play"}
                 onClick={toggle}
                 disabled={
-                  modelBusy ||
+                  worker.modelBusy ||
                   (mode === "recorded" && last === 0) ||
                   (tick === last &&
                     run.status === "completed" &&
@@ -606,7 +380,7 @@ export function Observatory({
                   (tick === last &&
                     (run.status === "completed" || mode === "recorded")) ||
                   (mode === "worker" && playing) ||
-                  modelBusy
+                  worker.modelBusy
                 }
               >
                 <StepForward size={18} />
@@ -626,7 +400,7 @@ export function Observatory({
                 max={Math.max(last, 1)}
                 value={[tick]}
                 onValueChange={(v) => jump(v[0])}
-                disabled={last === 0 || mode === "worker" || modelBusy}
+                disabled={last === 0 || mode === "worker" || worker.modelBusy}
               />
               <div className="incident-markers">
                 {claimEvents.map((e) => (
@@ -673,7 +447,7 @@ export function Observatory({
               {mode !== "recorded" && run.status === "active" && (
                 <Select
                   value=""
-                  disabled={modelBusy}
+                  disabled={worker.modelBusy}
                   onValueChange={(v) => intervene(v as Intervention)}
                 >
                   <SelectTrigger aria-label="Intervene in simulation">
@@ -721,7 +495,7 @@ export function Observatory({
               <span>
                 <strong>Live model decisions</strong>
                 <small>
-                  {provider?.reason ??
+                  {worker.provider?.reason ??
                     (hosted ? (
                       <>
                         You&apos;re playing the hosted demo. Free simulations,
@@ -739,30 +513,31 @@ export function Observatory({
                 </small>
               </span>
             </div>
-            {provider?.ready && (
+            {worker.provider?.ready && (
               <p>
-                {provider.model} · daily budget ${provider.dailyBudgetUSD} · six
-                requests per run maximum. Each model step sends this recipient’s
-                visible evidence to Claude and may incur API cost.
+                {worker.provider.model} · daily budget $
+                {worker.provider.dailyBudgetUSD} · six requests per run maximum.
+                Each model step sends this recipient’s visible evidence to
+                Claude and may incur API cost.
               </p>
             )}
             <button
               className="secondary"
               disabled={
                 !canAskModel({
-                  ready: !!provider?.ready,
+                  ready: !!worker.provider?.ready,
                   mode,
                   playing,
                   queued: !!queued,
-                  busy: modelBusy,
+                  busy: worker.modelBusy,
                   run,
                   tick,
                 })
               }
-              onClick={() => void requestModelStep()}
+              onClick={() => void worker.modelStep()}
             >
               <Sparkles size={15} />
-              {modelBusy
+              {worker.modelBusy
                 ? "Evaluating the next decision…"
                 : "Ask Claude to decide next tick"}
             </button>
@@ -1023,14 +798,14 @@ export function Observatory({
               Open replay
             </button>
           </article>
-          {workerAvailable && workerRuns.length > 0 && (
+          {worker.available && worker.runs.length > 0 && (
             <div className="worker-library">
               <h3>On your local worker</h3>
               <p className="muted-small">
                 Stored in SQLite. Resume across page reloads and worker
                 restarts.
               </p>
-              {workerRuns.map((r) => (
+              {worker.runs.map((r) => (
                 <article className="library-row" key={r.id}>
                   <div>
                     <h3>{r.name}</h3>
@@ -1040,7 +815,11 @@ export function Observatory({
                   </div>
                   <button
                     className="secondary"
-                    onClick={() => void openWorker(r.id)}
+                    onClick={() =>
+                      void worker
+                        .open(r.id)
+                        .then((ok) => ok && setView("observatory"))
+                    }
                   >
                     Connect to run
                   </button>
@@ -1158,7 +937,7 @@ export function Observatory({
             <Play size={16} />
             Create simulation
           </button>
-          {workerAvailable && (
+          {worker.available && (
             <button
               className="secondary"
               disabled={starting}
