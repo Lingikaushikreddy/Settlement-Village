@@ -26,7 +26,6 @@ import {
   VolumeX,
   Star,
   Clock,
-  Lock,
   Home,
   X,
 } from "lucide-react";
@@ -37,13 +36,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Scene, Sprite } from "./scene";
-import { restoreGame } from "@/lib/game/economy";
 import {
   CampaignSession,
   type CampaignSessionState,
 } from "@/lib/game/campaign-session";
 import {
-  startBattle,
   deploy,
   focusTarget,
   settleBattle,
@@ -55,23 +52,26 @@ import {
   opponents,
   quests,
   upgradeCost,
-  freeBuilders,
-  armySize,
 } from "@/lib/game/catalog";
 import type {
   Game,
   BuildingKind,
   TroopKind,
-  Resources,
 } from "@/lib/game/model";
 import { CrewBoard, CrewInspector } from "./crew";
 import { VillageJournal } from "./village-journal";
-import { actionProblem, buildProblem } from "@/lib/game/action-availability";
+import { actionProblem } from "@/lib/game/action-availability";
 import { crewCommand, crewRoster } from "@/lib/game/crew";
 import type { CrewCommand } from "@/lib/game/crew-types";
 import { CouncilPanel } from "./council";
 import { useCampaign } from "./use-campaign";
 import { SessionGate } from "./session-gate";
+import {
+  CampaignDialogs,
+  Cost,
+  download,
+  type Panel,
+} from "./campaign-dialogs";
 import {
   activeIncidentTargets,
   armyTotal,
@@ -99,33 +99,6 @@ const Research = lazy(() =>
   import("../observatory").then((m) => ({ default: m.Observatory })),
 );
 const resourceIcons = { gold: Coins, wood: TreePine, food: Wheat };
-function Cost({ cost }: { cost: Partial<Resources> }) {
-  return (
-    <span className="game-cost">
-      {Object.entries(cost)
-        .filter(([, n]) => n! > 0)
-        .map(([r, n]) => {
-          const Icon = resourceIcons[r as keyof Resources];
-          return (
-            <span key={r}>
-              <Icon size={14} />
-              {Math.floor(n!)}
-            </span>
-          );
-        })}
-    </span>
-  );
-}
-function download(g: Game) {
-  const a = document.createElement("a"),
-    url = URL.createObjectURL(
-      new Blob([JSON.stringify(g, null, 2)], { type: "application/json" }),
-    );
-  a.href = url;
-  a.download = "Settlement-village.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
 export function SettlementGame() {
   const [attempt, setAttempt] = useState(0);
   const [view, setView] = useState<{
@@ -202,9 +175,7 @@ function CampaignGame({
     chime,
   } = useCampaign(session, initialGame);
   const [selected, setSelected] = useState<string | null>(null),
-    [panel, setPanel] = useState<"build" | "train" | "raid" | "guide" | null>(
-      null,
-    ),
+    [panel, setPanel] = useState<Panel | null>(null),
     [councilOpen, setCouncilOpen] = useState(false),
     [crewOpen, setCrewOpen] = useState(false),
     [crewView, setCrewView] = useState<"agent" | "jobs" | "history">("agent"),
@@ -217,7 +188,6 @@ function CampaignGame({
     [troop, setTroop] = useState<TroopKind>("knight"),
     [squad, setSquad] = useState(1);
   const crewTrigger = useRef<HTMLElement | null>(null);
-  const file = useRef<HTMLInputElement>(null);
   const crewAct = (c: CrewCommand) => {
     if (campaignCrewAct(c) && c.type === "start") {
       setCouncilOpen(false);
@@ -852,317 +822,37 @@ function CampaignGame({
           </button>
         </div>
       ) : null}
-      {panel !== null ? (
-        <Dialog open onOpenChange={(v) => !v && setPanel(null)}>
-          <DialogContent className="game-dialog">
-            <DialogTitle className="game-dialog-title">
-              {panel === "build"
-                ? "Make room for possibility."
-                : panel === "train"
-                  ? "Your army starts here."
-                  : panel === "raid"
-                    ? "Beyond the treeline."
-                    : "Welcome home, chief."}
-            </DialogTitle>
-            <DialogDescription>
-              {panel === "build"
-                ? `${freeBuilders(game)} of 2 builders available. Choose a building, then place it in your village.`
-                : panel === "train"
-                  ? `${armySize(game)} / 40 camp spaces used. Training continues while you explore.`
-                  : panel === "raid"
-                    ? "Scout a stronghold, deploy your troops, and bring the spoils home."
-                    : "Build a thriving village and lead your troops into battle."}
-            </DialogDescription>
-            {panel === "build" ? (
-              <div className="build-shop">
-                {(Object.keys(buildings) as BuildingKind[])
-                  .filter((k) => k !== "hall")
-                  .map((k) => (
-                    <button
-                      className="shop-item"
-                      key={k}
-                      disabled={!!buildProblem(game, k)}
-                      onClick={() => {
-                        setPlacing(`new:${k}`);
-                        setPanel(null);
-                        setSelected(null);
-                      }}
-                    >
-                      <Sprite index={buildings[k].sprite} />
-                      <h3>{buildings[k].name}</h3>
-                      <span>
-                        <Clock size={12} />
-                        {buildings[k].seconds}s to build
-                      </span>
-                      <Cost cost={buildings[k].cost} />
-                      <b className="shop-cta">
-                        {buildProblem(game, k) || (
-                          <>
-                            Place building <ChevronRight size={13} />
-                          </>
-                        )}
-                      </b>
-                    </button>
-                  ))}
-              </div>
-            ) : null}
-            {panel === "train" ? (
-              <>
-                <div className="training-shop">
-                  {(Object.keys(troops) as TroopKind[]).map((k) => (
-                    <article className="training-card" key={k}>
-                      <Sprite index={troops[k].sprite} />
-                      <h3>{troops[k].name}</h3>
-                      <p>{troops[k].role}</p>
-                      <div className="troop-stats">
-                        <span>
-                          <Shield size={13} />
-                          {troops[k].hp}
-                        </span>
-                        <span>
-                          <Swords size={13} />
-                          {troops[k].damage}/s
-                        </span>
-                      </div>
-                      <Cost cost={troops[k].cost} />
-                      <button
-                        className="game-button blue small"
-                        disabled={
-                          !!actionProblem(game, {
-                            type: "train",
-                            kind: k,
-                            count: 1,
-                          })
-                        }
-                        aria-describedby={`train-${k}-problem`}
-                        onClick={() =>
-                          act(
-                            { type: "train", kind: k, count: 1 },
-                            `${troops[k].name} added to training.`,
-                          )
-                        }
-                      >
-                        Train 1 · {troops[k].seconds}s
-                      </button>
-                      <button
-                        className="train-five"
-                        disabled={
-                          !!actionProblem(game, {
-                            type: "train",
-                            kind: k,
-                            count: 5,
-                          })
-                        }
-                        aria-describedby={`train-${k}-problem`}
-                        onClick={() =>
-                          act(
-                            { type: "train", kind: k, count: 5 },
-                            `Five ${troops[k].plural} queued.`,
-                          )
-                        }
-                      >
-                        Queue 5
-                      </button>
-                      <p className="action-problem" id={`train-${k}-problem`}>
-                        {actionProblem(game, {
-                          type: "train",
-                          kind: k,
-                          count: 1,
-                        }) ||
-                          (actionProblem(game, {
-                            type: "train",
-                            kind: k,
-                            count: 5,
-                          })
-                            ? `Queue 5: ${actionProblem(game, { type: "train", kind: k, count: 5 })}`
-                            : "")}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-                <div className="training-queue">
-                  <Hammer size={18} />
-                  {game.training.length ? (
-                    <>
-                      <b>{game.training.length} training</b>
-                      <span>
-                        Next {troops[game.training[0].kind].noun} in{" "}
-                        {Math.max(
-                          1,
-                          Math.ceil(game.training[0].readyAt - game.clock),
-                        )}
-                        s
-                      </span>
-                    </>
-                  ) : (
-                    <span>
-                      The training queue is clear. Ready when you are.
-                    </span>
-                  )}
-                </div>
-              </>
-            ) : null}
-            {panel === "raid" ? (
-              <div className="raid-list">
-                {opponents.map((o, i) => (
-                  <article
-                    className={`raid-option ${i > game.unlocked ? "locked" : ""}`}
-                    key={o.name}
-                  >
-                    <div className="raid-illustration">
-                      <Sprite index={i === 0 ? 5 : i === 1 ? 4 : 0} />
-                      <span>{i + 1}</span>
-                    </div>
-                    <div>
-                      <small>
-                        {o.region} · {o.difficulty}
-                      </small>
-                      <h3>{o.name}</h3>
-                      <Cost
-                        cost={{ gold: o.gold, wood: o.wood, food: o.food }}
-                      />
-                    </div>
-                    <button
-                      className="game-button gold small"
-                      disabled={
-                        i > game.unlocked ||
-                        Object.values(game.army).every((n) => n === 0)
-                      }
-                      onClick={() => {
-                        if (update((g) => startBattle(g, i))) {
-                          setPanel(null);
-                          setSelected(null);
-                        }
-                      }}
-                    >
-                      {i > game.unlocked ? (
-                        <>
-                          <Lock size={14} />
-                          Locked
-                        </>
-                      ) : (
-                        <>
-                          Scout <ChevronRight size={14} />
-                        </>
-                      )}
-                    </button>
-                  </article>
-                ))}
-                <p className="raid-note">
-                  {Object.values(game.army).every((n) => n === 0)
-                    ? "Train at least one troop before scouting. "
-                    : ""}
-                  Deployed troops are spent. Troops left in reserve return home.
-                  Earn a star to unlock the next stronghold.
-                </p>
-              </div>
-            ) : null}
-            {panel === "guide" ? (
-              <div className="game-guide">
-                <div
-                  className="guide-vista"
-                  role="img"
-                  aria-label="Illustration of Willowmere in its forest valley"
-                />
-                <div>
-                  <Hammer />
-                  <p>
-                    <b>Build your village</b>Collect from the floating resource
-                    bubbles. Place and upgrade buildings to grow production.
-                  </p>
-                </div>
-                <div>
-                  <Shield />
-                  <p>
-                    <b>Train your army</b>Kavyas absorb damage. Jhansis strike
-                    from range. Catapults break through strong defenses.
-                  </p>
-                </div>
-                <div>
-                  <Swords />
-                  <p>
-                    <b>Lead the raid</b>Deploy along the edges and focus towers
-                    first. Destroy the town hall, half the village, and every
-                    building for three stars.
-                  </p>
-                </div>
-                <div>
-                  <BookOpen />
-                  <p>
-                    <b>Give your crew an objective</b>Choose Grow the village,
-                    Prepare for a raid or Restock supplies in Village orders.
-                    Residents collect actual resources, build and upgrade a new
-                    farm, organize recruitment, and replan around shortages.
-                    Review the growth plan’s spending ceiling and protected
-                    reserves before starting. Inspect a resident to see their
-                    job and memories. Crew work pauses during raids, offline, in
-                    Council and in Research.
-                  </p>
-                </div>
-                <div>
-                  <BookOpen />
-                  <p>
-                    <b>Care for your residents</b>Open Council stories to meet
-                    six residents. Start their day, inspect rumors, and give
-                    evidence before they decide. Work earns supplies; deception
-                    can cost gold. Social stories pause during raids and while
-                    offline.
-                  </p>
-                </div>
-                <p className="guide-limit">
-                  Single-player campaign. Progress saves on this device; offline
-                  production is capped at 8 hours. Free resident policies are
-                  the default. Optional model decisions are configured in
-                  Research.
-                </p>
-                <div className="guide-links">
-                  <button onClick={() => download(game)}>
-                    <Download size={16} />
-                    Export save
-                  </button>
-                  <button onClick={() => file.current?.click()}>
-                    <BookOpen size={16} />
-                    Import save
-                  </button>
-                  <button onClick={() => openResearch()}>
-                    Open village research
-                  </button>
-                </div>
-                <input
-                  type="file"
-                  ref={file}
-                  hidden
-                  accept="application/json"
-                  onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    try {
-                      if (f.size > 2000000)
-                        throw Error("Choose a save smaller than 2 MB.");
-                      const imported = restoreGame(await f.text());
-                      if (!update(() => imported)) return;
-                      closeResearch();
-                      setCouncilOpen(false);
-                      setCrewOpen(false);
-                      setSelected(null);
-                      setPlacing(null);
-                      setPanel(null);
-                      setNotice("Village restored from your save.");
-                    } catch (error) {
-                      setNotice(
-                        error instanceof Error
-                          ? error.message
-                          : "Cannot read save.",
-                      );
-                    }
-                    e.target.value = "";
-                  }}
-                />
-              </div>
-            ) : null}
-          </DialogContent>
-        </Dialog>
-      ) : null}
+      <CampaignDialogs
+        panel={panel}
+        game={game}
+        act={act}
+        update={update}
+        onClose={() => setPanel(null)}
+        onPlace={(kind) => {
+          setPlacing(`new:${kind}`);
+          setPanel(null);
+          setSelected(null);
+        }}
+        onScouted={() => {
+          setPanel(null);
+          setSelected(null);
+        }}
+        guide={{
+          game,
+          onResearch: () => openResearch(),
+          onError: setNotice,
+          onImport: (imported) => {
+            if (!update(() => imported)) return;
+            closeResearch();
+            setCouncilOpen(false);
+            setCrewOpen(false);
+            setSelected(null);
+            setPlacing(null);
+            setPanel(null);
+            setNotice("Village restored from your save.");
+          },
+        }}
+      />
       {done ? (
         <Dialog open onOpenChange={() => {}}>
           <DialogContent
