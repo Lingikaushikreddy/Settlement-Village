@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "settlement-testbed": "./dist/testbed/cli.js"
+    "settlement-testbed": "dist/testbed/cli.js"
   },
   "main": "./dist/testbed/index.js",
   "types": "./dist/testbed/index.d.ts",
