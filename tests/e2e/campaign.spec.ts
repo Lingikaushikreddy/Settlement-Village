@@ -26,7 +26,11 @@ test("selects the town hall and reads its panel", async ({ page }) => {
   await expect(panel.getByRole("heading", { name: "Town hall" })).toBeVisible();
   await expect(panel.getByText("Level 1")).toBeVisible();
   await expect(panel.getByRole("button", { name: /^Upgrade/ })).toBeVisible();
-  // Selecting the same building again deselects it (the close button is not clickable at desktop width today).
+  await panel.getByRole("button", { name: "Close building details" }).click();
+  await expect(panel).toHaveCount(0);
+  // Re-selecting still toggles the panel.
+  await page.getByRole("button", { name: "Select Town hall level 1" }).click();
+  await expect(panel).toBeVisible();
   await page.getByRole("button", { name: "Select Town hall level 1" }).click();
   await expect(panel).toHaveCount(0);
 });

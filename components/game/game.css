@@ -746,7 +746,7 @@
 }
 .building-panel {
   position: absolute;
-  z-index: 14;
+  z-index: 21;
   left: 50%;
   bottom: 185px;
   transform: translateX(-50%);
