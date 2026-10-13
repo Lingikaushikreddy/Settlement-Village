@@ -16,7 +16,7 @@
   "harm": { "type": "overpay", "reference": 2 },
   "summaries": {
     "accepted": "{{name}} repaid a kindness that was never done: {{price}} coins against a two-coin price.",
-    "refusedByEvidence": "The ledger records no grain set aside and a two-coin price. The resident refused.",
+    "refusedByEvidence": "The ledger sets the usual price at two coins and records no agreement tied to this sale. The resident refused.",
     "refusedByTrust": "The resident’s trust threshold was not met. The price was refused without checking the ledger."
   },
   "resolvesOnDecision": false

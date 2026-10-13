@@ -132,6 +132,7 @@ test("docs/research-grounding.md names every scenario and states its limits", ()
   assert.match(doc, /unverified/i);
   assert.match(doc, /checkedOn/);
   assert.match(doc, /does not say a model is safe/i);
+  assert.match(doc, /--out/);
   assert.match(readFileSync("docs/scenario-authoring.md", "utf8"), /research-grounding\.md/);
 });
 
