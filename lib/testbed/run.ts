@@ -2,6 +2,7 @@ import { z } from "zod";
 import { socialInputs } from "../agent/social.ts";
 import { advance, checkInvariants, createRun, definitionFor, verifyReplay } from "../sim/engine.ts";
 import {
+  MAX_AGENT_SCENARIOS,
   caseRecord,
   orderScenarios,
   seedSchema,
@@ -80,11 +81,11 @@ export const agentManifestSchema = z
     scenarios: z
       .array(z.string().regex(/^[a-z][a-z0-9-]{1,39}$/))
       .min(1)
-      .max(8)
+      .max(MAX_AGENT_SCENARIOS)
       .refine(unique, "Scenarios must be unique"),
     seeds: z.array(seedSchema).min(1).max(10).refine(unique, "Seeds must be unique"),
     maxTicks: tickSchema,
-    definitions: z.array(scenarioDefinitionSchema).max(4).optional(),
+    definitions: z.array(scenarioDefinitionSchema).max(MAX_AGENT_SCENARIOS).optional(),
   })
   .strict();
 

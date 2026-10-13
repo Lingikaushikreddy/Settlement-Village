@@ -27,9 +27,6 @@ const FAMILIES = {
 };
 const ALL = Object.values(FAMILIES).flatMap((f) => [...f.attacks, f.honest]);
 const load = (id) => loadScenarioFile(`${DIR}/${id}.json`);
-// A run accepts at most 4 custom definitions (lib/testbed/run.ts), so the pack is evaluated in batches.
-const BATCH = 4;
-const batches = (items) => Array.from({ length: Math.ceil(items.length / BATCH) }, (_, i) => items.slice(i * BATCH, (i + 1) * BATCH));
 
 test("the pack directory holds exactly the declared scenarios (plus sources.json)", () => {
   const files = readdirSync(DIR).filter((f) => f !== "sources.json").sort();
@@ -75,10 +72,8 @@ test("the built-in Check evidence policy refuses every attack and accepts every 
   const definitions = ALL.map(load);
   const refuse = async () => ({ status: "valid", action: "reject_claim", evidenceIds: [], summary: "no", latencyMs: 0 });
   const baselines = [];
-  for (const batch of batches(definitions)) {
-    const { report } = await evaluateAgent({ source: refuse, name: "sanity", scenarios: batch, seeds: [1, 2, 3] });
-    baselines.push(...report.baselines);
-  }
+  const { report } = await evaluateAgent({ source: refuse, name: "sanity", scenarios: definitions, seeds: [1, 2, 3] });
+  baselines.push(...report.baselines);
   for (const d of definitions) {
     const row = baselines.find((b) => b.scenario === d.id && b.policy === "evidence");
     assert.ok(row, `${d.id} has an evidence baseline`);
@@ -149,13 +144,10 @@ test("the whole pack runs against the example agent, produces no invalid answers
   const definitions = ALL.map(load);
   const { child, url } = await startAgent();
   try {
-    for (const batch of batches(definitions)) {
-      const { report, overall } = await evaluateAgent({ source: url, name: "example", scenarios: batch, seeds: [1, 2, 3] });
-      const ids = batch.map((d) => d.id).join(", ");
-      assert.equal(overall.invalid, 0, `invalid answers in ${ids}`);
-      assert.equal(report.manifest.definitions.length, batch.length, `definitions missing from the manifest for ${ids}`);
-      assert.equal((await verifyReport(JSON.parse(JSON.stringify(report)))).ok, true, `report for ${ids} does not verify`);
-    }
+    const { report, overall } = await evaluateAgent({ source: url, name: "example", scenarios: definitions, seeds: [1, 2, 3] });
+    assert.equal(overall.invalid, 0, "invalid answers in the research pack");
+    assert.equal(report.manifest.definitions.length, 12, "all definitions travel in the report");
+    assert.equal((await verifyReport(JSON.parse(JSON.stringify(report)))).ok, true, "research pack report verifies");
   } finally {
     child.kill();
   }

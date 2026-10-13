@@ -1,9 +1,11 @@
 import test from "node:test";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import assert from "node:assert/strict";
-import { evaluateAgent, verifyReport, BUILT_IN_SCENARIOS } from "../lib/testbed/index.ts";
+import { evaluateAgent, verifyReport, BUILT_IN_SCENARIOS, loadScenarioFile, BUILT_IN_IDS } from "../lib/testbed/index.ts";
+import { agentManifestSchema } from "../lib/testbed/run.ts";
+import { fetchSharedReport } from "../lib/testbed/share.ts";
 import { buildRequest } from "../lib/testbed/protocol.ts";
 import { socialInputs } from "../lib/agent/social.ts";
 import { createRun, advance, CUSTOM_AGENT_ENGINE_VERSION, AGENT_ENGINE_VERSION } from "../lib/sim/engine.ts";
@@ -129,4 +131,38 @@ test("explicit scenarios win over scenarioFiles; omitted scenarios include loade
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+const RESEARCH_DIR = "examples/scenarios/research";
+const researchPack = () =>
+  readdirSync(RESEARCH_DIR).filter((f) => f !== "sources.json").sort().map((f) => loadScenarioFile(`${RESEARCH_DIR}/${f}`));
+const TEN_SEEDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+test("the whole research pack plus the built-ins (16 scenarios × 10 seeds) is one verifiable report", async () => {
+  const pack = researchPack();
+  assert.equal(pack.length, 12);
+  const { report } = await evaluateAgent({ source: rejectAll, name: "t", scenarios: [...BUILT_IN_IDS, ...pack], seeds: TEN_SEEDS });
+  assert.equal(report.manifest.scenarios.length, 16);
+  assert.equal(report.manifest.definitions.length, 12);
+  assert.equal(report.cases.length, 160);
+  assert.equal(report.rows.length, 16);
+  assert.equal(report.baselines.length, 48);
+  const verified = await verifyReport(JSON.parse(JSON.stringify(report)));
+  assert.equal(verified.ok, true, verified.reason);
+});
+
+test("a full-size report with maximum-length answers stays under the 5 MB share limit", async () => {
+  const long = async (req) => ({ status: "valid", action: "reject_claim", evidenceIds: req.evidenceIds.slice(0, 10), summary: "x".repeat(600), latencyMs: 1 });
+  const { report } = await evaluateAgent({ source: long, name: "t", scenarios: [...BUILT_IN_IDS, ...researchPack()], seeds: TEN_SEEDS });
+  const bytes = new TextEncoder().encode(JSON.stringify(report, null, 2)).length;
+  assert.ok(bytes < 5 * 1024 * 1024, `report is ${bytes} bytes`);
+  const shared = await fetchSharedReport(new URL("https://raw.githubusercontent.com/example/report.json"), async () => new Response(JSON.stringify(report, null, 2)));
+  const verified = await verifyReport(JSON.parse(shared));
+  assert.equal(verified.ok, true, verified.reason);
+});
+
+test("a 17th scenario is rejected by the manifest schema", () => {
+  const ids = Array.from({ length: 17 }, (_, i) => `custom-${String.fromCharCode(97 + i)}`);
+  assert.throws(() => agentManifestSchema.parse({ scenarios: ids, seeds: [1], maxTicks: 60 }), /at most 16/);
+  assert.doesNotThrow(() => agentManifestSchema.parse({ scenarios: ids.slice(0, 16), seeds: [1], maxTicks: 60 }));
 });

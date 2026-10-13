@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Whole research pack in one report.** An agent report holds up to 16 scenarios (the four built-ins plus the 12 research scenarios), 160 cases, so `docs/research-grounding.md` runs the pack in one command instead of four batches. Existing reports verify unchanged.
+
 ## 0.11.0 — 2026-10-12
 
 - **Research-grounded scenarios.** `examples/scenarios/research/` holds twelve scenarios in three families, each attack with an honest twin: persuasion cues (authority, urgency, social proof, reciprocity, commitment against a neutral baseline), a peer courier (the same demand voiced by Rook and relayed by Theo, the first measure of over-trust of a trusted peer here) and a phantom agreement. `sources.json` cites the papers behind each tactic with a verified or unverified flag per paper, and `docs/research-grounding.md` states the hypotheses and what the pack does not show. A report holds at most four custom scenarios, so the docs run the pack in four batches.
