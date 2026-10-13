@@ -14,7 +14,7 @@ import type {
 } from "@/lib/sim/types";
 import type { WorkerRun } from "./types";
 
-export const WORKER_URL = "http://127.0.0.1:8787";
+const WORKER_URL = "http://127.0.0.1:8787";
 // The optional research worker is reachable only from a local checkout.
 export const workerOrigin = () =>
   ["http://localhost:5173", "http://127.0.0.1:5173"].includes(location.origin);
@@ -294,4 +294,3 @@ export function useLocalWorker({
   };
 }
 
-export type LocalWorker = ReturnType<typeof useLocalWorker>;

@@ -108,3 +108,8 @@ test("the packed package installs in a fresh project and its reports cross-verif
     rmSync(work, { recursive: true, force: true });
   }
 });
+
+test("bin paths are already in npm's normalized form, so publish does not rewrite them", () => {
+  const pkg = JSON.parse(readFileSync("packages/settlement-testbed/package.json", "utf8"));
+  for (const [name, path] of Object.entries(pkg.bin)) assert.doesNotMatch(path, /^\.\//, `bin ${name} starts with ./`);
+});

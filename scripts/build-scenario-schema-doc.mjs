@@ -23,7 +23,8 @@ const rows = [
 const table = ["| Field | Type | Required | Meaning |", "| --- | --- | --- | --- |", ...rows.map((r) => `| \`${r[0]}\` | ${r[1]} | ${r[2]} | ${r[3]} |`)].join("\n");
 const path = "docs/scenario-authoring.md";
 const doc = readFileSync(path, "utf8");
-const next = doc.replace(/<!-- schema:start -->[\s\S]*?<!-- schema:end -->/, `<!-- schema:start -->\n${table}\n<!-- schema:end -->`);
+// Use a callback so the dollar-backtick sequence in the id pattern stays literal.
+const next = doc.replace(/<!-- schema:start -->[\s\S]*?<!-- schema:end -->/, () => `<!-- schema:start -->\n${table}\n<!-- schema:end -->`);
 if (process.argv.includes("--check")) {
   if (next !== doc) {
     console.error(`${path} schema table is out of date. Run: node scripts/build-scenario-schema-doc.mjs`);
