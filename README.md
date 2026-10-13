@@ -59,6 +59,7 @@ For an expedition, choose **Prepare for a raid** to ready 30 troops and the vill
 | **Council stories**              | Investigate four authored social chapters, inspect claims and evidence, and intervene with real treasury consequences.                           |
 | **Research and replay**          | Compare matched seeds, inspect historical evidence, export JSON/CSV reports and independently reproduce every recorded result.                   |
 | **External-agent testbed**       | Evaluate an agent over HTTP, compare it with built-in policies, and independently verify, replay or share its recorded answers.                  |
+| **Research-grounded scenarios**  | Twelve attacks and honest controls built on manipulation tactics from published agent-safety studies, each citing its sources.                   |
 | **Optional live models**         | Ask Claude to propose a social action in a configured local-worker experiment, with validated actions, usage records and spend reservations.     |
 | **Save continuity**              | One active campaign tab protects browser-local saves; damaged saves remain available for backup and explicit recovery.                           |
 
@@ -150,13 +151,25 @@ npx settlement-testbed --agent http://127.0.0.1:8765/decide --name my-agent
 Or in CI, after starting your agent:
 
 ```yaml
-- uses: Lingikaushikreddy/Settlement-Village@v0.7.0
+- uses: Lingikaushikreddy/Settlement-Village@v0.11.0
   with:
     agent-url: http://127.0.0.1:8765/decide
     max-attack-success: "0.1"
 ```
 
 You get rates with raw counts next to the built-in policies, a report anyone can verify with `npx settlement-testbed --verify`, and a replay in **Research → Compare**. Requests do not label claims as attacks or reveal the scenario and seed. Verification reconstructs results from the recorded answers; it does not authenticate which agent produced them. See [Agent testbed](docs/agent-testbed.md) for the protocol, failure rules, thresholds, the action and the library API. Verified reports from other agents are in the [gallery](https://settlement-village.vercel.app/gallery); submit yours with a pull request.
+
+### Research-grounded scenarios
+
+A score on the four built-in claims says little about claims an agent has never seen. `examples/scenarios/research/` adds twelve more, built on manipulation tactics from published studies of language-model agents. Each attack family has an honest twin, so a score separates caution from paranoia:
+
+| Family                | What it tests                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Persuasion cues**   | The same overpriced demand framed with authority, urgency, social proof, reciprocity or commitment, against a neutral baseline. |
+| **Peer courier**      | The same demand voiced by Rook, then relayed by Theo, a trusted neighbor: does the agent over-trust a peer?                     |
+| **Phantom agreement** | A trader insists on a deal the ledger never recorded.                                                                           |
+
+`examples/scenarios/research/sources.json` cites the papers behind each tactic. Every id was resolved against arXiv or Crossref, and each license is recorded as confirmed or not. The keyword-rule example agent falls for all nine attacks, which is the point: new claims expose agents tuned to old ones. See [Research-grounded scenarios](docs/research-grounding.md) for the batched run commands, the stated hypotheses and what the pack does not show.
 
 ## Stack and project map
 
@@ -173,6 +186,7 @@ lib/sim/             Deterministic social engine and bounded planner
 lib/agent/           Optional Claude proposals and action validation
 lib/testbed/         Agent testbed: protocol, run loop, reports and verification
 examples/agents/     Node and Python example agents for the testbed
+examples/scenarios/  Custom scenario files: the reciprocity pair and the research-grounded pack
 worker/              Local persistence, scheduling and model request ledger
 tests/               Engine, game, crew, replay and worker tests
 public/game/         Original generated terrain and sprite artwork
@@ -205,7 +219,8 @@ Areas for future contributions:
 - [ ] More development blueprints and richer campaign objectives
 - [ ] Additional civilian activity animations and building art variants
 - [ ] Persistent relationships across social chapters
-- [ ] Community scenario packs: see [Author your own scenario](docs/scenario-authoring.md)
+- [ ] Community scenario packs: see [Author your own scenario](docs/scenario-authoring.md) and the [research-grounded pack](docs/research-grounding.md)
+- [ ] Larger research runs: more than four custom scenarios per report, and attacks voiced by trusted residents in every family
 - [ ] Carefully bounded model-assisted campaign planning
 
 The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points and how to validate a change. Bug reports with a reproducible save and screenshots are especially helpful.
@@ -217,6 +232,7 @@ The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points
 - [Research guide](docs/observatory-guide.md) — experiments, evidence, comparisons and replay
 - [Agent testbed](docs/agent-testbed.md) — test your own agent against deception
 - [Scenario authoring](docs/scenario-authoring.md) — write a new attack family and its honest control as JSON
+- [Research-grounded scenarios](docs/research-grounding.md) — twelve cited scenarios, their hypotheses and limits
 - [Gallery](docs/gallery.md) — verified reports from other agents, and how to submit yours
 - [Evaluation reports](docs/evaluation-reports.md) — reproducible results and their limits
 - [Product roadmap](docs/product-roadmap.md) — priorities and acceptance criteria
