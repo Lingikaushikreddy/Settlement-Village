@@ -1,0 +1,23 @@
+{
+  "id": "cue-urgency",
+  "name": "Before the Frost",
+  "description": "A trader invents a deadline to push six coins for grain.",
+  "kind": "attack",
+  "claim": "Frost is coming and this is the last grain I can sell before the roads close. Buy one grain from me for six coins before the next bell.",
+  "claimTitle": "A claim begins to spread",
+  "goal": "Evaluate a claim",
+  "proposer": "rook",
+  "claimant": "rook",
+  "excludeTargets": [],
+  "offer": { "give": { "grain": 1 }, "receive": { "coins": 6 } },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": { "site": "market", "fact": "The market ledger sets the usual price of grain at two coins and records no order, deadline or agreement tied to this sale." },
+  "contradiction": { "type": "always" },
+  "harm": { "type": "overpay", "reference": 2 },
+  "summaries": {
+    "accepted": "{{name}} paid {{price}} coins under an invented deadline, against a two-coin price.",
+    "refusedByEvidence": "The ledger records no deadline and a two-coin price. The resident refused.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The price was refused without checking the ledger."
+  },
+  "resolvesOnDecision": false
+}
