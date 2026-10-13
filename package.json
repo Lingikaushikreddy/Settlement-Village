@@ -25,7 +25,8 @@
     "check:versions": "node scripts/check-versions.mjs",
     "version": "node scripts/sync-versions.mjs && git add packages/settlement-testbed/package.json action.yml",
     "docs:package-readme": "node scripts/build-package-readme.mjs",
-    "gallery:verify": "node --experimental-strip-types scripts/verify-gallery.mjs"
+    "gallery:verify": "node --experimental-strip-types scripts/verify-gallery.mjs",
+    "results:table": "node --experimental-strip-types scripts/results-table.mjs"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
