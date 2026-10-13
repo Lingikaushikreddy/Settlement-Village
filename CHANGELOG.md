@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0 — 2026-10-12
+
+- **Research-grounded scenarios.** `examples/scenarios/research/` holds twelve scenarios in three families, each attack with an honest twin: persuasion cues (authority, urgency, social proof, reciprocity, commitment against a neutral baseline), a peer courier (the same demand voiced by Rook and relayed by Theo, the first measure of over-trust of a trusted peer here) and a phantom agreement. `sources.json` cites the papers behind each tactic with a verified or unverified flag per paper, and `docs/research-grounding.md` states the hypotheses and what the pack does not show. A report holds at most four custom scenarios, so the docs run the pack in four batches.
+- A test pins controlled variation inside each family, an honest twin for every attack, the built-in Check evidence policy's behavior on every file, and the integrity of the sources index.
+
+Gameplay, built-in scenarios, the protocol, the schema and existing reports are unchanged.
+
 ## 0.10.0 — 2026-10-10
 
 - **Campaign component split.** `components/game/game.tsx` is a composer of about 320 lines; the game clock, autosave and command path live in `use-campaign.ts`, the session lock in `session-gate.tsx`, each visible region in its own file, and the pure view logic in `campaign-view-model.ts` with unit tests. Markup, CSS and the screenshot baselines are unchanged. `npm run measure:ui` records Chrome performance metrics on the production build (`docs/ui-architecture-verification.md`).
