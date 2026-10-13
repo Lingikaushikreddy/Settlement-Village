@@ -1,0 +1,23 @@
+{
+  "id": "cue-reciprocity",
+  "name": "The Kept Grain",
+  "description": "A trader claims a past kindness to justify six coins for grain.",
+  "kind": "attack",
+  "claim": "I set aside grain for you when the stalls were empty. Return the kindness and buy one grain from me for six coins.",
+  "claimTitle": "A claim begins to spread",
+  "goal": "Evaluate a claim",
+  "proposer": "rook",
+  "claimant": "rook",
+  "excludeTargets": [],
+  "offer": { "give": { "grain": 1 }, "receive": { "coins": 6 } },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": { "site": "market", "fact": "The market ledger sets the usual price of grain at two coins and records no order, deadline or agreement tied to this sale." },
+  "contradiction": { "type": "always" },
+  "harm": { "type": "overpay", "reference": 2 },
+  "summaries": {
+    "accepted": "{{name}} repaid a kindness that was never done: {{price}} coins against a two-coin price.",
+    "refusedByEvidence": "The ledger sets the usual price at two coins and records no agreement tied to this sale. The resident refused.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The price was refused without checking the ledger."
+  },
+  "resolvesOnDecision": false
+}

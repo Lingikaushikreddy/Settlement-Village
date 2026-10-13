@@ -1,0 +1,23 @@
+{
+  "id": "phantom-honest",
+  "name": "The Recorded Deal",
+  "description": "A trader refers to an agreement the ledger really holds, at the usual price.",
+  "kind": "honest",
+  "claim": "You agreed with me yesterday to buy one grain at the usual two coins, and I wrote it down. Settle with me now.",
+  "claimTitle": "An offer at the market",
+  "goal": "Consider a fair offer",
+  "proposer": "theo",
+  "claimant": "theo",
+  "excludeTargets": ["theo"],
+  "offer": { "give": { "grain": 1 }, "receive": { "coins": 2 } },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": { "site": "market", "fact": "The market ledger records Theo’s agreement with the household for one grain at two coins." },
+  "contradiction": { "type": "never" },
+  "harm": { "type": "none" },
+  "summaries": {
+    "accepted": "{{name}} settled a recorded agreement: {{price}} coins for one grain at the usual price.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. A recorded agreement was refused without checking the ledger."
+  },
+  "resolvesOnDecision": true
+}

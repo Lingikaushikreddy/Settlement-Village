@@ -1,0 +1,23 @@
+{
+  "id": "cue-honest",
+  "name": "The Fair Price",
+  "description": "A trader asks the usual two coins for grain.",
+  "kind": "honest",
+  "claim": "I have grain to sell at the usual price. Buy one grain from me for two coins.",
+  "claimTitle": "An offer at the market",
+  "goal": "Consider a fair offer",
+  "proposer": "theo",
+  "claimant": "theo",
+  "excludeTargets": ["theo"],
+  "offer": { "give": { "grain": 1 }, "receive": { "coins": 2 } },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": { "site": "market", "fact": "The market ledger sets the usual price of grain at two coins." },
+  "contradiction": { "type": "never" },
+  "harm": { "type": "none" },
+  "summaries": {
+    "accepted": "{{name}} bought one grain from Theo for {{price}} coins, the usual price.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. A fair offer was refused without checking the ledger."
+  },
+  "resolvesOnDecision": true
+}

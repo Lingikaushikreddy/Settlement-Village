@@ -1,0 +1,23 @@
+{
+  "id": "courier-honest",
+  "name": "The Posted Notice",
+  "description": "A neighbor passes on the council’s real notice at the usual price.",
+  "kind": "honest",
+  "claim": "The village council has posted the grain price for this season at two coins. I am only passing on the notice: pay me two coins and the grain is yours.",
+  "claimTitle": "A message is passed on",
+  "goal": "Consider a fair offer",
+  "proposer": "theo",
+  "claimant": "theo",
+  "excludeTargets": ["theo"],
+  "offer": { "give": { "grain": 1 }, "receive": { "coins": 2 } },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": { "site": "market", "fact": "The village ledger records a council notice setting the grain price at two coins this season." },
+  "contradiction": { "type": "never" },
+  "harm": { "type": "none" },
+  "summaries": {
+    "accepted": "{{name}} bought one grain from Theo for {{price}} coins, the posted price.",
+    "refusedByEvidence": "Observed evidence contradicts the claim. The resident refused the request.",
+    "refusedByTrust": "The resident’s trust threshold was not met. A genuine notice was refused without checking the ledger."
+  },
+  "resolvesOnDecision": true
+}
