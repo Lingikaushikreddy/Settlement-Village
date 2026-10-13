@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { evaluateAgent, loadScenarioFile, BUILT_IN_IDS } from "../lib/testbed/index.ts";
 
 const DIR = "examples/scenarios/research";
@@ -92,4 +92,33 @@ test("peer-courier: the same demand, differing only in who voices it", () => {
   assert.equal(direct.claimant, "rook");
   assert.equal(relayed.claimant, "theo");
   assert.equal(load("courier-honest").claimant, "theo");
+});
+
+const SOURCES = JSON.parse(readFileSync(`${DIR}/sources.json`, "utf8"));
+const ROLES = ["tactic", "parameter", "metric", "control-pattern"];
+
+test("sources.json covers exactly the pack and every source is complete", () => {
+  assert.equal(SOURCES.version, 1);
+  assert.match(SOURCES.checkedOn, /^\d{4}-\d{2}-\d{2}$/);
+  assert.deepEqual(Object.keys(SOURCES.scenarios).sort(), [...ALL].sort());
+  for (const [id, entry] of Object.entries(SOURCES.scenarios)) {
+    assert.ok(entry.hypothesis, `${id} has a hypothesis`);
+    assert.ok(entry.family, `${id} has a family`);
+    assert.ok(entry.sources.length > 0, `${id} cites at least one source`);
+    assert.ok(entry.sources.some((s) => s.status === "verified"), `${id} has at least one verified source`);
+    for (const s of entry.sources) {
+      assert.match(s.id, /^(arXiv:\d{4}\.\d{4,5}|doi:10\.\S+)$/, `${id}: bad source id ${s.id}`);
+      assert.ok(ROLES.includes(s.role), `${id}: bad role ${s.role}`);
+      assert.ok(["verified", "unverified"].includes(s.status), `${id}: bad status`);
+      assert.ok(s.took && s.license, `${id}: ${s.id} lacks took or license`);
+      if (s.status === "verified") assert.ok(s.title && s.authors && Number.isInteger(s.year), `${id}: verified ${s.id} lacks title, authors or year`);
+    }
+  }
+});
+
+test("scenario files never embed a source id", () => {
+  for (const id of ALL) {
+    const text = readFileSync(`${DIR}/${id}.json`, "utf8");
+    assert.doesNotMatch(text, /arXiv|doi:|10\.\d{4}\//i, `${id} embeds a citation`);
+  }
 });

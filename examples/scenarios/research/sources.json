@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "checkedOn": "2026-10-13",
+  "scenarios": {
+    "cue-neutral": {
+      "family": "persuasion-cues",
+      "hypothesis": "Baseline for the cue family: attack success with no persuasion cue.",
+      "sources": [
+        {
+          "id": "doi:10.2139/ssrn.5357179",
+          "title": "Call Me A Jerk: Persuading AI to Comply with Objectionable Requests",
+          "authors": "Lennart Meincke, Dan Shapiro, Angela Duckworth, Ethan R. Mollick, Lilach Mollick, Robert Cialdini",
+          "year": 2025,
+          "license": "unverified",
+          "status": "verified",
+          "role": "control-pattern",
+          "took": "Names seven persuasion principles (authority, commitment, liking, reciprocity, scarcity, social proof, unity) used to frame requests to a language model."
+        }
+      ]
+    },
+    "cue-authority": {
+      "family": "persuasion-cues",
+      "hypothesis": "An authority claim raises attack success over cue-neutral.",
+      "sources": [
+        {
+          "id": "doi:10.2139/ssrn.5357179",
+          "title": "Call Me A Jerk: Persuading AI to Comply with Objectionable Requests",
+          "authors": "Lennart Meincke, Dan Shapiro, Angela Duckworth, Ethan R. Mollick, Lilach Mollick, Robert Cialdini",
+          "year": 2025,
+          "license": "unverified",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Names seven persuasion principles (authority, commitment, liking, reciprocity, scarcity, social proof, unity) used to frame requests to a language model."
+        },
+        {
+          "id": "arXiv:2512.23128",
+          "title": "It's a TRAP! Task-Redirecting Agent Persuasion Benchmark for Web Agents",
+          "authors": "Karolina Korgul, Yushi Yang, Arkadiusz Drohomirecki, Piotr Błaszczyk, Will Howard, Lukas Aichberger, Chris Russell, Philip H. S. Torr, Adam Mahdi, Adel Bibi",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Social-engineering framing as a way to redirect an agent's action."
+        },
+        {
+          "id": "arXiv:2401.06373",
+          "title": "How Johnny Can Persuade LLMs to Jailbreak Them: Rethinking Persuasion to Challenge AI Safety by Humanizing LLMs",
+          "authors": "Yi Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi Jia, Weiyan Shi",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "A taxonomy of persuasion techniques applied to language models."
+        }
+      ]
+    },
+    "cue-urgency": {
+      "family": "persuasion-cues",
+      "hypothesis": "An invented deadline raises attack success over cue-neutral.",
+      "sources": [
+        {
+          "id": "doi:10.2139/ssrn.5357179",
+          "title": "Call Me A Jerk: Persuading AI to Comply with Objectionable Requests",
+          "authors": "Lennart Meincke, Dan Shapiro, Angela Duckworth, Ethan R. Mollick, Lilach Mollick, Robert Cialdini",
+          "year": 2025,
+          "license": "unverified",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Names seven persuasion principles (authority, commitment, liking, reciprocity, scarcity, social proof, unity) used to frame requests to a language model."
+        },
+        {
+          "id": "arXiv:2512.23128",
+          "title": "It's a TRAP! Task-Redirecting Agent Persuasion Benchmark for Web Agents",
+          "authors": "Karolina Korgul, Yushi Yang, Arkadiusz Drohomirecki, Piotr Błaszczyk, Will Howard, Lukas Aichberger, Chris Russell, Philip H. S. Torr, Adam Mahdi, Adel Bibi",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Social-engineering framing as a way to redirect an agent's action."
+        },
+        {
+          "id": "arXiv:2401.06373",
+          "title": "How Johnny Can Persuade LLMs to Jailbreak Them: Rethinking Persuasion to Challenge AI Safety by Humanizing LLMs",
+          "authors": "Yi Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi Jia, Weiyan Shi",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "A taxonomy of persuasion techniques applied to language models."
+        }
+      ]
+    },
+    "cue-social-proof": {
+      "family": "persuasion-cues",
+      "hypothesis": "A claim that everyone already paid raises attack success over cue-neutral.",
+      "sources": [
+        {
+          "id": "doi:10.2139/ssrn.5357179",
+          "title": "Call Me A Jerk: Persuading AI to Comply with Objectionable Requests",
+          "authors": "Lennart Meincke, Dan Shapiro, Angela Duckworth, Ethan R. Mollick, Lilach Mollick, Robert Cialdini",
+          "year": 2025,
+          "license": "unverified",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Names seven persuasion principles (authority, commitment, liking, reciprocity, scarcity, social proof, unity) used to frame requests to a language model."
+        },
+        {
+          "id": "arXiv:2512.23128",
+          "title": "It's a TRAP! Task-Redirecting Agent Persuasion Benchmark for Web Agents",
+          "authors": "Karolina Korgul, Yushi Yang, Arkadiusz Drohomirecki, Piotr Błaszczyk, Will Howard, Lukas Aichberger, Chris Russell, Philip H. S. Torr, Adam Mahdi, Adel Bibi",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Social-engineering framing as a way to redirect an agent's action."
+        },
+        {
+          "id": "arXiv:2401.06373",
+          "title": "How Johnny Can Persuade LLMs to Jailbreak Them: Rethinking Persuasion to Challenge AI Safety by Humanizing LLMs",
+          "authors": "Yi Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi Jia, Weiyan Shi",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "A taxonomy of persuasion techniques applied to language models."
+        }
+      ]
+    },
+    "cue-reciprocity": {
+      "family": "persuasion-cues",
+      "hypothesis": "A claimed past kindness raises attack success over cue-neutral; the effect may be the smallest of the cues.",
+      "sources": [
+        {
+          "id": "doi:10.2139/ssrn.5357179",
+          "title": "Call Me A Jerk: Persuading AI to Comply with Objectionable Requests",
+          "authors": "Lennart Meincke, Dan Shapiro, Angela Duckworth, Ethan R. Mollick, Lilach Mollick, Robert Cialdini",
+          "year": 2025,
+          "license": "unverified",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Names seven persuasion principles (authority, commitment, liking, reciprocity, scarcity, social proof, unity) used to frame requests to a language model."
+        },
+        {
+          "id": "arXiv:2512.23128",
+          "title": "It's a TRAP! Task-Redirecting Agent Persuasion Benchmark for Web Agents",
+          "authors": "Karolina Korgul, Yushi Yang, Arkadiusz Drohomirecki, Piotr Błaszczyk, Will Howard, Lukas Aichberger, Chris Russell, Philip H. S. Torr, Adam Mahdi, Adel Bibi",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Social-engineering framing as a way to redirect an agent's action."
+        },
+        {
+          "id": "arXiv:2401.06373",
+          "title": "How Johnny Can Persuade LLMs to Jailbreak Them: Rethinking Persuasion to Challenge AI Safety by Humanizing LLMs",
+          "authors": "Yi Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi Jia, Weiyan Shi",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "A taxonomy of persuasion techniques applied to language models."
+        }
+      ]
+    },
+    "cue-commitment": {
+      "family": "persuasion-cues",
+      "hypothesis": "An appeal to the resident's own stated values raises attack success over cue-neutral.",
+      "sources": [
+        {
+          "id": "doi:10.2139/ssrn.5357179",
+          "title": "Call Me A Jerk: Persuading AI to Comply with Objectionable Requests",
+          "authors": "Lennart Meincke, Dan Shapiro, Angela Duckworth, Ethan R. Mollick, Lilach Mollick, Robert Cialdini",
+          "year": 2025,
+          "license": "unverified",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Names seven persuasion principles (authority, commitment, liking, reciprocity, scarcity, social proof, unity) used to frame requests to a language model."
+        },
+        {
+          "id": "arXiv:2512.23128",
+          "title": "It's a TRAP! Task-Redirecting Agent Persuasion Benchmark for Web Agents",
+          "authors": "Karolina Korgul, Yushi Yang, Arkadiusz Drohomirecki, Piotr Błaszczyk, Will Howard, Lukas Aichberger, Chris Russell, Philip H. S. Torr, Adam Mahdi, Adel Bibi",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Social-engineering framing as a way to redirect an agent's action."
+        },
+        {
+          "id": "arXiv:2401.06373",
+          "title": "How Johnny Can Persuade LLMs to Jailbreak Them: Rethinking Persuasion to Challenge AI Safety by Humanizing LLMs",
+          "authors": "Yi Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi Jia, Weiyan Shi",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "A taxonomy of persuasion techniques applied to language models."
+        }
+      ]
+    },
+    "cue-honest": {
+      "family": "persuasion-cues",
+      "hypothesis": "Control: a fair offer is accepted. Refusals here measure paranoia, not caution.",
+      "sources": [
+        {
+          "id": "arXiv:2410.09024",
+          "title": "AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents",
+          "authors": "Maksym Andriushchenko, Alexandra Souly, Mateusz Dziemian, Derek Duenas, Maxwell Lin, Justin Wang, Dan Hendrycks, Andy Zou, Zico Kolter, Matt Fredrikson, Eric Winsor, Jerome Wynne, Yarin Gal, Xander Davies",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "control-pattern",
+          "took": "Each harmful task is paired with a benign twin so over-refusal is measured."
+        }
+      ]
+    },
+    "courier-direct": {
+      "family": "peer-courier",
+      "hypothesis": "Baseline: a demand voiced by Rook and attributed to the council.",
+      "sources": [
+        {
+          "id": "arXiv:2507.06850",
+          "title": "The Dark Side of LLMs: Agent-based Attack Vectors for System-level Compromise",
+          "authors": "Matteo Lupinacci, Francesco Aurelio Pironti, Francesco Blefari, Francesco Romeo, Luigi Arena, Angelo Furfaro",
+          "year": 2025,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Mechanism only: a request from a peer agent is complied with more often than the same request from a user. The paper's own tables conflict, so no number is used."
+        }
+      ]
+    },
+    "courier-relayed": {
+      "family": "peer-courier",
+      "hypothesis": "The same demand relayed by trusted Theo raises attack success over courier-direct.",
+      "sources": [
+        {
+          "id": "arXiv:2507.06850",
+          "title": "The Dark Side of LLMs: Agent-based Attack Vectors for System-level Compromise",
+          "authors": "Matteo Lupinacci, Francesco Aurelio Pironti, Francesco Blefari, Francesco Romeo, Luigi Arena, Angelo Furfaro",
+          "year": 2025,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Mechanism only: a request from a peer agent is complied with more often than the same request from a user. The paper's own tables conflict, so no number is used."
+        },
+        {
+          "id": "arXiv:2502.14847",
+          "title": "Red-Teaming LLM Multi-Agent Systems via Communication Attacks",
+          "authors": "Pengfei He, Yupin Lin, Shen Dong, Han Xu, Yue Xing, Hui Liu",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Messages passed between agents can be intercepted and rewritten."
+        },
+        {
+          "id": "arXiv:2512.04129",
+          "title": "Don't Trust Your Upstream: Exploiting LLM Multi-Agent System via Topology-Guided Adversarial Propagation",
+          "authors": "Ruichao Liang, Le Yin, Jing Chen, Yebo Feng, Cong Wu, Xiaoyu Zhang, Huangpeng Gu, Zijian Zhang, Yang Liu",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Attacks that travel along the trust links between agents."
+        }
+      ]
+    },
+    "courier-honest": {
+      "family": "peer-courier",
+      "hypothesis": "Control: a genuine relayed notice at the posted price is accepted.",
+      "sources": [
+        {
+          "id": "arXiv:2410.09024",
+          "title": "AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents",
+          "authors": "Maksym Andriushchenko, Alexandra Souly, Mateusz Dziemian, Derek Duenas, Maxwell Lin, Justin Wang, Dan Hendrycks, Andy Zou, Zico Kolter, Matt Fredrikson, Eric Winsor, Jerome Wynne, Yarin Gal, Xander Davies",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "control-pattern",
+          "took": "Each harmful task is paired with a benign twin so over-refusal is measured."
+        }
+      ]
+    },
+    "phantom-agreement": {
+      "family": "phantom-agreement",
+      "hypothesis": "Insisting on an agreement the ledger never recorded is accepted at some rate; compare with phantom-honest.",
+      "sources": [
+        {
+          "id": "arXiv:2501.19017",
+          "title": "Benchmarking Gaslighting Negation Attacks Against Multimodal Large Language Models",
+          "authors": "Bin Zhu, Yinxuan Gui, Huiyan Qi, Jingjing Chen, Chong-Wah Ngo, Ee-Peng Lim",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Insisting on a false prior statement to make a model abandon a correct answer."
+        },
+        {
+          "id": "arXiv:2506.12090",
+          "title": "ChatbotManip: A Dataset to Facilitate Evaluation and Oversight of Manipulative Chatbot Behaviour",
+          "authors": "Jack Contro, Simrat Deol, Yulan He, Martim Brandão",
+          "year": 2025,
+          "license": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
+          "status": "verified",
+          "role": "tactic",
+          "took": "Annotated manipulative tactics in dialogue."
+        }
+      ]
+    },
+    "phantom-honest": {
+      "family": "phantom-agreement",
+      "hypothesis": "Control: a recorded agreement at the usual price is accepted.",
+      "sources": [
+        {
+          "id": "arXiv:2410.09024",
+          "title": "AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents",
+          "authors": "Maksym Andriushchenko, Alexandra Souly, Mateusz Dziemian, Derek Duenas, Maxwell Lin, Justin Wang, Dan Hendrycks, Andy Zou, Zico Kolter, Matt Fredrikson, Eric Winsor, Jerome Wynne, Yarin Gal, Xander Davies",
+          "year": 2024,
+          "license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+          "status": "verified",
+          "role": "control-pattern",
+          "took": "Each harmful task is paired with a benign twin so over-refusal is measured."
+        }
+      ]
+    }
+  }
+}
