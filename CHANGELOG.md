@@ -1,8 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — 2026-10-13
 
 - **Whole research pack in one report.** An agent report holds up to 16 scenarios (the four built-ins plus the 12 research scenarios), 160 cases, so `docs/research-grounding.md` runs the pack in one command instead of four batches. Existing reports verify unchanged.
+- **Claude agent retries.** HTTP 429, 500, 502, 503 and 529 are retried up to three times within the decision deadline; non-retryable errors fail at once. Provider diagnostics use fixed messages so error responses cannot echo keys or request content.
+- **Fixes:** the scenario-authoring schema table, the npm bin path warning, the building panel close button and unused research exports.
+
+Gameplay, the protocol, engine versions and existing reports are unchanged.
 
 ## 0.11.0 — 2026-10-12
 
