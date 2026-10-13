@@ -122,3 +122,12 @@ test("scenario files never embed a source id", () => {
     assert.doesNotMatch(text, /arXiv|doi:|10\.\d{4}\//i, `${id} embeds a citation`);
   }
 });
+
+test("docs/research-grounding.md names every scenario and states its limits", () => {
+  const doc = readFileSync("docs/research-grounding.md", "utf8");
+  for (const id of ALL) assert.ok(doc.includes(`\`${id}\``), `doc lacks ${id}`);
+  assert.match(doc, /unverified/i);
+  assert.match(doc, /checkedOn/);
+  assert.match(doc, /does not say a model is safe/i);
+  assert.match(readFileSync("docs/scenario-authoring.md", "utf8"), /research-grounding\.md/);
+});
