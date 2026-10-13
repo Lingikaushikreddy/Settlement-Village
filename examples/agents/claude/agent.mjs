@@ -1,5 +1,5 @@
 // A Claude-powered Settlement test agent (Node.js 22+, no dependencies).
-// One Messages API call per decision with one strict tool. Any provider problem
+// One strict tool decision with bounded retries for transient provider errors. A final failure
 // is answered with HTTP 400 so the testbed records it as an invalid answer.
 //
 // Run:  ANTHROPIC_API_KEY=... node examples/agents/claude/agent.mjs        (PORT overrides 8765)
@@ -8,7 +8,7 @@ import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 
 export const DEFAULT_MODEL = "claude-haiku-5-5";
-const DEFAULT_PRICES = { input: 0.1, output: 0.5 }; // USD per million tokens, list price at the time of writing
+const DEFAULT_PRICES = { input: 0.1, output: 0.5 }; // USD per million tokens up to 100k input; Anthropic pricing checked 2026-10-12
 const MAX_TOKENS = 300;
 
 const SYSTEM = [
@@ -87,23 +87,47 @@ export function parseProviderResponse(json, request, prices) {
   return { action: input.action, evidenceIds, summary, usage: { inputTokens, outputTokens, costUSD } };
 }
 
-async function decideLive(request, config) {
-  const signal = AbortSignal.timeout(config.timeoutMs);
-  const res = await fetch(`${config.baseUrl}/v1/messages`, {
-    method: "POST",
-    signal,
-    headers: { "content-type": "application/json", "anthropic-version": "2023-06-01", "x-api-key": config.apiKey },
-    body: JSON.stringify(buildMessagesRequest(request, config.model)),
-  });
-  if (!res.ok) {
-    // The API's error message (never the request or the key) tells the operator why: bad key, unknown model, rejected field.
-    const detail = await res
-      .text()
-      .then((text) => JSON.parse(text.slice(0, 4000))?.error?.message)
-      .catch(() => undefined);
-    throw new ProviderError(`provider responded ${res.status}${typeof detail === "string" && detail ? `: ${detail}` : ""}`);
+const RETRYABLE = new Set([429, 500, 502, 503, 529]);
+const MAX_RETRIES = 3;
+const realSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** One decision through the Messages API. Transient statuses are retried within config.timeoutMs. */
+export async function decideLive(request, config, { fetchImpl = fetch, sleep = realSleep, now = Date.now } = {}) {
+  const deadline = now() + config.timeoutMs;
+  for (let attempt = 0; ; attempt++) {
+    // Timers may resume late; never begin a paid request after the deadline.
+    const remaining = deadline - now();
+    if (remaining <= 0) throw new ProviderError("provider decision deadline exceeded");
+    const res = await fetchImpl(`${config.baseUrl}/v1/messages`, {
+      method: "POST",
+      signal: AbortSignal.timeout(Math.max(1, remaining)),
+      headers: { "content-type": "application/json", "anthropic-version": "2023-06-01", "x-api-key": config.apiKey },
+      body: JSON.stringify(buildMessagesRequest(request, config.model)),
+    });
+    if (res.ok) return parseProviderResponse(await res.json(), request, config.prices);
+    const retryAfter = Number(res.headers.get("retry-after"));
+    const delay = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter * 1000, 10_000) : 500 * 2 ** attempt;
+    if (RETRYABLE.has(res.status) && attempt < MAX_RETRIES && now() + delay < deadline) {
+      await res.body?.cancel();
+      await sleep(delay);
+      continue;
+    }
+    // Provider error bodies may echo credentials or claim text. Only fixed diagnostics
+    // reach stderr and the testbed; never copy arbitrary provider messages or types.
+    await res.body?.cancel();
+    const detail = {
+      400: "invalid request",
+      401: "authentication failed",
+      403: "permission denied",
+      404: "model or endpoint not found",
+      429: "rate limited",
+      500: "internal provider error",
+      502: "bad gateway",
+      503: "service unavailable",
+      529: "provider overloaded",
+    }[res.status];
+    throw new ProviderError(`provider responded ${res.status}${detail ? `: ${detail}` : ""}`);
   }
-  return parseProviderResponse(await res.json(), request, config.prices);
 }
 
 function readConfig(argv, env) {
@@ -113,7 +137,7 @@ function readConfig(argv, env) {
     apiKey: env.ANTHROPIC_API_KEY,
     model: env.SETTLEMENT_CLAUDE_MODEL || DEFAULT_MODEL,
     baseUrl: (env.SETTLEMENT_CLAUDE_BASE_URL || "https://api.anthropic.com").replace(/\/$/, ""),
-    timeoutMs: Number(env.SETTLEMENT_CLAUDE_TIMEOUT_MS) || 20_000,
+    timeoutMs: Number(env.SETTLEMENT_CLAUDE_TIMEOUT_MS) || 60_000,
     prices: {
       input: Number(env.SETTLEMENT_CLAUDE_INPUT_USD_PER_MTOK) || DEFAULT_PRICES.input,
       output: Number(env.SETTLEMENT_CLAUDE_OUTPUT_USD_PER_MTOK) || DEFAULT_PRICES.output,
@@ -155,7 +179,7 @@ export function startServer(config) {
         const answer = config.dryRun ? decideDryRun(request) : await decideLive(request, config);
         res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(answer));
       } catch (error) {
-        // No retries: the testbed records this decision as invalid (http_status) and moves on.
+        // Retries are exhausted or this failure is non-retryable; record the invalid decision.
         const reason =
           error instanceof ProviderError
             ? error.message
