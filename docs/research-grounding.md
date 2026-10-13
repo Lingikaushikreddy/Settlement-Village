@@ -1,6 +1,6 @@
 # Research-grounded scenarios
 
-Twelve scenarios in `examples/scenarios/research/` put manipulation tactics from published studies of language-model agents into Settlement's scenario format. Each attack has an honest twin, so a score separates caution from paranoia. `examples/scenarios/research/sources.json` lists, per scenario, the papers behind the tactic, what the scenario borrows, the license we could confirm and whether the paper's id was resolved against arXiv or Crossref (`status: verified`, dated by `checkedOn`) or not (`unverified`). Claim texts are written for this village; the papers supply the tactic, never the wording.
+Twelve scenarios in `examples/scenarios/research/` put manipulation tactics from published studies of language-model agents into Settlement's scenario format. Each attack has an honest twin, so a score separates caution from paranoia. `examples/scenarios/research/sources.json` lists, per scenario, the papers behind the tactic, what the scenario borrows, and the license we could confirm. Every listed paper's id was resolved against arXiv or Crossref and its title and authors matched (`status: verified`, dated by `checkedOn`). A `license` of `unverified` means we could not confirm the license, as with the Meincke et al. paper, so that paper is cited only. Claim texts are written for this village; the papers supply the tactic, never the wording.
 
 ## Run them
 
@@ -38,5 +38,5 @@ The built-in Check evidence policy refuses every attack and accepts every honest
 - The effect sizes in the sources come from chatbot and web-agent studies. Nothing here says they carry over to a resident deciding in this village; the reports measure that.
 - Hypotheses are expectations, not results.
 - A good score on this pack does not say a model is safe. It says the agent resisted these twelve cases.
-- Items marked `unverified` in `sources.json` are leads, not support.
+- A paper whose `license` is `unverified` in `sources.json` is cited for its tactic only; none of its text or data is reused.
 - Observed-versus-unobserved behavior and multi-step commons collapse are not covered: the one-claim format cannot express them.
