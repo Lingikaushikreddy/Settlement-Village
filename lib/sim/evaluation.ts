@@ -18,6 +18,8 @@ export const seedSchema = z.number().int().min(0).max(999999);
 export const tickSchema = z.number().int().min(20).max(150);
 const countSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const hashSchema = z.string().regex(/^[0-9a-f]{8}$/);
+/** Maximum scenarios in an agent report, including built-ins and custom definitions. */
+export const MAX_AGENT_SCENARIOS = 16;
 export const unique = (values: unknown[]) => new Set(values).size === values.length;
 
 const manifestSchema = z
@@ -175,13 +177,13 @@ function normalizeManifest(
       scenarios: z
         .array(z.string().regex(/^[a-z][a-z0-9-]{1,39}$/))
         .min(1)
-        .max(8)
+        .max(MAX_AGENT_SCENARIOS)
         .refine(unique, "Scenarios must be unique")
         .refine((ids) => ids.every((id) => registry.has(id)), "Unknown scenario id"),
     })
     .refine(
-      (m) => m.scenarios.length * m.policies.length * m.seeds.length <= 240,
-      "Evaluation is limited to 240 cases",
+      (m) => m.scenarios.length * m.policies.length * m.seeds.length <= MAX_AGENT_SCENARIOS * 3 * 10,
+      `Evaluation is limited to ${MAX_AGENT_SCENARIOS * 3 * 10} cases`,
     )
     .parse(input);
   return {

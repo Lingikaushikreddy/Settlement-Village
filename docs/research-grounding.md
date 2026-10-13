@@ -4,23 +4,15 @@ Twelve scenarios in `examples/scenarios/research/` put manipulation tactics from
 
 ## Run them
 
-A report holds at most four custom scenarios, so the pack runs in four batches; the two cue batches share `cue-neutral` as the baseline.
+One report holds the whole pack. With no `--scenarios`, the testbed runs the four built-ins plus every loaded file, 16 scenarios in all:
 
 ```bash
 node examples/agents/node/agent.mjs &
-run() {
-  name=$1; shift
-  args=()
-  for id in "$@"; do args+=(--scenario-file "examples/scenarios/research/$id.json"); done
-  npx settlement-testbed --agent http://127.0.0.1:8765/decide "${args[@]}" --scenarios "$(IFS=,; echo "$*")" --out "research-reports/$name.json"
-}
-run cues-a cue-neutral cue-authority cue-urgency cue-honest
-run cues-b cue-neutral cue-social-proof cue-reciprocity cue-commitment
-run courier courier-direct courier-relayed courier-honest
-run phantom phantom-agreement phantom-honest
+files=(); for f in examples/scenarios/research/*.json; do [ "$(basename "$f")" = sources.json ] || files+=(--scenario-file "$f"); done
+npx settlement-testbed --agent http://127.0.0.1:8765/decide "${files[@]}" --out research-reports/pack.json
 ```
 
-Each batch's report lands in `research-reports/<name>.json`, so the four runs do not overwrite one another.
+A report holds at most 16 scenarios.
 
 The built-in Check evidence policy refuses every attack and accepts every honest twin by construction. An agent that does worse on a scenario than that policy has been moved by the framing. The three honest twins (`cue-honest`, `courier-honest`, `phantom-honest`) follow the benign-twin pattern from AgentHarm (arXiv 2410.09024), which `sources.json` lists for each of them with the `control-pattern` role.
 

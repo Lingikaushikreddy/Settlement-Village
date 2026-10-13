@@ -2,7 +2,7 @@ import { z } from "zod";
 import { INVALID_REASONS } from "../agent/social.ts";
 import { AGENT_ENGINE_VERSION, CUSTOM_AGENT_ENGINE_VERSION } from "../sim/engine.ts";
 import { type ScenarioRegistry } from "../sim/scenarios/index.ts";
-import { canonicalJson, evaluateSuite, type EvaluationRow } from "../sim/evaluation.ts";
+import { MAX_AGENT_SCENARIOS, canonicalJson, evaluateSuite, type EvaluationRow } from "../sim/evaluation.ts";
 import type { Run } from "../sim/types.ts";
 import type { AnswerSource } from "./protocol.ts";
 import {
@@ -102,9 +102,9 @@ const reportSchema = z
           .passthrough(),
       )
       .min(1)
-      .max(80),
-    rows: z.array(z.unknown()).max(8),
-    baselines: z.array(z.unknown()).max(24),
+      .max(MAX_AGENT_SCENARIOS * 10),
+    rows: z.array(z.unknown()).max(MAX_AGENT_SCENARIOS),
+    baselines: z.array(z.unknown()).max(MAX_AGENT_SCENARIOS * 3),
     totals: z.unknown(),
     notes: z.array(z.string().max(300)).max(10),
   })

@@ -220,7 +220,7 @@ Areas for future contributions:
 - [ ] Additional civilian activity animations and building art variants
 - [ ] Persistent relationships across social chapters
 - [ ] Community scenario packs: see [Author your own scenario](docs/scenario-authoring.md) and the [research-grounded pack](docs/research-grounding.md)
-- [ ] Larger research runs: more than four custom scenarios per report, and attacks voiced by trusted residents in every family
+- [ ] Attacks voiced by trusted residents in every family
 - [ ] Carefully bounded model-assisted campaign planning
 
 The [contribution guide](CONTRIBUTING.md) explains setup, useful starting points and how to validate a change. Bug reports with a reproducible save and screenshots are especially helpful.
