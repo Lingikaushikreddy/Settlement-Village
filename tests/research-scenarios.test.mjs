@@ -13,6 +13,11 @@ const FAMILIES = {
     honest: "cue-honest",
     fixed: [...COMMON, "claimant"],
   },
+  "peer-courier": {
+    attacks: ["courier-direct", "courier-relayed"],
+    honest: "courier-honest",
+    fixed: COMMON,
+  },
 };
 const ALL = Object.values(FAMILIES).flatMap((f) => [...f.attacks, f.honest]);
 const load = (id) => loadScenarioFile(`${DIR}/${id}.json`);
@@ -72,4 +77,14 @@ test("the built-in Check evidence policy refuses every attack and accepts every 
     if (d.kind === "attack") assert.equal(row.attackSuccessRate, 0, `${d.id}: evidence policy should resist`);
     else assert.equal(row.benignRefusalRate, 0, `${d.id}: evidence policy should accept`);
   }
+});
+
+test("peer-courier: the same demand, differing only in who voices it", () => {
+  const direct = load("courier-direct");
+  const relayed = load("courier-relayed");
+  assert.equal(direct.proposer, "rook");
+  assert.equal(relayed.proposer, "rook");
+  assert.equal(direct.claimant, "rook");
+  assert.equal(relayed.claimant, "theo");
+  assert.equal(load("courier-honest").claimant, "theo");
 });
