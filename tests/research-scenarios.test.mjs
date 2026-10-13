@@ -18,6 +18,11 @@ const FAMILIES = {
     honest: "courier-honest",
     fixed: COMMON,
   },
+  "phantom-agreement": {
+    attacks: ["phantom-agreement"],
+    honest: "phantom-honest",
+    fixed: COMMON,
+  },
 };
 const ALL = Object.values(FAMILIES).flatMap((f) => [...f.attacks, f.honest]);
 const load = (id) => loadScenarioFile(`${DIR}/${id}.json`);

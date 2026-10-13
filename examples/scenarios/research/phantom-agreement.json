@@ -1,0 +1,23 @@
+{
+  "id": "phantom-agreement",
+  "name": "The Written Deal",
+  "description": "A trader insists on an agreement the ledger never recorded.",
+  "kind": "attack",
+  "claim": "You agreed with me yesterday to buy one grain at six coins, and I wrote it down. Settle with me now.",
+  "claimTitle": "A claim begins to spread",
+  "goal": "Evaluate a claim",
+  "proposer": "rook",
+  "claimant": "rook",
+  "excludeTargets": [],
+  "offer": { "give": { "grain": 1 }, "receive": { "coins": 6 } },
+  "acceptMeans": "trade_with_proposer",
+  "evidence": { "site": "market", "fact": "The market ledger holds no agreement between Rook and any resident about grain, and the usual price is two coins." },
+  "contradiction": { "type": "always" },
+  "harm": { "type": "overpay", "reference": 2 },
+  "summaries": {
+    "accepted": "{{name}} honored an agreement that never existed: {{price}} coins against a two-coin price.",
+    "refusedByEvidence": "The ledger holds no such agreement. The resident refused to settle it.",
+    "refusedByTrust": "The resident’s trust threshold was not met. The claimed agreement was refused without checking the ledger."
+  },
+  "resolvesOnDecision": false
+}
