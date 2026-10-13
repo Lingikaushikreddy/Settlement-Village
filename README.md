@@ -12,15 +12,25 @@ A multi-agent village strategy game and an inspectable AI simulation lab.
 [![npm](https://img.shields.io/npm/v/settlement-testbed.svg)](https://www.npmjs.com/package/settlement-testbed)
 [![No API key required](https://img.shields.io/badge/Play_without_an_API_key-38664a.svg)](#run-locally)
 
+[![Play in your browser: no signup, no API key](https://img.shields.io/badge/%E2%96%B6_Play_in_your_browser-no_signup,_no_API_key-38664a?style=for-the-badge)](https://settlement-village.vercel.app)
+
 [Play online](https://settlement-village.vercel.app) · [Quick start](#run-locally) · [How agents work](#how-the-agents-work) · [Player guide](docs/player-guide.md) · [Contribute](CONTRIBUTING.md) · [Discuss](https://github.com/Lingikaushikreddy/Settlement-Village/discussions)
 
-![Settlement gameplay: the illustrated village, distinct residents, village orders and resource controls](docs/media/village-v3.png)
+[![Settlement in 15 seconds: give the village an objective, watch residents claim jobs and gather, then read the log of why each resident took its job](docs/media/settlement-demo.gif)](https://settlement-village.vercel.app)
+
+<sub>Real recording of the live site: one click on <b>Grow the village</b>, then the decision log. Click to play.</sub>
 
 </div>
 
 **Give six residents a shared goal: grow the village, prepare for a raid, or restock supplies. Watch them claim jobs, gather resources, build and upgrade a new farm, or coordinate recruitment.** Inspect what each resident is doing, why they took the job, and what they remember. Then command your army in battle, or open the research desk to investigate social decisions and replay their evidence.
 
 The campaign and free research tools run in your browser with **no API key, paid AI, account, or database required**, whether you open the hosted frontend or run it locally. Campaign residents use deterministic game AI. Optional Claude decisions are available for explicit steps in local-worker research experiments.
+
+| You want to…                 | Start here                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Play**                     | Open [settlement-village.vercel.app](https://settlement-village.vercel.app). Saves stay in your browser.                             |
+| **Test your own agent**      | `npx settlement-testbed --agent http://127.0.0.1:8765/decide --name my-agent`, then see [Test your own agent](#test-your-own-agent). |
+| **Run or change it locally** | `git clone`, `npm ci`, `npm run dev`. See [Run locally](#run-locally).                                                               |
 
 If you like games where agent decisions are visible, **star the repository** to follow Settlement's development.
 
