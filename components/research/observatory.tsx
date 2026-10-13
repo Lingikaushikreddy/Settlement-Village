@@ -18,7 +18,6 @@ import { ModelReadiness } from "./model-readiness";
 import { ActivityPanel } from "./activity-panel";
 import { MetricsPanel } from "./metrics-panel";
 import { RunLibrary, useSavedRuns } from "./run-library";
-export type { ResearchFrame } from "./types";
 
 export function Observatory({
   currentRun,

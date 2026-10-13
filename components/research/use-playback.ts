@@ -10,7 +10,7 @@ import { advance, runToEnd } from "@/lib/sim/engine";
 import type { Intervention, Policy, Run, Scenario } from "@/lib/sim/types";
 import type { ResearchMode, WorkerRun } from "./types";
 
-export type PlaybackState = {
+type PlaybackState = {
   run: Run;
   tick: number;
   mode: ResearchMode;
