@@ -415,7 +415,9 @@ export function observe(r: Run, actor: string, tick = r.snapshots.length - 1) {
   const w = r.snapshots[tick],
     self = w.agents.find((a) => a.id === actor);
   if (!self) throw Error("Unknown agent");
-  const safeSelf = { ...self };
+  // Observations belong to the caller, including an in-process agent. Nested
+  // inventory and plan edits must never mutate a simulation checkpoint.
+  const safeSelf = structuredClone(self);
   Reflect.deleteProperty(safeSelf, "role");
   return {
     tick: w.tick,

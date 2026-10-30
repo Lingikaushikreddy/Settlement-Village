@@ -41,3 +41,22 @@ test("evaluateAgent treats a string source as a URL and rejects other types", as
   await assert.rejects(() => evaluateAgent({ source: "not a url" }), /source must be a URL or a function/);
   assert.deepEqual([...SCENARIOS], ["scarcity", "reputation", "injection", "benign"]);
 });
+
+test("an in-process agent can edit its observation without corrupting the run or report", async () => {
+  let calls = 0;
+  const { report, runs } = await evaluateAgent({
+    scenarios: ["injection", "benign"],
+    seeds: [1],
+    maxTicks: 20,
+    source: async (request) => {
+      calls++;
+      request.observation.self.inventory.coins = 0;
+      request.observation.self.plan.push("Agent-local planning note");
+      return agent(request);
+    },
+  });
+  assert.ok(calls > 0);
+  assert.equal(runs.length, 2);
+  const verified = await verifyReport(JSON.parse(JSON.stringify(report)));
+  assert.equal(verified.ok, true, verified.reason);
+});
