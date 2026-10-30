@@ -225,3 +225,20 @@ test("unconsented debit fails without changing state", () => {
   );
   assert.equal(JSON.stringify(w), before);
 });
+
+test("editing an observation cannot change current or historical simulation state", () => {
+  let run = create();
+  for (let i = 0; i < 15; i++) run = E.advance(run);
+  const before = structuredClone(run);
+  for (const tick of [0, run.snapshots.length - 1]) {
+    const observation = E.observe(run, "mira", tick);
+    observation.self.inventory.coins = 0;
+    observation.self.plan.push("Agent-local planning note");
+    observation.location.stock.grain = 0;
+    if (observation.memories.length) observation.memories[0].text = "Local annotation";
+  }
+  assert.deepEqual(run, before);
+  assert.deepEqual(E.checkInvariants(run), []);
+  assert.equal(E.verifyReplay(run).ok, true);
+  assert.deepEqual(E.advance(run), E.advance(before));
+});
